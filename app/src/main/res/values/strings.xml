@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/values/strings.xml
+     Todas las cadenas de texto de la app en español. -->
+<resources>
+
+    <!-- Nombre de la app (visible en el launcher de TV) -->
+    <string name="app_name">Botes SELAE</string>
+
+    <!-- Cabecera de la pantalla principal -->
+    <string name="app_title">Próximos Botes</string>
+
+    <!-- Descripciones de accesibilidad -->
+    <string name="selae_logo_desc">Logo SELAE</string>
+    <string name="game_logo_desc">Logo del juego</string>
+
+    <!-- Estados de carga -->
+    <string name="loading_text">Cargando botes…</string>
+
+    <!-- Mensajes de error -->
+    <string name="error_no_connection">Sin conexión a internet</string>
+    <string name="error_no_data">No hay datos disponibles.\nComprueba la conexión de red.</string>
+    <string name="error_cache_data">Sin conexión — mostrando datos guardados</string>
+    <string name="error_timeout">Tiempo de espera agotado</string>
+    <string name="error_parse">Error al procesar los datos del servidor</string>
+
+    <!-- Pie de página -->
+    <string name="footer_disclaimer">Datos informativos. Importe del bote sujeto a cambios. © SELAE</string>
+
+    <!-- Texto de bote vacío -->
+    <string name="jackpot_unavailable">Bote no disponible</string>
+    <string name="date_soon">Próximamente</string>
+
+</resources>

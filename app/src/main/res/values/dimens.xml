@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/values/dimens.xml
+     Dimensiones optimizadas para pantallas de TV 1920×1080.
+     Tipografía mínima de 28sp para importes según requisitos. -->
+<resources>
+
+    <!-- ════════════════════════
+         ESTRUCTURA GENERAL
+         ════════════════════════ -->
+    <!-- Altura de la barra de cabecera -->
+    <dimen name="header_height">72dp</dimen>
+
+    <!-- Altura del pie de página -->
+    <dimen name="footer_height">40dp</dimen>
+
+    <!-- ════════════════════════
+         ESPACIADOS GENERALES
+         ════════════════════════ -->
+    <!-- Padding lateral grande (márgenes del grid) -->
+    <dimen name="padding_xl">40dp</dimen>
+
+    <!-- Padding estándar -->
+    <dimen name="padding_l">20dp</dimen>
+
+    <dimen name="padding_m">12dp</dimen>
+
+    <dimen name="padding_s">8dp</dimen>
+
+    <!-- ════════════════════════
+         TARJETAS DE JUEGO
+         ════════════════════════ -->
+    <!-- Margen entre tarjetas -->
+    <dimen name="card_margin">10dp</dimen>
+
+    <!-- Padding interno de cada tarjeta -->
+    <dimen name="card_padding">20dp</dimen>
+
+    <!-- Radio de esquinas -->
+    <dimen name="card_corner_radius">16dp</dimen>
+
+    <!-- Tamaño del logo dentro de la tarjeta -->
+    <dimen name="logo_size">100dp</dimen>
+
+    <!-- ════════════════════════
+         TIPOGRAFÍA
+         Optimizada para legibilidad a distancia en TV
+         ════════════════════════ -->
+    <!-- Importe del bote (mínimo requerido: 28sp) -->
+    <dimen name="text_jackpot">36sp</dimen>
+
+    <!-- Nombre del juego -->
+    <dimen name="text_game_name">22sp</dimen>
+
+    <!-- Fecha del sorteo (mínimo requerido: 20sp) -->
+    <dimen name="text_draw_date">20sp</dimen>
+
+    <!-- Addons -->
+    <dimen name="text_addon">16sp</dimen>
+
+    <!-- Cabecera -->
+    <dimen name="text_header_title">26sp</dimen>
+
+    <!-- Pie de página / metadatos -->
+    <dimen name="text_footer">13sp</dimen>
+
+    <!-- ════════════════════════
+         ICONOS Y DECORACIÓN
+         ════════════════════════ -->
+    <!-- Tamaño del icono de calendario en la fecha -->
+    <dimen name="icon_calendar">20dp</dimen>
+
+    <!-- Bullet de addon -->
+    <dimen name="addon_bullet">6dp</dimen>
+
+    <!-- Grosor del separador decorativo de la tarjeta -->
+    <dimen name="divider_thickness">3dp</dimen>
+
+    <dimen name="divider_width">60dp</dimen>
+
+</resources>

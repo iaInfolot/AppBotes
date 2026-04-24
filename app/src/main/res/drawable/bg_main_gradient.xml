@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/bg_main_gradient.xml
+     Degradado de fondo de la pantalla principal: azul muy oscuro → casi negro. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="linear"
+        android:angle="135"
+        android:startColor="@color/bg_start"
+        android:centerColor="#111124"
+        android:endColor="@color/bg_end" />
+</shape>

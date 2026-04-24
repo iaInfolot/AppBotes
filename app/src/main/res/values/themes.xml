@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/values/themes.xml
+     Tema principal de la app. Sin barra de título, pantalla completa,
+     orientación landscape forzada. -->
+<resources>
+
+    <!-- Tema base heredado de Leanback para TV -->
+    <style name="Theme.SelaeSignage" parent="Theme.AppCompat.Leanback">
+
+        <!-- Sin barra de título -->
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionBar">false</item>
+
+        <!-- Pantalla completa -->
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+
+        <!-- Fondo de la ventana = color de fondo principal -->
+        <item name="android:windowBackground">@color/bg_start</item>
+
+        <!-- Colores del sistema -->
+        <item name="colorPrimary">@color/accent_blue</item>
+        <item name="colorPrimaryDark">@color/bg_start</item>
+        <item name="colorAccent">@color/accent_gold</item>
+
+        <!-- Texto -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+
+        <!-- Sin animación de transición al arrancar -->
+        <item name="android:windowAnimationStyle">@style/NoAnimation</item>
+
+        <!-- Mantener pantalla encendida -->
+        <item name="android:keepScreenOn">true</item>
+
+    </style>
+
+    <!-- Estilo sin animación de transición -->
+    <style name="NoAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@null</item>
+        <item name="android:activityOpenExitAnimation">@null</item>
+        <item name="android:activityCloseEnterAnimation">@null</item>
+        <item name="android:activityCloseExitAnimation">@null</item>
+        <item name="android:taskOpenEnterAnimation">@null</item>
+        <item name="android:taskOpenExitAnimation">@null</item>
+    </style>
+
+</resources>

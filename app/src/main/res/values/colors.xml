@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/values/colors.xml
+     Paleta de colores de la app de señalización SELAE.
+     Fondo oscuro + acentos dorados/vibrantes acordes con la identidad SELAE. -->
+<resources>
+
+    <!-- ════════════════════════════════════════
+         FONDOS
+         ════════════════════════════════════════ -->
+    <!-- Fondo principal de la pantalla (usado en degradado) -->
+    <color name="bg_start">#0D0D1A</color>
+    <color name="bg_end">#1A1A2E</color>
+
+    <!-- Fondo de las tarjetas -->
+    <color name="card_bg">#1E1E30</color>
+    <color name="card_bg_top">#252540</color>
+    <color name="card_bg_bottom">#16162A</color>
+
+    <!-- Cabecera y pie -->
+    <color name="header_bg">#0A0A18</color>
+    <color name="footer_bg">#0A0A14</color>
+
+    <!-- Contenedor de addons (más oscuro) -->
+    <color name="addon_container_bg">#12122A</color>
+
+    <!-- ════════════════════════════════════════
+         TEXTOS
+         ════════════════════════════════════════ -->
+    <!-- Texto principal (blanco) -->
+    <color name="text_primary">#FFFFFF</color>
+
+    <!-- Texto secundario (gris claro) -->
+    <color name="text_secondary">#B0B8CC</color>
+
+    <!-- Texto de ayuda / pie de página -->
+    <color name="text_hint">#606880</color>
+
+    <!-- ════════════════════════════════════════
+         ACENTOS — Dorado SELAE
+         ════════════════════════════════════════ -->
+    <!-- Dorado principal: importes de bote -->
+    <color name="accent_gold">#FFD700</color>
+
+    <!-- Dorado suave: importes de addon -->
+    <color name="accent_gold_soft">#E8C14A</color>
+
+    <!-- Dorado oscuro: bordes, separadores -->
+    <color name="accent_gold_dark">#B8960C</color>
+
+    <!-- ════════════════════════════════════════
+         ACENTOS SECUNDARIOS
+         ════════════════════════════════════════ -->
+    <!-- Azul SELAE -->
+    <color name="accent_blue">#1E5EBF</color>
+    <color name="accent_blue_light">#4A90E2</color>
+
+    <!-- Verde para estados "ok" -->
+    <color name="accent_green">#2ECC71</color>
+
+    <!-- ════════════════════════════════════════
+         ERRORES Y AVISOS
+         ════════════════════════════════════════ -->
+    <color name="error_bg">#CC3A1A1A</color>
+    <color name="error_text">#FF6B6B</color>
+    <color name="warning_text">#FFA500</color>
+
+    <!-- ════════════════════════════════════════
+         DIVISORES
+         ════════════════════════════════════════ -->
+    <color name="divider_color">#33FFFFFF</color>
+    <color name="divider_gold">#80FFD700</color>
+
+    <!-- ════════════════════════════════════════
+         TRANSPARENCIAS ÚTILES
+         ════════════════════════════════════════ -->
+    <color name="overlay_dark">#CC000000</color>
+    <color name="transparent">#00000000</color>
+
+</resources>
