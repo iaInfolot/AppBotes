@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- activity_main.xml
+     Pantalla principal de señalización para Android TV (1920×1080).
+     Layout apaisado a pantalla completa con todas las tarjetas visibles sin scroll. -->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_main_gradient"
+    android:fitsSystemWindows="false">
+
+    <!-- ════════════════════════════════════════════════════════
+         CABECERA: Logo SELAE + Título + Reloj de última actualización
+         ════════════════════════════════════════════════════════ -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/headerBar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/header_height"
+        android:background="@color/header_bg"
+        android:paddingStart="@dimen/padding_xl"
+        android:paddingEnd="@dimen/padding_xl"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Logo SELAE (izquierda) -->
+        <ImageView
+            android:id="@+id/imgSelae"
+            android:layout_width="160dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_selae_logo"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/selae_logo_desc"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- Divider vertical -->
+        <View
+            android:id="@+id/dividerHeader"
+            android:layout_width="2dp"
+            android:layout_height="40dp"
+            android:background="@color/divider_color"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toEndOf="@id/imgSelae"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- Título central -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/app_title"
+            android:textColor="@color/text_primary"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.05"
+            android:layout_marginStart="20dp"
+            app:layout_constraintStart_toEndOf="@id/dividerHeader"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvLastUpdate"
+            app:layout_constraintHorizontal_bias="0" />
+
+        <!-- Timestamp última actualización (derecha) -->
+        <TextView
+            android:id="@+id/tvLastUpdate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-light"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ════════════════════════════════════════════════════════
+         BANNER DE ERROR (solo visible cuando hay problema de red)
+         ════════════════════════════════════════════════════════ -->
+    <TextView
+        android:id="@+id/tvErrorMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text=""
+        android:textColor="@color/error_text"
+        android:textSize="16sp"
+        android:background="@drawable/bg_error_banner"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="8dp"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/headerBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/recyclerJackpots" />
+
+    <!-- ════════════════════════════════════════════════════════
+         GRID PRINCIPAL DE TARJETAS
+         Ocupa todo el espacio entre la cabecera y el footer.
+         ════════════════════════════════════════════════════════ -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerJackpots"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="@dimen/padding_xl"
+        android:paddingVertical="@dimen/padding_l"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/headerBar"
+        app:layout_constraintBottom_toTopOf="@id/footerBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ════════════════════════════════════════════════════════
+         PIE DE PÁGINA: frase discreta
+         ════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/footerBar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/footer_height"
+        android:orientation="horizontal"
+        android:background="@color/footer_bg"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/padding_xl"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/footer_disclaimer"
+            android:textColor="@color/text_hint"
+            android:textSize="13sp"
+            android:textStyle="italic" />
+
+    </LinearLayout>
+
+    <!-- ════════════════════════════════════════════════════════
+         OVERLAY DE CARGA INICIAL
+         ════════════════════════════════════════════════════════ -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ProgressBar
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:indeterminateTint="@color/accent_gold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/loading_text"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:layout_marginTop="16dp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

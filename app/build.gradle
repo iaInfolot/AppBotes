@@ -52,7 +52,7 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
 
     // Android TV Leanback (para soporte nativo de TV)
-    implementation 'androidx.leanback:leanback:1.0.0'
+    implementation 'androidx.leanback:leanback:1.2.0'
 
     // Coroutines para llamadas asíncronas
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'

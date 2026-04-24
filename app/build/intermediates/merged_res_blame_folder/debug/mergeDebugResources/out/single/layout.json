@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "com.selae.signage.app-mergeDebugResources-3:/layout/activity_main.xml",
+        "source": "com.selae.signage.app-main-6:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.selae.signage.app-mergeDebugResources-3:/layout/item_jackpot_card.xml",
+        "source": "com.selae.signage.app-main-6:/layout/item_jackpot_card.xml"
+    },
+    {
+        "merged": "com.selae.signage.app-mergeDebugResources-3:/layout/item_addon_row.xml",
+        "source": "com.selae.signage.app-main-6:/layout/item_addon_row.xml"
+    }
+]

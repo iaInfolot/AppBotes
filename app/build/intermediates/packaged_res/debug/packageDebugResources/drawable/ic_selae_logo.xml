@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/ic_selae_logo.xml
+     Logo simplificado de SELAE para la cabecera.
+     Reemplazar por el logo oficial si se dispone del asset PNG/SVG. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="48dp"
+    android:viewportWidth="160"
+    android:viewportHeight="48">
+
+    <!-- Fondo píldora azul -->
+    <path
+        android:fillColor="#1E5EBF"
+        android:pathData="M8,4 H152 Q156,4 156,8 V40 Q156,44 152,44 H8 Q4,44 4,40 V8 Q4,4 8,4 Z" />
+
+    <!-- Estrella decorativa izquierda -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M22,24 L24.5,17 L27,24 H34 L28.5,28 L30.5,35 L24.5,31 L18.5,35 L20.5,28 L15,24 Z" />
+
+    <!-- Texto "SELAE" -->
+    <text
+        android:fontFamily="sans-serif-black"
+        android:textSize="18"
+        android:fillColor="#FFFFFF" />
+
+    <!-- Línea dorada inferior -->
+    <path
+        android:strokeColor="#FFD700"
+        android:strokeWidth="2"
+        android:pathData="M4,42 H156" />
+
+</vector>
