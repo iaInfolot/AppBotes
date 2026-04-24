@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- res/xml/network_security_config.xml
-     Solo permite conexiones HTTPS al dominio del webservice -->
-<network-security-config>
-    <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">webservice.infolot.es</domain>
-    </domain-config>
-</network-security-config>

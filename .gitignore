@@ -1,19 +1,36 @@
-# Android Studio
+# ============================================================
+# Android Studio / IntelliJ
+# ============================================================
 *.iml
 .gradle/
 /local.properties
-/.idea/
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
 .DS_Store
-/build/
 /captures/
 .externalNativeBuild/
 .cxx/
+
+# ============================================================
+# Build outputs — TODOS los módulos (app/build, etc.)
+# ============================================================
+build/
+**/build/
+
+# ============================================================
+# APK / Bundle / Keystore (nunca al repositorio)
+# ============================================================
 *.apk
 *.aab
 *.keystore
 *.jks
 
-# Gradle
-gradle/wrapper/
-gradlew
-gradlew.bat
+# ============================================================
+# NOTA: gradle/wrapper/, gradlew y gradlew.bat NO se excluyen.
+# Son necesarios para que Android Studio pueda abrir y
+# sincronizar el proyecto en cualquier máquina.
+# ============================================================
