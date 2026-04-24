@@ -5,7 +5,7 @@
 <resources>
 
     <!-- Tema base heredado de Leanback para TV -->
-    <style name="Theme.SelaeSignage" parent="Theme.AppCompat.Leanback">
+    <style name="Theme.SelaeSignage" parent="Theme.Leanback">
 
         <!-- Sin barra de título -->
         <item name="windowNoTitle">true</item>
