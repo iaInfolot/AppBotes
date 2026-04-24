@@ -16,13 +16,13 @@ object AppConfig {
     // ============================================================
 
     /** Token de autenticación proporcionado por SELAE/InfoLot */
-    const val TOKEN: String = "{{token_Plus}}"
+    const val TOKEN: String = "5dc3cbd2-5f8b-4c19-a9ab-44de846eaba5"
 
     /** Contraseña de autenticación */
-    const val PASS: String = "{{pass_Plus}}"
+    const val PASS: String = ",54-J%aM-]eV.e94"
 
     /** Identificador de la aplicación en el webservice */
-    const val APP_ID: String = "{{Web_Service}}"
+    const val APP_ID: String = "2218649e-3e5a-4e37-a81e-ab1956816aad"
 
     // ============================================================
     // CONFIGURACIÓN DE RED
