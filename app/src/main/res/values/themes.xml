@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- res/values/themes.xml
-     Tema principal de la app. Sin barra de título, pantalla completa,
-     orientación landscape forzada. -->
+     Tema principal de la app. Sin barra de título, pantalla completa. -->
 <resources>
 
-    <!-- Tema base heredado de Leanback para TV -->
-    <style name="Theme.SelaeSignage" parent="Theme.Leanback">
+    <!--
+        Se usa Theme.AppCompat.NoActionBar como base.
+        Theme.Leanback no garantiza los atributos colorPrimary/windowNoTitle
+        en todas las versiones de la librería leanback.
+    -->
+    <style name="Theme.SelaeSignage" parent="Theme.AppCompat.NoActionBar">
 
         <!-- Sin barra de título -->
         <item name="windowNoTitle">true</item>
@@ -15,7 +18,7 @@
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
 
-        <!-- Fondo de la ventana = color de fondo principal -->
+        <!-- Fondo de la ventana -->
         <item name="android:windowBackground">@color/bg_start</item>
 
         <!-- Colores del sistema -->

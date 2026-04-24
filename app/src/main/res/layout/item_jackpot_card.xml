@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- item_jackpot_card.xml
      Tarjeta individual de un juego/bote de SELAE.
-     Diseño vertical con logo, nombre, bote y fecha del sorteo.
-     Dimensiones optimizadas para TV a 1920×1080. -->
+     Diseño vertical con logo, nombre, bote y fecha del sorteo. -->
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -54,7 +53,9 @@
             android:background="@drawable/divider_accent"
             android:layout_marginBottom="16dp" />
 
-        <!-- ──── IMPORTE DEL BOTE ──── -->
+        <!-- ──── IMPORTE DEL BOTE ────
+             autoSizeTextType usa namespace app: para compatibilidad API 23+
+             paddingHorizontal/Vertical reemplazados por start/end/top/bottom -->
         <TextView
             android:id="@+id/tvJackpotAmount"
             android:layout_width="match_parent"
@@ -66,12 +67,11 @@
             android:fontFamily="sans-serif-black"
             android:gravity="center"
             android:maxLines="1"
-            android:adjustViewBounds="true"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="20sp"
-            android:autoSizeMaxTextSize="@dimen/text_jackpot"
             android:letterSpacing="-0.02"
-            android:layout_marginBottom="10dp" />
+            android:layout_marginBottom="10dp"
+            app:autoSizeTextType="uniform"
+            app:autoSizeMinTextSize="20sp"
+            app:autoSizeMaxTextSize="@dimen/text_jackpot" />
 
         <!-- ──── FECHA DEL SORTEO ──── -->
         <TextView
@@ -88,7 +88,8 @@
             android:drawableStart="@drawable/ic_calendar"
             android:layout_marginBottom="12dp" />
 
-        <!-- ──── ADDONS (premios adicionales) ──── -->
+        <!-- ──── ADDONS (premios adicionales) ────
+             paddingHorizontal/Vertical reemplazados por start/end/top/bottom -->
         <LinearLayout
             android:id="@+id/containerAddons"
             android:layout_width="match_parent"
@@ -96,8 +97,10 @@
             android:orientation="vertical"
             android:visibility="gone"
             android:background="@drawable/bg_addon_container"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="8dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
             android:layout_marginTop="6dp" />
 
     </LinearLayout>

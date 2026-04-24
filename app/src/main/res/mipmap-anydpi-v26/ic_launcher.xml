@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- mipmap-anydpi-v26/ic_launcher.xml
+     Adaptive icon para API 26+. Se usa ic_launcher_foreground como capa superior. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/bg_start" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

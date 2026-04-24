@@ -8,7 +8,8 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="4dp">
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
 
     <!-- Bullet decorativo -->
     <View

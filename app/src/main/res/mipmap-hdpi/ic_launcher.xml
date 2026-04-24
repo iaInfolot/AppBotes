@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/bg_start"/>
-    <foreground android:drawable="@drawable/ic_launcher"/>
-</adaptive-icon>
+<!-- mipmap-hdpi/ic_launcher.xml
+     Icono estándar para API < 26 (no adaptive-icon).
+     Android usa este cuando el dispositivo no soporta adaptive icons. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Fondo azul oscuro circular -->
+    <path
+        android:fillColor="#0D1B4D"
+        android:pathData="M0,0 H48 V48 H0 Z" />
+
+    <!-- Estrella dorada -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M24,8 L27,18 H38 L29,24 L32,34 L24,28 L16,34 L19,24 L10,18 H21 Z" />
+
+</vector>
