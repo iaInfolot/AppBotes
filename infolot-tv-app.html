@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infolot · Botes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg:        #0a0e14;
+    --surface:   #111720;
+    --card:      #161d28;
+    --border:    #1e2c3a;
+    --accent:    #f0b429;
+    --accent2:   #e05c2a;
+    --text:      #e8edf3;
+    --muted:     #5a6a7a;
+    --success:   #2ecc8a;
+    --radius:    14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── LAYOUT ────────────────────────────────── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 28px 40px 20px;
+    gap: 0;
+  }
+
+  /* ── HEADER ────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-shrink: 0;
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo-main {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.6rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .logo-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  #clock {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  #menu-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  #menu-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── DIVIDER ───────────────────────────────── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--border) 40%, transparent 100%);
+    margin-bottom: 22px;
+    flex-shrink: 0;
+  }
+
+  /* ── SECTION TITLE ─────────────────────────── */
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 18px;
+    flex-shrink: 0;
+  }
+  .section-title span {
+    color: var(--accent);
+    margin-right: 8px;
+  }
+
+  /* ── JACKPOT GRID ──────────────────────────── */
+  #jackpots-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    overflow-y: auto;
+    padding-right: 4px;
+    align-content: start;
+  }
+
+  #jackpots-grid::-webkit-scrollbar { width: 4px; }
+  #jackpots-grid::-webkit-scrollbar-track { background: transparent; }
+  #jackpots-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── JACKPOT CARD ──────────────────────────── */
+  .jackpot-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp .4s ease both;
+    transition: border-color .2s, transform .2s;
+  }
+  .jackpot-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .jackpot-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .jackpot-card:hover::before { opacity: 1; }
+
+  .card-game-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-date {
+    font-size: .78rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+    font-weight: 300;
+  }
+
+  .card-jackpot {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .card-jackpot .currency {
+    font-size: 1.2rem;
+    color: var(--accent2);
+    margin-right: 4px;
+  }
+
+  .card-addons {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .addon-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,.04);
+    border-radius: 6px;
+    padding: 5px 10px;
+  }
+
+  .addon-name {
+    font-size: .75rem;
+    color: var(--muted);
+    text-transform: capitalize;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+  }
+
+  .addon-amount {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--success);
+  }
+
+  /* ── STATUS BAR ────────────────────────────── */
+  #status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #status-msg {
+    font-size: .78rem;
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+  }
+  #status-msg.error { color: #e05c2a; }
+  #status-msg.ok    { color: var(--success); }
+
+  #last-update {
+    font-size: .75rem;
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  /* ── LOADING ───────────────────────────────── */
+  #loading {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 50;
+  }
+
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+
+  #loading p {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── OVERLAY (menu / config) ───────────────── */
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.7);
+    backdrop-filter: blur(6px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #overlay.visible { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 36px 40px;
+    width: 560px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .modal h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .modal .modal-sub {
+    font-size: .8rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .form-group label {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: .8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+
+  .form-group input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: .95rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .form-group input:focus { border-color: var(--accent); }
+
+  .form-group input[type="number"] { appearance: textfield; }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: .95rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:active { transform: scale(.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-secondary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-danger {
+    background: #c0392b;
+    color: #fff;
+    margin-left: auto;
+  }
+
+  /* ── MAIN MENU ─────────────────────────────── */
+  .menu-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .menu-list li button {
+    width: 100%;
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 14px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color .2s, color .2s;
+  }
+  .menu-list li button:hover { border-color: var(--accent); color: var(--accent); }
+
+  .menu-icon {
+    font-size: 1.3rem;
+    width: 28px;
+    text-align: center;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 18px; right: 20px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color .2s;
+  }
+  .close-btn:hover { color: var(--text); }
+
+  /* ── EMPTY STATE ───────────────────────────── */
+  #empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--muted);
+  }
+  #empty-state .empty-icon { font-size: 3rem; }
+  #empty-state p {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* ── ANIMATIONS ────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Cargando botes...</p>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;">
+  <header>
+    <div class="logo-area">
+      <div class="logo-main">Infolot</div>
+      <div class="logo-sub">Próximos Botes</div>
+    </div>
+    <div class="header-right">
+      <div id="clock">--:--</div>
+      <button id="menu-btn" onclick="openMenu()">☰ Menú</button>
+    </div>
+  </header>
+
+  <div class="divider"></div>
+
+  <div class="section-title"><span>▸</span> Próximos Sorteos</div>
+
+  <div id="jackpots-grid"></div>
+
+  <div id="empty-state">
+    <div class="empty-icon">🎰</div>
+    <p>No hay botes disponibles</p>
+  </div>
+
+  <div id="status-bar">
+    <span id="status-msg">Listo</span>
+    <span id="last-update"></span>
+  </div>
+</div>
+
+<!-- OVERLAY (menú + configuración) -->
+<div id="overlay">
+  <!-- MAIN MENU -->
+  <div class="modal" id="modal-menu">
+    <button class="close-btn" onclick="closeOverlay()">✕</button>
+    <h2>Menú</h2>
+    <div class="modal-sub">Navegación</div>
+    <ul class="menu-list">
+      <li><button onclick="goHome()"><span class="menu-icon">🏠</span>Inicio — Botes</button></li>
+      <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
+      <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
+    </ul>
+    <div style="font-size:.75rem; color:var(--muted); font-family:'Barlow Condensed',sans-serif; letter-spacing:1px;">
+      v1.0 · Infolot TV App
+    </div>
+  </div>
+
+  <!-- CONFIG PANEL -->
+  <div class="modal" id="modal-config" style="display:none;">
+    <button class="close-btn" onclick="closeOverlay()">✕</button>
+    <h2>Configuración</h2>
+    <div class="modal-sub">Parámetros del WebService</div>
+
+    <div class="form-group">
+      <label>URL del WebService</label>
+      <input type="text" id="cfg-url" placeholder="https://webservice.infolot.es" />
+    </div>
+    <div class="form-group">
+      <label>App ID</label>
+      <input type="text" id="cfg-appid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+    </div>
+    <div class="form-group">
+      <label>Token</label>
+      <input type="text" id="cfg-token" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="cfg-pass" placeholder="••••••••••••" />
+    </div>
+
+    <div style="height:1px; background:var(--border); margin: 20px 0;"></div>
+
+    <div class="form-group">
+      <label>Auto-actualización (minutos, 0 = desactivada)</label>
+      <input type="number" id="cfg-refresh" min="0" max="1440" placeholder="0" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveConfig()">💾 Guardar</button>
+      <button class="btn btn-secondary" onclick="showMenu()">← Volver</button>
+      <button class="btn btn-danger" onclick="resetConfig()">Restablecer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── DEFAULT CONFIG ──────────────────────────────────────────────────────
+  const DEFAULTS = {
+    url:     'https://webservice.infolot.es',
+    appid:   '41461407-985d-4834-973f-1a672edb74e2',
+    token:   '1d446400-a63a-4467-bef9-1e661971c931',
+    pass:    '48].-.TuNa&Pu%26',
+    refresh: 0   // minutos; 0 = sin auto-refresco
+  };
+
+  const STORAGE_KEY = 'infolot_cfg';
+  let refreshTimer = null;
+
+  // ── CONFIG ──────────────────────────────────────────────────────────────
+  function loadConfig() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? { ...DEFAULTS, ...JSON.parse(saved) } : { ...DEFAULTS };
+    } catch { return { ...DEFAULTS }; }
+  }
+
+  function saveConfig() {
+    const cfg = {
+      url:     document.getElementById('cfg-url').value.trim()    || DEFAULTS.url,
+      appid:   document.getElementById('cfg-appid').value.trim()  || DEFAULTS.appid,
+      token:   document.getElementById('cfg-token').value.trim()  || DEFAULTS.token,
+      pass:    document.getElementById('cfg-pass').value          || DEFAULTS.pass,
+      refresh: parseInt(document.getElementById('cfg-refresh').value) || 0
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    closeOverlay();
+    setupAutoRefresh(cfg.refresh);
+    fetchJackpots();
+  }
+
+  function resetConfig() {
+    if (!confirm('¿Restablecer la configuración por defecto?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    fillConfigForm(DEFAULTS);
+    setStatus('Configuración restablecida', 'ok');
+  }
+
+  function fillConfigForm(cfg) {
+    document.getElementById('cfg-url').value     = cfg.url;
+    document.getElementById('cfg-appid').value   = cfg.appid;
+    document.getElementById('cfg-token').value   = cfg.token;
+    document.getElementById('cfg-pass').value    = cfg.pass;
+    document.getElementById('cfg-refresh').value = cfg.refresh;
+  }
+
+  // ── AUTO-REFRESH ────────────────────────────────────────────────────────
+  function setupAutoRefresh(minutes) {
+    if (refreshTimer) clearInterval(refreshTimer);
+    if (minutes > 0) {
+      refreshTimer = setInterval(fetchJackpots, minutes * 60 * 1000);
+    }
+  }
+
+  // ── CLOCK ───────────────────────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('clock').textContent = `${h}:${m}`;
+  }
+
+  // ── FETCH JACKPOTS ──────────────────────────────────────────────────────
+  async function fetchJackpots() {
+    const cfg = loadConfig();
+    setStatus('Conectando con el servidor...', '');
+    showLoading(true);
+
+    const body = {
+      token:  cfg.token,
+      pass:   cfg.pass,
+      app_id: cfg.appid
+    };
+
+    try {
+      const resp = await fetch(`${cfg.url}/ws/next-jackpots`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+
+      if (!json.data) throw new Error('Respuesta inesperada del servidor');
+
+      renderJackpots(json.data);
+      const now = new Date();
+      document.getElementById('last-update').textContent =
+        `Actualizado: ${now.toLocaleTimeString('es-ES')}`;
+      setStatus('Datos actualizados correctamente', 'ok');
+
+    } catch (err) {
+      console.error(err);
+      setStatus(`Error: ${err.message}`, 'error');
+      renderJackpots([]);
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  // ── RENDER ──────────────────────────────────────────────────────────────
+  function renderJackpots(data) {
+    const grid  = document.getElementById('jackpots-grid');
+    const empty = document.getElementById('empty-state');
+    grid.innerHTML = '';
+
+    if (!data || data.length === 0) {
+      grid.style.display  = 'none';
+      empty.style.display = 'flex';
+      return;
+    }
+
+    grid.style.display  = '';
+    empty.style.display = 'none';
+
+    data.forEach((item, i) => {
+      const card = document.createElement('div');
+      card.className = 'jackpot-card';
+      card.style.animationDelay = `${i * 60}ms`;
+
+      const dateStr = item.date
+        ? new Date(item.date + 'T00:00:00').toLocaleDateString('es-ES',
+            { weekday:'long', day:'numeric', month:'long' })
+        : '—';
+
+      const jackpotFmt = formatAmount(item.jackpot);
+
+      let addonsHtml = '';
+      if (item.addons && item.addons.length > 0) {
+        addonsHtml = `<div class="card-addons">` +
+          item.addons.map(a => `
+            <div class="addon-item">
+              <span class="addon-name">${escHtml(a.name)}</span>
+              <span class="addon-amount">+ ${formatAmount(a.jackpot)}</span>
+            </div>`).join('') +
+        `</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="card-game-name">${escHtml(item.name)}</div>
+        <div class="card-date">${dateStr}</div>
+        <div class="card-jackpot">
+          <span class="currency">€</span>${jackpotFmt}
+        </div>
+        ${addonsHtml}
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  // ── HELPERS ─────────────────────────────────────────────────────────────
+  function formatAmount(n) {
+    const num = parseInt(n) || 0;
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace('.', ',') + ' M';
+    if (num >= 1_000)     return (num / 1_000).toFixed(0) + ' K';
+    return num.toLocaleString('es-ES');
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  function setStatus(msg, type) {
+    const el = document.getElementById('status-msg');
+    el.textContent = msg;
+    el.className = type || '';
+  }
+
+  function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'flex' : 'none';
+    document.getElementById('app').style.display     = show ? 'none' : 'flex';
+  }
+
+  // ── NAVIGATION ──────────────────────────────────────────────────────────
+  function openMenu() {
+    showMenu();
+    document.getElementById('overlay').classList.add('visible');
+  }
+
+  function closeOverlay() {
+    document.getElementById('overlay').classList.remove('visible');
+  }
+
+  function showMenu() {
+    document.getElementById('modal-menu').style.display   = '';
+    document.getElementById('modal-config').style.display = 'none';
+  }
+
+  function showConfig() {
+    fillConfigForm(loadConfig());
+    document.getElementById('modal-menu').style.display   = 'none';
+    document.getElementById('modal-config').style.display = '';
+  }
+
+  function goHome() {
+    closeOverlay();
+  }
+
+  function manualRefresh() {
+    closeOverlay();
+    fetchJackpots();
+  }
+
+  // ── KEYBOARD NAV ────────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' || e.key === 'Back') closeOverlay();
+  });
+
+  // ── INIT ─────────────────────────────────────────────────────────────────
+  updateClock();
+  setInterval(updateClock, 30000);
+
+  const initCfg = loadConfig();
+  setupAutoRefresh(initCfg.refresh);
+  fetchJackpots();
+</script>
+</body>
+</html>
