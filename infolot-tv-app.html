@@ -582,7 +582,7 @@ body.orient-v #status-bar { padding: 8px 24px; }
 
   <div id="status-bar">
     <span id="status-msg">Listo</span>
-    <span id="last-update"></span>
+    <span id="last-update"></span><span id="app-ver" style="font-size:.68rem;color:var(--muted);font-family:var(--font-ui);letter-spacing:1px;margin-left:16px;"></span>
   </div>
 </div>
 
@@ -599,7 +599,7 @@ body.orient-v #status-bar { padding: 8px 24px; }
       <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
       <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
     </ul>
-    <div class="app-version">v1.1 · Infolot TV App</div>
+    <div class="app-version" id="menu-version">v1.1 · Infolot TV App</div>
   </div>
 
   <!-- CONFIG -->
@@ -708,6 +708,8 @@ const DEFAULTS = {
 };
 
 const STORAGE_KEY = 'infolot_cfg_v3';
+const APP_VERSION  = '1.2';
+const APP_REVISION = '20260531-001';
 let gamesMap   = {};   // id_game -> game data
 let pvInfo     = {};
 let timers     = {};
@@ -1014,6 +1016,7 @@ function esc(str) {
 function openMenu() {
   showMenu();
   document.getElementById('overlay').classList.add('visible');
+  document.getElementById('menu-version').textContent = `v${APP_VERSION} · r${APP_REVISION} · Infolot TV App`;
 }
 function closeOverlay() {
   document.getElementById('overlay').classList.remove('visible');
@@ -1116,6 +1119,7 @@ document.addEventListener('keydown', e => {
 
   updateClock();
   setInterval(updateClock, 30000);
+  document.getElementById('app-ver').textContent = `v${APP_VERSION} · r${APP_REVISION}`;
 
   setupTimers(cfg);
   loadAllData();
