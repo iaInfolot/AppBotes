@@ -55,16 +55,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .accent-line{height:2px;background:linear-gradient(90deg,var(--pv-primary) 0%,var(--pv-secondary) 40%,transparent 80%);flex-shrink:0;}
 
 /* MAIN CONTENT */
-#main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:12px 24px 0;}
+#main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:12px 24px 0;min-height:0;}
 .section-label{font-family:var(--font-ui);font-size:.68rem;font-weight:600;letter-spacing:5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;flex-shrink:0;display:flex;align-items:center;gap:8px;}
 .section-label::before{content:'';display:inline-block;width:5px;height:5px;background:var(--pv-primary);border-radius:50%;}
 
 /* VIEWS — only one visible at a time */
-.view{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;}
-.view.active{display:flex;}
+.view{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;} .view.active{display:flex;flex:1;min-height:0;}
+.view.active{display:flex;flex:1;min-height:0;}
 
 /* ════════ VIEW 1: JACKPOTS GRID ════════ */
-#jackpots-grid{flex:1;display:grid;gap:10px;overflow:hidden;padding-bottom:12px;}
+#jackpots-grid{flex:1;display:grid;gap:10px;overflow-y:auto;overflow-x:hidden;padding-bottom:12px;min-height:0;}
 
 .jackpot-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .35s ease both;transition:transform .2s,box-shadow .2s,border-color .2s;min-height:0;}
 .jackpot-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.35);border-color:var(--pv-primary);}
@@ -223,7 +223,7 @@ body.orient-v .view-tabs{display:none;}
     <div class="section-label" id="section-label">Próximos Sorteos</div>
 
     <!-- VIEW 1: JACKPOTS -->
-    <div class="view active" id="view-jackpots">
+    <div class="view active" id="view-jackpots" style="flex:1;min-height:0;">
       <div id="jackpots-grid"></div>
       <div id="empty-state">
         <div class="ei">🎰</div>
@@ -326,7 +326,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260531-009';
+const APP_REVISION = '20260531-010';
 const STORAGE_KEY  = 'infolot_cfg_v9';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -553,6 +553,7 @@ function renderJackpots(data){
   console.log('[Jackpots] items after filter:',items.length);
   if(!items.length){grid.style.display='none';empty.style.display='flex';return;}
   grid.style.display='';empty.style.display='none';
+  console.log('[Render] Rendering',items.length,'cards into grid');
   const maxJ=Math.max(...items.map(i=>parseFloat(i.jackpot)||0));
   const minDate=items.reduce((m,i)=>(!i.date?m:(!m||i.date<m?i.date:m)),null);
   const isV=document.body.classList.contains('orient-v');
@@ -607,7 +608,7 @@ function renderJackpots(data){
     grid.appendChild(card);
     if(item.date)startCountdown(cdId,item.date,game);
   });
-  requestAnimationFrame(()=>fitAmountFonts());
+  setTimeout(()=>fitAmountFonts(), 100);
 }
 
 // ── RENDER RESULTS ────────────────────
@@ -835,7 +836,12 @@ function setupTimers(cfg){
 }
 
 // ── UI HELPERS ────────────────────────
-function showLoading(s){document.getElementById('loading').style.display=s?'flex':'none';document.getElementById('app').classList.toggle('visible',!s);}
+function showLoading(s){
+  document.getElementById('loading').style.display=s?'flex':'none';
+  const app=document.getElementById('app');
+  app.classList.toggle('visible',!s);
+  if(!s) setTimeout(()=>fitAmountFonts(),200);
+}
 function setLoadingStep(m){document.getElementById('loading-step').textContent=m;}
 function setStatus(m,t){const el=document.getElementById('status-msg');el.textContent=m;el.className=t||'';}
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
