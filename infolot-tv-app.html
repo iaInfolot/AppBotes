@@ -709,7 +709,7 @@ const DEFAULTS = {
 
 const STORAGE_KEY = 'infolot_cfg_v3';
 const APP_VERSION  = '1.2';
-const APP_REVISION = '20260531-002';
+const APP_REVISION = '20260531-003';
 let gamesMap   = {};   // id_game -> game data
 let pvInfo     = {};
 let timers     = {};
@@ -800,7 +800,7 @@ async function wsCall(endpoint, extra = {}) {
     app_id:    cfg.appid,
     ...extra
   };
-  const resp = await fetch(cfg.proxy, {
+  const resp = await fetch(cfg.proxy.replace('http://', 'https://'), {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify(body)
@@ -1069,7 +1069,7 @@ async function diagRun(endpoint) {
   try {
     const body = { _endpoint: endpoint, token: cfg.token, pass: cfg.pass, app_id: cfg.appid };
     const t0   = Date.now();
-    const resp = await fetch(cfg.proxy, {
+    const resp = await fetch(cfg.proxy.replace('http://', 'https://'), {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(body)
