@@ -5,488 +5,563 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Infolot · Botes</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@300;400;600;700&display=swap');
 
-  :root {
-    --bg:        #0a0e14;
-    --surface:   #111720;
-    --card:      #161d28;
-    --border:    #1e2c3a;
-    --accent:    #f0b429;
-    --accent2:   #e05c2a;
-    --text:      #e8edf3;
-    --muted:     #5a6a7a;
-    --success:   #2ecc8a;
-    --radius:    14px;
-  }
+:root {
+  --bg:       #08090d;
+  --surface:  #10131a;
+  --card:     #13161f;
+  --border:   #1c2230;
+  --accent:   #f0b429;
+  --accent2:  #e05c2a;
+  --text:     #e8edf3;
+  --muted:    #4a5a6e;
+  --success:  #2ecc8a;
+  --radius:   12px;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-ui:      'Barlow Condensed', sans-serif;
+  --font-body:    'Barlow', sans-serif;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html, body {
-    width: 100%; height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Barlow', sans-serif;
-    overflow: hidden;
-  }
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
 
-  /* ── LAYOUT ────────────────────────────────── */
-  #app {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    padding: 28px 40px 20px;
-    gap: 0;
-  }
+/* ── LOADING ─────────────────────────────────── */
+#loading {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 24px; z-index: 200;
+}
+#loading-logo {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  letter-spacing: 6px;
+  color: var(--accent);
+}
+#loading-step {
+  font-family: var(--font-ui);
+  font-size: .85rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
 
-  /* ── HEADER ────────────────────────────────── */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    flex-shrink: 0;
-  }
+/* ── APP WRAPPER ─────────────────────────────── */
+#app {
+  display: none;
+  width: 100vw; height: 100vh;
+  flex-direction: column;
+  overflow: hidden;
+}
+#app.visible { display: flex; }
 
-  .logo-area {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
+/* ── HEADER ──────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 36px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+}
 
-  .logo-main {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.6rem;
-    letter-spacing: 3px;
-    color: var(--accent);
-    line-height: 1;
-  }
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
-  .logo-sub {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1rem;
-    font-weight: 300;
-    color: var(--muted);
-    letter-spacing: 4px;
-    text-transform: uppercase;
-  }
+#pv-logo {
+  height: 44px;
+  width: auto;
+  display: none;
+  object-fit: contain;
+}
 
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
+.title-block {}
 
-  #clock {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 300;
-    color: var(--muted);
-    letter-spacing: 2px;
-  }
+#pv-name {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 3px;
+  color: var(--accent);
+  line-height: 1;
+}
 
-  #menu-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 20px;
-    border-radius: 8px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: border-color .2s, color .2s;
-  }
-  #menu-btn:hover { border-color: var(--accent); color: var(--accent); }
+#pv-subtitle {
+  font-family: var(--font-ui);
+  font-size: .72rem;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
 
-  /* ── DIVIDER ───────────────────────────────── */
-  .divider {
-    height: 1px;
-    background: linear-gradient(90deg, var(--accent) 0%, var(--border) 40%, transparent 100%);
-    margin-bottom: 22px;
-    flex-shrink: 0;
-  }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
 
-  /* ── SECTION TITLE ─────────────────────────── */
-  .section-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: .85rem;
-    font-weight: 600;
-    letter-spacing: 5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 18px;
-    flex-shrink: 0;
-  }
-  .section-title span {
-    color: var(--accent);
-    margin-right: 8px;
-  }
+#clock {
+  font-family: var(--font-ui);
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 3px;
+}
 
-  /* ── JACKPOT GRID ──────────────────────────── */
-  #jackpots-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-    overflow-y: auto;
-    padding-right: 4px;
-    align-content: start;
-  }
+#menu-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  font-size: .9rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+#menu-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  #jackpots-grid::-webkit-scrollbar { width: 4px; }
-  #jackpots-grid::-webkit-scrollbar-track { background: transparent; }
-  #jackpots-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+/* ── ACCENT LINE ──────────────────────────────── */
+.accent-line {
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 30%, transparent 70%);
+  flex-shrink: 0;
+}
 
-  /* ── JACKPOT CARD ──────────────────────────── */
-  .jackpot-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px 22px;
-    position: relative;
-    overflow: hidden;
-    animation: fadeUp .4s ease both;
-    transition: border-color .2s, transform .2s;
-  }
-  .jackpot-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
+/* ── MAIN CONTENT ─────────────────────────────── */
+#main-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
 
-  .jackpot-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    opacity: 0;
-    transition: opacity .2s;
-  }
-  .jackpot-card:hover::before { opacity: 1; }
+/* ── SECTION LABEL ────────────────────────────── */
+.section-label {
+  font-family: var(--font-ui);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 14px 36px 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
 
-  .card-game-name {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1.15rem;
-    font-weight: 600;
-    letter-spacing: 1px;
-    color: var(--text);
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+/* ══════════════════════════════════════════════
+   HORIZONTAL LAYOUT
+══════════════════════════════════════════════ */
+body.orient-h #main-content {
+  display: flex;
+  flex-direction: column;
+}
 
-  .card-date {
-    font-size: .78rem;
-    color: var(--muted);
-    margin-bottom: 16px;
-    font-weight: 300;
-  }
+body.orient-h #jackpots-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  padding: 4px 36px 16px;
+  overflow-y: auto;
+  align-content: start;
+}
 
-  .card-jackpot {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.4rem;
-    letter-spacing: 2px;
-    color: var(--accent);
-    line-height: 1;
-  }
+/* ══════════════════════════════════════════════
+   VERTICAL LAYOUT
+══════════════════════════════════════════════ */
+body.orient-v header {
+  padding: 14px 24px 10px;
+}
+body.orient-v #pv-name { font-size: 1.6rem; }
+body.orient-v #clock   { font-size: 1.3rem; }
 
-  .card-jackpot .currency {
-    font-size: 1.2rem;
-    color: var(--accent2);
-    margin-right: 4px;
-  }
+body.orient-v #main-content {
+  display: flex;
+  flex-direction: column;
+}
 
-  .card-addons {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+body.orient-v #jackpots-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding: 4px 24px 16px;
+  overflow-y: auto;
+  align-content: start;
+}
 
-  .addon-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(255,255,255,.04);
-    border-radius: 6px;
-    padding: 5px 10px;
-  }
+body.orient-v .jackpot-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 20px;
+}
 
-  .addon-name {
-    font-size: .75rem;
-    color: var(--muted);
-    text-transform: capitalize;
-    font-family: 'Barlow Condensed', sans-serif;
-    letter-spacing: 1px;
-  }
+body.orient-v .card-left {
+  flex: 1;
+  min-width: 0;
+}
 
-  .addon-amount {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: .9rem;
-    font-weight: 600;
-    color: var(--success);
-  }
+body.orient-v .card-jackpot {
+  font-size: 2rem;
+  text-align: right;
+  flex-shrink: 0;
+}
 
-  /* ── STATUS BAR ────────────────────────────── */
-  #status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+body.orient-v .card-addons {
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: 0;
+  gap: 6px;
+}
 
-  #status-msg {
-    font-size: .78rem;
-    color: var(--muted);
-    font-family: 'Barlow Condensed', sans-serif;
-    letter-spacing: 1px;
-  }
-  #status-msg.error { color: #e05c2a; }
-  #status-msg.ok    { color: var(--success); }
+body.orient-v .card-game-logo {
+  width: 36px; height: 36px;
+}
 
-  #last-update {
-    font-size: .75rem;
-    color: var(--muted);
-    font-family: 'Barlow Condensed', sans-serif;
-  }
+/* ── JACKPOT CARD ─────────────────────────────── */
+.jackpot-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp .4s ease both;
+  transition: border-color .25s, transform .2s, box-shadow .25s;
+  cursor: default;
+}
+.jackpot-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+}
 
-  /* ── LOADING ───────────────────────────────── */
-  #loading {
-    position: absolute;
-    inset: 0;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    z-index: 50;
-  }
+/* color accent top bar — driven by game bg_color */
+.jackpot-card .card-top-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
 
-  .spinner {
-    width: 48px; height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .8s linear infinite;
-  }
+.card-game-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
 
-  #loading p {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+.card-game-logo {
+  width: 40px; height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
 
-  /* ── OVERLAY (menu / config) ───────────────── */
-  #overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.7);
-    backdrop-filter: blur(6px);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-  }
-  #overlay.visible { display: flex; }
+.card-game-name {
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
 
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 36px 40px;
-    width: 560px;
-    max-width: 95vw;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-  }
+.card-days {
+  font-family: var(--font-ui);
+  font-size: .68rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
 
-  .modal h2 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    letter-spacing: 3px;
-    color: var(--accent);
-    margin-bottom: 6px;
-  }
+.card-date {
+  font-size: .75rem;
+  color: var(--muted);
+  margin-bottom: 14px;
+  font-weight: 300;
+}
 
-  .modal .modal-sub {
-    font-size: .8rem;
-    color: var(--muted);
-    margin-bottom: 28px;
-    font-family: 'Barlow Condensed', sans-serif;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
+.card-jackpot {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  letter-spacing: 2px;
+  line-height: 1;
+}
 
-  .form-group {
-    margin-bottom: 18px;
-  }
+.card-jackpot .currency {
+  font-size: 1.2rem;
+  opacity: .7;
+  margin-right: 3px;
+}
 
-  .form-group label {
-    display: block;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: .8rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 7px;
-  }
+.card-addons {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
 
-  .form-group input {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-family: 'Barlow', sans-serif;
-    font-size: .95rem;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .form-group input:focus { border-color: var(--accent); }
+.addon-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,.04);
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+.addon-name  { font-size: .72rem; color: var(--muted); font-family: var(--font-ui); letter-spacing: 1px; text-transform: capitalize; }
+.addon-amt   { font-family: var(--font-ui); font-size: .88rem; font-weight: 600; color: var(--success); }
 
-  .form-group input[type="number"] { appearance: textfield; }
+/* ── EMPTY STATE ──────────────────────────────── */
+#empty-state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: var(--muted);
+}
+#empty-state .ei { font-size: 3rem; }
+#empty-state p   { font-family: var(--font-ui); font-size: .9rem; letter-spacing: 4px; text-transform: uppercase; }
 
-  .modal-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 28px;
-    flex-wrap: wrap;
-  }
+/* ── STATUS BAR ───────────────────────────────── */
+#status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 36px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+body.orient-v #status-bar { padding: 8px 24px; }
 
-  .btn {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: .95rem;
-    font-weight: 600;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 24px;
-    cursor: pointer;
-    transition: opacity .2s, transform .1s;
-  }
-  .btn:hover { opacity: .85; }
-  .btn:active { transform: scale(.97); }
+#status-msg { font-size: .72rem; color: var(--muted); font-family: var(--font-ui); letter-spacing: 1px; }
+#status-msg.error  { color: var(--accent2); }
+#status-msg.ok     { color: var(--success); }
+#last-update { font-size: .7rem; color: var(--muted); font-family: var(--font-ui); }
 
-  .btn-primary {
-    background: var(--accent);
-    color: #000;
-  }
+/* ── SCROLLBAR ────────────────────────────────── */
+#jackpots-grid::-webkit-scrollbar { width: 3px; }
+#jackpots-grid::-webkit-scrollbar-track { background: transparent; }
+#jackpots-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .btn-secondary {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
+/* ── OVERLAY ──────────────────────────────────── */
+#overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+#overlay.visible { display: flex; }
 
-  .btn-danger {
-    background: #c0392b;
-    color: #fff;
-    margin-left: auto;
-  }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px;
+  width: 520px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  position: relative;
+}
 
-  /* ── MAIN MENU ─────────────────────────────── */
-  .menu-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 28px;
-  }
+.modal h2 {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  letter-spacing: 3px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.modal-sub {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-bottom: 26px;
+  font-family: var(--font-ui);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
 
-  .menu-list li button {
-    width: 100%;
-    text-align: left;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    padding: 14px 20px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 400;
-    letter-spacing: 1px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    transition: border-color .2s, color .2s;
-  }
-  .menu-list li button:hover { border-color: var(--accent); color: var(--accent); }
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: .72rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.form-group input,
+.form-group select {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: .92rem;
+  padding: 9px 13px;
+  outline: none;
+  transition: border-color .2s;
+  appearance: none;
+}
+.form-group input:focus,
+.form-group select:focus { border-color: var(--accent); }
 
-  .menu-icon {
-    font-size: 1.3rem;
-    width: 28px;
-    text-align: center;
-  }
+.form-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
 
-  .close-btn {
-    position: absolute;
-    top: 18px; right: 20px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 1.4rem;
-    cursor: pointer;
-    line-height: 1;
-    transition: color .2s;
-  }
-  .close-btn:hover { color: var(--text); }
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
 
-  /* ── EMPTY STATE ───────────────────────────── */
-  #empty-state {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 16px;
-    color: var(--muted);
-  }
-  #empty-state .empty-icon { font-size: 3rem; }
-  #empty-state p {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-  }
+.btn {
+  font-family: var(--font-ui);
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: opacity .2s, transform .1s;
+}
+.btn:hover   { opacity: .85; }
+.btn:active  { transform: scale(.97); }
+.btn-primary   { background: var(--accent); color: #000; }
+.btn-secondary { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+.btn-danger    { background: #b03020; color: #fff; margin-left: auto; }
 
-  /* ── ANIMATIONS ────────────────────────────── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+.close-btn {
+  position: absolute;
+  top: 16px; right: 18px;
+  background: none; border: none;
+  color: var(--muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: color .2s;
+  line-height: 1;
+}
+.close-btn:hover { color: var(--text); }
 
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+/* ── MENU LIST ────────────────────────────────── */
+.menu-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.menu-list li button {
+  width: 100%; text-align: left;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 13px 18px;
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border-color .2s, color .2s;
+}
+.menu-list li button:hover { border-color: var(--accent); color: var(--accent); }
+.menu-icon { font-size: 1.2rem; width: 26px; text-align: center; }
+
+.app-version { font-size: .68rem; color: var(--muted); font-family: var(--font-ui); letter-spacing: 1px; }
+
+/* ── CONFIG SECTION HEADER ────────────────────── */
+.cfg-section {
+  font-family: var(--font-ui);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 20px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cfg-section::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── ANIMATIONS ───────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body>
+<body class="orient-h">
 
-<!-- LOADING SCREEN -->
+<!-- LOADING -->
 <div id="loading">
+  <div id="loading-logo">Infolot</div>
   <div class="spinner"></div>
-  <p>Cargando botes...</p>
+  <div id="loading-step">Iniciando...</div>
 </div>
 
-<!-- MAIN APP -->
-<div id="app" style="display:none;">
+<!-- APP -->
+<div id="app">
   <header>
-    <div class="logo-area">
-      <div class="logo-main">Infolot</div>
-      <div class="logo-sub">Próximos Botes</div>
+    <div class="header-left">
+      <img id="pv-logo" src="" alt="Logo">
+      <div class="title-block">
+        <div id="pv-name">—</div>
+        <div id="pv-subtitle">Próximos Botes</div>
+      </div>
     </div>
     <div class="header-right">
       <div id="clock">--:--</div>
@@ -494,15 +569,15 @@
     </div>
   </header>
 
-  <div class="divider"></div>
+  <div class="accent-line"></div>
 
-  <div class="section-title"><span>▸</span> Próximos Sorteos</div>
-
-  <div id="jackpots-grid"></div>
-
-  <div id="empty-state">
-    <div class="empty-icon">🎰</div>
-    <p>No hay botes disponibles</p>
+  <div id="main-content">
+    <div class="section-label">Próximos Sorteos</div>
+    <div id="jackpots-grid"></div>
+    <div id="empty-state">
+      <div class="ei">🎰</div>
+      <p>No hay botes disponibles</p>
+    </div>
   </div>
 
   <div id="status-bar">
@@ -511,8 +586,9 @@
   </div>
 </div>
 
-<!-- OVERLAY (menú + configuración) -->
+<!-- OVERLAY -->
 <div id="overlay">
+
   <!-- MAIN MENU -->
   <div class="modal" id="modal-menu">
     <button class="close-btn" onclick="closeOverlay()">✕</button>
@@ -523,272 +599,412 @@
       <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
       <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
     </ul>
-    <div style="font-size:.75rem; color:var(--muted); font-family:'Barlow Condensed',sans-serif; letter-spacing:1px;">
-      v1.0 · Infolot TV App
-    </div>
+    <div class="app-version">v1.1 · Infolot TV App</div>
   </div>
 
-  <!-- CONFIG PANEL -->
+  <!-- CONFIG -->
   <div class="modal" id="modal-config" style="display:none;">
     <button class="close-btn" onclick="closeOverlay()">✕</button>
     <h2>Configuración</h2>
-    <div class="modal-sub">Parámetros del WebService</div>
+    <div class="modal-sub">Parámetros del sistema</div>
 
+    <div class="cfg-section">WebService</div>
     <div class="form-group">
       <label>URL del WebService</label>
-      <input type="text" id="cfg-url" placeholder="https://webservice.infolot.es" />
+      <input type="text" id="cfg-url" placeholder="https://webservice.infolot.es">
     </div>
     <div class="form-group">
       <label>App ID</label>
-      <input type="text" id="cfg-appid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+      <input type="text" id="cfg-appid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
     </div>
     <div class="form-group">
       <label>Token</label>
-      <input type="text" id="cfg-token" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+      <input type="text" id="cfg-token" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
     </div>
     <div class="form-group">
       <label>Contraseña</label>
-      <input type="password" id="cfg-pass" placeholder="••••••••••••" />
+      <input type="password" id="cfg-pass" placeholder="••••••••••••">
     </div>
 
-    <div style="height:1px; background:var(--border); margin: 20px 0;"></div>
-
+    <div class="cfg-section">Visualización</div>
     <div class="form-group">
-      <label>Auto-actualización (minutos, 0 = desactivada)</label>
-      <input type="number" id="cfg-refresh" min="0" max="1440" placeholder="0" />
+      <label>Orientación de pantalla</label>
+      <select id="cfg-orient">
+        <option value="h">Horizontal (landscape)</option>
+        <option value="v">Vertical (portrait)</option>
+      </select>
+    </div>
+
+    <div class="cfg-section">Actualización automática</div>
+    <div class="form-group">
+      <label>Refresco de botes (minutos, 0 = solo al arrancar)</label>
+      <input type="number" id="cfg-refresh-jackpots" min="0" max="1440" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label>Refresco de datos del punto de venta (horas, 0 = solo al arrancar)</label>
+      <input type="number" id="cfg-refresh-pvinfo" min="0" max="168" placeholder="0">
     </div>
 
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="saveConfig()">💾 Guardar</button>
+      <button class="btn btn-primary"   onclick="saveConfig()">💾 Guardar</button>
       <button class="btn btn-secondary" onclick="showMenu()">← Volver</button>
-      <button class="btn btn-danger" onclick="resetConfig()">Restablecer</button>
+      <button class="btn btn-danger"    onclick="resetConfig()">Restablecer</button>
     </div>
   </div>
+
 </div>
 
 <script>
-  // ── DEFAULT CONFIG ──────────────────────────────────────────────────────
-  const DEFAULTS = {
-    url:     'https://webservice.infolot.es',
-    appid:   '41461407-985d-4834-973f-1a672edb74e2',
-    token:   '1d446400-a63a-4467-bef9-1e661971c931',
-    pass:    '48].-.TuNa&Pu%26',
-    refresh: 0   // minutos; 0 = sin auto-refresco
-  };
+// ════════════════════════════════════════════
+//  DEFAULTS & CONFIG
+// ════════════════════════════════════════════
+const DEFAULTS = {
+  url:             'https://webservice.infolot.es',
+  appid:           '41461407-985d-4834-973f-1a672edb74e2',
+  token:           '1d446400-a63a-4467-bef9-1e661971c931',
+  pass:            '48].-.TuNa&Pu%26',
+  orient:          null,   // null = detectar la primera vez
+  refreshJackpots: 0,      // minutos
+  refreshPvInfo:   0       // horas
+};
 
-  const STORAGE_KEY = 'infolot_cfg';
-  let refreshTimer = null;
+const STORAGE_KEY = 'infolot_cfg_v2';
+let gamesMap   = {};   // id_game -> game data
+let pvInfo     = {};
+let timers     = {};
 
-  // ── CONFIG ──────────────────────────────────────────────────────────────
-  function loadConfig() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? { ...DEFAULTS, ...JSON.parse(saved) } : { ...DEFAULTS };
-    } catch { return { ...DEFAULTS }; }
-  }
+function loadConfig() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    return s ? { ...DEFAULTS, ...JSON.parse(s) } : { ...DEFAULTS };
+  } catch { return { ...DEFAULTS }; }
+}
 
-  function saveConfig() {
-    const cfg = {
-      url:     document.getElementById('cfg-url').value.trim()    || DEFAULTS.url,
-      appid:   document.getElementById('cfg-appid').value.trim()  || DEFAULTS.appid,
-      token:   document.getElementById('cfg-token').value.trim()  || DEFAULTS.token,
-      pass:    document.getElementById('cfg-pass').value          || DEFAULTS.pass,
-      refresh: parseInt(document.getElementById('cfg-refresh').value) || 0
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
-    closeOverlay();
-    setupAutoRefresh(cfg.refresh);
-    fetchJackpots();
-  }
+function persistConfig(cfg) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+}
 
-  function resetConfig() {
-    if (!confirm('¿Restablecer la configuración por defecto?')) return;
-    localStorage.removeItem(STORAGE_KEY);
-    fillConfigForm(DEFAULTS);
-    setStatus('Configuración restablecida', 'ok');
-  }
+function saveConfig() {
+  const cfg = loadConfig();
+  cfg.url             = document.getElementById('cfg-url').value.trim()          || DEFAULTS.url;
+  cfg.appid           = document.getElementById('cfg-appid').value.trim()        || DEFAULTS.appid;
+  cfg.token           = document.getElementById('cfg-token').value.trim()        || DEFAULTS.token;
+  cfg.pass            = document.getElementById('cfg-pass').value                || DEFAULTS.pass;
+  cfg.orient          = document.getElementById('cfg-orient').value;
+  cfg.refreshJackpots = parseInt(document.getElementById('cfg-refresh-jackpots').value) || 0;
+  cfg.refreshPvInfo   = parseInt(document.getElementById('cfg-refresh-pvinfo').value)   || 0;
+  persistConfig(cfg);
+  applyOrientation(cfg.orient);
+  closeOverlay();
+  setupTimers(cfg);
+  loadAllData();
+}
 
-  function fillConfigForm(cfg) {
-    document.getElementById('cfg-url').value     = cfg.url;
-    document.getElementById('cfg-appid').value   = cfg.appid;
-    document.getElementById('cfg-token').value   = cfg.token;
-    document.getElementById('cfg-pass').value    = cfg.pass;
-    document.getElementById('cfg-refresh').value = cfg.refresh;
-  }
+function resetConfig() {
+  if (!confirm('¿Restablecer la configuración por defecto?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  fillConfigForm({ ...DEFAULTS, orient: detectOrientation() });
+  setStatus('Configuración restablecida', 'ok');
+}
 
-  // ── AUTO-REFRESH ────────────────────────────────────────────────────────
-  function setupAutoRefresh(minutes) {
-    if (refreshTimer) clearInterval(refreshTimer);
-    if (minutes > 0) {
-      refreshTimer = setInterval(fetchJackpots, minutes * 60 * 1000);
-    }
-  }
+function fillConfigForm(cfg) {
+  document.getElementById('cfg-url').value              = cfg.url;
+  document.getElementById('cfg-appid').value            = cfg.appid;
+  document.getElementById('cfg-token').value            = cfg.token;
+  document.getElementById('cfg-pass').value             = cfg.pass;
+  document.getElementById('cfg-orient').value           = cfg.orient || detectOrientation();
+  document.getElementById('cfg-refresh-jackpots').value = cfg.refreshJackpots;
+  document.getElementById('cfg-refresh-pvinfo').value   = cfg.refreshPvInfo;
+}
 
-  // ── CLOCK ───────────────────────────────────────────────────────────────
-  function updateClock() {
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2,'0');
-    const m = String(now.getMinutes()).padStart(2,'0');
-    document.getElementById('clock').textContent = `${h}:${m}`;
-  }
+// ════════════════════════════════════════════
+//  ORIENTATION
+// ════════════════════════════════════════════
+function detectOrientation() {
+  try {
+    const t = screen.orientation ? screen.orientation.type : '';
+    if (t.includes('portrait')) return 'v';
+    if (t.includes('landscape')) return 'h';
+    return window.innerHeight > window.innerWidth ? 'v' : 'h';
+  } catch { return 'h'; }
+}
 
-  // ── FETCH JACKPOTS ──────────────────────────────────────────────────────
-  async function fetchJackpots() {
-    const cfg = loadConfig();
-    setStatus('Conectando con el servidor...', '');
-    showLoading(true);
+function applyOrientation(orient) {
+  document.body.classList.remove('orient-h', 'orient-v');
+  document.body.classList.add('orient-' + (orient || 'h'));
+}
 
-    const body = {
-      token:  cfg.token,
-      pass:   cfg.pass,
-      app_id: cfg.appid
-    };
+// ════════════════════════════════════════════
+//  CLOCK
+// ════════════════════════════════════════════
+function updateClock() {
+  const n = new Date();
+  const h = String(n.getHours()).padStart(2,'0');
+  const m = String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}`;
+}
 
-    try {
-      const resp = await fetch(`${cfg.url}/ws/next-jackpots`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const json = await resp.json();
-
-      if (!json.data) throw new Error('Respuesta inesperada del servidor');
-
-      renderJackpots(json.data);
-      const now = new Date();
-      document.getElementById('last-update').textContent =
-        `Actualizado: ${now.toLocaleTimeString('es-ES')}`;
-      setStatus('Datos actualizados correctamente', 'ok');
-
-    } catch (err) {
-      console.error(err);
-      setStatus(`Error: ${err.message}`, 'error');
-      renderJackpots([]);
-    } finally {
-      showLoading(false);
-    }
-  }
-
-  // ── RENDER ──────────────────────────────────────────────────────────────
-  function renderJackpots(data) {
-    const grid  = document.getElementById('jackpots-grid');
-    const empty = document.getElementById('empty-state');
-    grid.innerHTML = '';
-
-    if (!data || data.length === 0) {
-      grid.style.display  = 'none';
-      empty.style.display = 'flex';
-      return;
-    }
-
-    grid.style.display  = '';
-    empty.style.display = 'none';
-
-    data.forEach((item, i) => {
-      const card = document.createElement('div');
-      card.className = 'jackpot-card';
-      card.style.animationDelay = `${i * 60}ms`;
-
-      const dateStr = item.date
-        ? new Date(item.date + 'T00:00:00').toLocaleDateString('es-ES',
-            { weekday:'long', day:'numeric', month:'long' })
-        : '—';
-
-      const jackpotFmt = formatAmount(item.jackpot);
-
-      let addonsHtml = '';
-      if (item.addons && item.addons.length > 0) {
-        addonsHtml = `<div class="card-addons">` +
-          item.addons.map(a => `
-            <div class="addon-item">
-              <span class="addon-name">${escHtml(a.name)}</span>
-              <span class="addon-amount">+ ${formatAmount(a.jackpot)}</span>
-            </div>`).join('') +
-        `</div>`;
-      }
-
-      card.innerHTML = `
-        <div class="card-game-name">${escHtml(item.name)}</div>
-        <div class="card-date">${dateStr}</div>
-        <div class="card-jackpot">
-          <span class="currency">€</span>${jackpotFmt}
-        </div>
-        ${addonsHtml}
-      `;
-
-      grid.appendChild(card);
-    });
-  }
-
-  // ── HELPERS ─────────────────────────────────────────────────────────────
-  function formatAmount(n) {
-    const num = parseInt(n) || 0;
-    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace('.', ',') + ' M';
-    if (num >= 1_000)     return (num / 1_000).toFixed(0) + ' K';
-    return num.toLocaleString('es-ES');
-  }
-
-  function escHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str || '';
-    return d.innerHTML;
-  }
-
-  function setStatus(msg, type) {
-    const el = document.getElementById('status-msg');
-    el.textContent = msg;
-    el.className = type || '';
-  }
-
-  function showLoading(show) {
-    document.getElementById('loading').style.display = show ? 'flex' : 'none';
-    document.getElementById('app').style.display     = show ? 'none' : 'flex';
-  }
-
-  // ── NAVIGATION ──────────────────────────────────────────────────────────
-  function openMenu() {
-    showMenu();
-    document.getElementById('overlay').classList.add('visible');
-  }
-
-  function closeOverlay() {
-    document.getElementById('overlay').classList.remove('visible');
-  }
-
-  function showMenu() {
-    document.getElementById('modal-menu').style.display   = '';
-    document.getElementById('modal-config').style.display = 'none';
-  }
-
-  function showConfig() {
-    fillConfigForm(loadConfig());
-    document.getElementById('modal-menu').style.display   = 'none';
-    document.getElementById('modal-config').style.display = '';
-  }
-
-  function goHome() {
-    closeOverlay();
-  }
-
-  function manualRefresh() {
-    closeOverlay();
-    fetchJackpots();
-  }
-
-  // ── KEYBOARD NAV ────────────────────────────────────────────────────────
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' || e.key === 'Back') closeOverlay();
+// ════════════════════════════════════════════
+//  WS CALL HELPER
+// ════════════════════════════════════════════
+async function wsCall(endpoint, extra = {}) {
+  const cfg  = loadConfig();
+  const body = { token: cfg.token, pass: cfg.pass, app_id: cfg.appid, ...extra };
+  const resp = await fetch(`${cfg.url}/ws/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
   });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const json = await resp.json();
+  if (json.error) throw new Error(json.error);
+  return json.data;
+}
 
-  // ── INIT ─────────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════
+//  PV-INFO
+// ════════════════════════════════════════════
+async function fetchPvInfo() {
+  setLoadingStep('Cargando datos del punto de venta...');
+  try {
+    const data = await wsCall('pv-info');
+    pvInfo = data || {};
+
+    // Name
+    const name = pvInfo?.company?.name_comercial
+               || pvInfo?.company?.name_social
+               || 'Mi Lotería';
+    document.getElementById('pv-name').textContent = name;
+    document.title = name + ' · Botes';
+    document.getElementById('loading-logo').textContent = name;
+
+  } catch(e) {
+    console.warn('pv-info error:', e.message);
+    document.getElementById('pv-name').textContent = 'Mi Lotería';
+  }
+}
+
+// ════════════════════════════════════════════
+//  GET-GAMES
+// ════════════════════════════════════════════
+const DAY_NAMES = { 1:'Lun', 2:'Mar', 3:'Mié', 4:'Jue', 5:'Vie', 6:'Sáb', 7:'Dom' };
+
+async function fetchGames() {
+  setLoadingStep('Cargando juegos...');
+  try {
+    const data = await wsCall('get-games');
+    gamesMap = {};
+    if (data && typeof data === 'object') {
+      Object.values(data).forEach(g => { gamesMap[g.id] = g; });
+    }
+  } catch(e) {
+    console.warn('get-games error:', e.message);
+    gamesMap = {};
+  }
+}
+
+// ════════════════════════════════════════════
+//  NEXT-JACKPOTS
+// ════════════════════════════════════════════
+async function fetchJackpots() {
+  setStatus('Actualizando botes...', '');
+  try {
+    const data = await wsCall('next-jackpots');
+    renderJackpots(Array.isArray(data) ? data : []);
+    const now = new Date();
+    document.getElementById('last-update').textContent =
+      `Actualizado: ${now.toLocaleTimeString('es-ES')}`;
+    setStatus('Datos actualizados', 'ok');
+  } catch(e) {
+    setStatus(`Error: ${e.message}`, 'error');
+    renderJackpots([]);
+  }
+}
+
+// ════════════════════════════════════════════
+//  RENDER JACKPOTS
+// ════════════════════════════════════════════
+function renderJackpots(data) {
+  const grid  = document.getElementById('jackpots-grid');
+  const empty = document.getElementById('empty-state');
+  grid.innerHTML = '';
+
+  if (!data || data.length === 0) {
+    grid.style.display  = 'none';
+    empty.style.display = 'flex';
+    return;
+  }
+  grid.style.display  = '';
+  empty.style.display = 'none';
+
+  data.forEach((item, i) => {
+    const game = gamesMap[item.id_game] || {};
+
+    // colors from game data
+    const topColor  = game.bg_color       || '#f0b429';
+    const jkFg      = game.jackpot_fg_color || '#f0b429';
+
+    // days string
+    let daysStr = '';
+    if (game.id_days) {
+      daysStr = game.id_days.split(',')
+        .map(d => DAY_NAMES[d.trim()] || d)
+        .join(' · ');
+    }
+
+    // date
+    const dateStr = item.date
+      ? new Date(item.date + 'T00:00:00').toLocaleDateString('es-ES',
+          { weekday:'long', day:'numeric', month:'long' })
+      : '—';
+
+    // addons
+    let addonsHtml = '';
+    if (item.addons && item.addons.length > 0) {
+      addonsHtml = `<div class="card-addons">` +
+        item.addons.map(a => `
+          <div class="addon-item">
+            <span class="addon-name">${esc(a.name)}</span>
+            <span class="addon-amt">+ ${fmtAmt(a.jackpot)}</span>
+          </div>`).join('') +
+        `</div>`;
+    }
+
+    // logo
+    const logoHtml = game.logo
+      ? `<img class="card-game-logo" src="${esc(game.logo)}" alt="${esc(game.name || '')}" onerror="this.style.display='none'">`
+      : '';
+
+    const card = document.createElement('div');
+    card.className = 'jackpot-card';
+    card.style.animationDelay = `${i * 55}ms`;
+    card.innerHTML = `
+      <div class="card-top-bar" style="background:${topColor}"></div>
+      <div class="card-game-header">
+        ${logoHtml}
+        <div class="card-game-name">${esc(item.name || game.name || '—')}</div>
+      </div>
+      <div class="card-left">
+        ${daysStr ? `<div class="card-days">${daysStr}</div>` : ''}
+        <div class="card-date">${dateStr}</div>
+      </div>
+      <div class="card-jackpot" style="color:${jkFg}">
+        <span class="currency">€</span>${fmtAmt(item.jackpot)}
+      </div>
+      ${addonsHtml}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════════
+//  LOAD ALL DATA (boot + refresh)
+// ════════════════════════════════════════════
+async function loadAllData() {
+  showLoading(true);
+  await fetchPvInfo();
+  await fetchGames();
+  await fetchJackpots();
+  showLoading(false);
+}
+
+async function refreshPvAndGames() {
+  await fetchPvInfo();
+  await fetchGames();
+}
+
+// ════════════════════════════════════════════
+//  TIMERS
+// ════════════════════════════════════════════
+function setupTimers(cfg) {
+  Object.values(timers).forEach(clearInterval);
+  timers = {};
+
+  if (cfg.refreshJackpots > 0)
+    timers.jackpots = setInterval(fetchJackpots, cfg.refreshJackpots * 60 * 1000);
+
+  if (cfg.refreshPvInfo > 0)
+    timers.pvinfo = setInterval(refreshPvAndGames, cfg.refreshPvInfo * 60 * 60 * 1000);
+}
+
+// ════════════════════════════════════════════
+//  UI HELPERS
+// ════════════════════════════════════════════
+function showLoading(show) {
+  document.getElementById('loading').style.display = show ? 'flex' : 'none';
+  const app = document.getElementById('app');
+  if (show) { app.classList.remove('visible'); }
+  else       { app.classList.add('visible'); }
+}
+
+function setLoadingStep(msg) {
+  document.getElementById('loading-step').textContent = msg;
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg;
+  el.className   = type || '';
+}
+
+function fmtAmt(n) {
+  const v = parseInt(n) || 0;
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.',',') + ' M';
+  if (v >= 1_000)     return (v / 1_000).toFixed(0) + ' K';
+  return v.toLocaleString('es-ES');
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+// ════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════
+function openMenu() {
+  showMenu();
+  document.getElementById('overlay').classList.add('visible');
+}
+function closeOverlay() {
+  document.getElementById('overlay').classList.remove('visible');
+}
+function showMenu() {
+  document.getElementById('modal-menu').style.display   = '';
+  document.getElementById('modal-config').style.display = 'none';
+}
+function showConfig() {
+  fillConfigForm(loadConfig());
+  document.getElementById('modal-menu').style.display   = 'none';
+  document.getElementById('modal-config').style.display = '';
+}
+function goHome()        { closeOverlay(); }
+function manualRefresh() { closeOverlay(); loadAllData(); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' || e.key === 'Back') closeOverlay();
+});
+
+// ════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════
+(function boot() {
+  const cfg = loadConfig();
+
+  // First-time orientation detection
+  if (cfg.orient === null) {
+    cfg.orient = detectOrientation();
+    persistConfig(cfg);
+  }
+  applyOrientation(cfg.orient);
+
   updateClock();
   setInterval(updateClock, 30000);
 
-  const initCfg = loadConfig();
-  setupAutoRefresh(initCfg.refresh);
-  fetchJackpots();
+  setupTimers(cfg);
+  loadAllData();
+})();
 </script>
 </body>
 </html>
