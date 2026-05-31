@@ -750,9 +750,10 @@ function updateClock() {
 async function wsCall(endpoint, extra = {}) {
   const cfg  = loadConfig();
   const body = { token: cfg.token, pass: cfg.pass, app_id: cfg.appid, ...extra };
+  // Usar text/plain evita el preflight CORS OPTIONS y el body llega completo al servidor
   const resp = await fetch(`${cfg.url}/ws/${endpoint}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(body)
   });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
