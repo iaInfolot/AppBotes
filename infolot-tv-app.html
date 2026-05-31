@@ -326,8 +326,8 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260531-008';
-const STORAGE_KEY  = 'infolot_cfg_v8';
+const APP_REVISION = '20260531-009';
+const STORAGE_KEY  = 'infolot_cfg_v9';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -341,7 +341,8 @@ const DEFAULTS = {
 };
 
 let gamesMap={}, pvData={}, timers={}, countdownTimers=[];
-let lastResultsData=[], currentView='jackpots';
+let lastJackpotsData=[], lastResultsData=[], currentView='jackpots';
+
 
 // ── CONFIG ──────────────────────────
 function loadConfig(){try{const s=localStorage.getItem(STORAGE_KEY);return s?{...DEFAULTS,...JSON.parse(s)}:{...DEFAULTS};}catch{return{...DEFAULTS};}}
@@ -421,10 +422,11 @@ function switchView(view){
   document.getElementById('tab-'+view).classList.add('active');
   if(view==='jackpots'){
     document.getElementById('section-label').textContent='Próximos Sorteos';
+    if(lastJackpotsData.length) renderJackpots(lastJackpotsData);
   } else if(view==='results'){
     document.getElementById('section-label').textContent=resultsWeekLabel();
-    if(!lastResultsData.length) fetchResults();
-    else renderResults(lastResultsData);
+    if(lastResultsData.length) renderResults(lastResultsData);
+    else fetchResults();
   }
 }
 
@@ -474,7 +476,8 @@ async function fetchJackpots(){
   setStatus('Actualizando botes...','');
   try{
     const data=await wsCall('next-jackpots');
-    renderJackpots(Array.isArray(data)?data:[]);
+    lastJackpotsData=Array.isArray(data)?data:[];
+    renderJackpots(lastJackpotsData);
     document.getElementById('last-update').textContent='Act: '+new Date().toLocaleTimeString('es-ES');
     setStatus('Datos actualizados','ok');
   }catch(e){setStatus('Error: '+e.message,'error');renderJackpots([]);}
@@ -490,6 +493,7 @@ async function fetchResults(){
       document.getElementById('section-label').textContent=resultsWeekLabel();
       renderResults(lastResultsData);
     }
+    // Always store so switching tabs shows data immediately
     setStatus('Datos actualizados','ok');
   }catch(e){setStatus('Error resultados: '+e.message,'error');}
 }
@@ -815,8 +819,10 @@ function fitAmountFonts(){
 // ── LOAD ALL ──────────────────────────
 async function loadAllData(){
   showLoading(true);
-  await fetchPvInfo();await fetchGames();
-  await fetchJackpots();await fetchResults();
+  await fetchPvInfo();
+  await fetchGames();
+  // Fetch jackpots and results in parallel AFTER games are loaded
+  await Promise.all([fetchJackpots(), fetchResults()]);
   showLoading(false);
 }
 async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();}
