@@ -614,6 +614,10 @@ body.orient-v #status-bar { padding: 8px 24px; }
       <input type="text" id="cfg-url" placeholder="https://webservice.infolot.es">
     </div>
     <div class="form-group">
+      <label>URL del Proxy</label>
+      <input type="text" id="cfg-proxy" placeholder="https://docs.infolot.es/proxy.php">
+    </div>
+    <div class="form-group">
       <label>App ID</label>
       <input type="text" id="cfg-appid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
     </div>
@@ -694,6 +698,7 @@ body.orient-v #status-bar { padding: 8px 24px; }
 // ════════════════════════════════════════════
 const DEFAULTS = {
   url:             'https://webservice.infolot.es',
+  proxy:           'https://docs.infolot.es/proxy.php',
   appid:           '41461407-985d-4834-973f-1a672edb74e2',
   token:           '1d446400-a63a-4467-bef9-1e661971c931',
   pass:            '48].-.TuNa&Pu%26',
@@ -721,6 +726,7 @@ function persistConfig(cfg) {
 function saveConfig() {
   const cfg = loadConfig();
   cfg.url             = document.getElementById('cfg-url').value.trim()          || DEFAULTS.url;
+  cfg.proxy           = document.getElementById('cfg-proxy').value.trim()        || DEFAULTS.proxy;
   cfg.appid           = document.getElementById('cfg-appid').value.trim()        || DEFAULTS.appid;
   cfg.token           = document.getElementById('cfg-token').value.trim()        || DEFAULTS.token;
   cfg.pass            = document.getElementById('cfg-pass').value                || DEFAULTS.pass;
@@ -743,6 +749,7 @@ function resetConfig() {
 
 function fillConfigForm(cfg) {
   document.getElementById('cfg-url').value              = cfg.url;
+  document.getElementById('cfg-proxy').value            = cfg.proxy || DEFAULTS.proxy;
   document.getElementById('cfg-appid').value            = cfg.appid;
   document.getElementById('cfg-token').value            = cfg.token;
   document.getElementById('cfg-pass').value             = cfg.pass;
@@ -783,12 +790,18 @@ function updateClock() {
 // ════════════════════════════════════════════
 async function wsCall(endpoint, extra = {}) {
   const cfg  = loadConfig();
-  const body = { token: cfg.token, pass: cfg.pass, app_id: cfg.appid, ...extra };
-  // Usar text/plain evita el preflight CORS OPTIONS y el body llega completo al servidor
-  const resp = await fetch(`${cfg.url}/ws/${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(body)
+  // _endpoint indica al proxy a que operacion del WS reenviar
+  const body = {
+    _endpoint: endpoint,
+    token:     cfg.token,
+    pass:      cfg.pass,
+    app_id:    cfg.appid,
+    ...extra
+  };
+  const resp = await fetch(cfg.proxy, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body)
   });
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const json = await resp.json();
@@ -1050,11 +1063,11 @@ async function diagRun(endpoint) {
   diagLog('Enviando petición...', '#5a7a8e');
 
   try {
-    const body = { token: cfg.token, pass: cfg.pass, app_id: cfg.appid };
+    const body = { _endpoint: endpoint, token: cfg.token, pass: cfg.pass, app_id: cfg.appid };
     const t0   = Date.now();
-    const resp = await fetch(`${cfg.url}/ws/${endpoint}`, {
+    const resp = await fetch(cfg.proxy, {
       method:  'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(body)
     });
     const ms   = Date.now() - t0;
