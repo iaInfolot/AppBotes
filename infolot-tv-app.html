@@ -326,8 +326,8 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260531-007';
-const STORAGE_KEY  = 'infolot_cfg_v7';
+const APP_REVISION = '20260531-008';
+const STORAGE_KEY  = 'infolot_cfg_v8';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -544,7 +544,9 @@ function renderJackpots(data){
   const grid=document.getElementById('jackpots-grid');
   const empty=document.getElementById('empty-state');
   grid.innerHTML='';
+  console.log('[Jackpots] data:',data.length,'gamesMap keys:',Object.keys(gamesMap).length);
   const items=data.filter(item=>!Object.keys(gamesMap).length||gamesMap[item.id_game]);
+  console.log('[Jackpots] items after filter:',items.length);
   if(!items.length){grid.style.display='none';empty.style.display='flex';return;}
   grid.style.display='';empty.style.display='none';
   const maxJ=Math.max(...items.map(i=>parseFloat(i.jackpot)||0));
@@ -620,18 +622,23 @@ function renderResults(data){
     weekDates.push(toYMD(new Date(d)));
   }
 
-  // Group results by id_game, keep only current week
+  // Group results by id_game — last-results returns latest per game
+  // We build week skeleton from game id_days and fill in what we have
   const byGame={};
   data.forEach(r=>{
     if(!r.date)return;
-    if(r.date<toYMD(mon)||r.date>toYMD(sun))return;
     if(Object.keys(gamesMap).length&&!gamesMap[r.id_game])return;
     if(!byGame[r.id_game])byGame[r.id_game]=[];
     byGame[r.id_game].push(r);
   });
+  // Also include LAE games that have no results yet this week
+  Object.keys(gamesMap).forEach(id=>{
+    if(!byGame[id])byGame[id]=[];
+  });
 
   // Determine grid columns for result blocks
-  const gameIds=Object.keys(byGame);
+  // Sort game IDs by game name
+  const gameIds=Object.keys(Object.keys(gamesMap).length?gamesMap:byGame);
   if(!gameIds.length){grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN RESULTADOS ESTA SEMANA</div>';return;}
 
   const isV=document.body.classList.contains('orient-v');
@@ -666,7 +673,9 @@ function renderResults(data){
 
     // Build draw map by date for quick lookup
     const drawByDate={};
-    draws.forEach(d=>{drawByDate[d.date]=d;});
+    draws.forEach(d=>{if(d.date)drawByDate[d.date]=d;});
+    // Also index by game results irrespective of week
+    const allResults=[...draws].sort((a,b)=>a.date>b.date?-1:1);
 
     // Determine which days this game plays
     const gameDays=game.id_days?game.id_days.split(',').map(x=>parseInt(x.trim())):[];
