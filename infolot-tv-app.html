@@ -10,216 +10,183 @@
 :root {
   --pv-primary:   #f0b429;
   --pv-secondary: #e05c2a;
-  --bg:       #07090e;
-  --surface:  #0f1319;
-  --card:     #131820;
-  --card2:    #171e28;
-  --border:   #1d2738;
-  --text:     #e6ecf3;
-  --text2:    #8a9bb0;
-  --muted:    #3d4f62;
-  --success:  #27c97a;
-  --radius:   14px;
-  --shadow:   0 4px 24px rgba(0,0,0,.45);
-  --font-display: 'Bebas Neue', sans-serif;
-  --font-ui:      'Barlow Condensed', sans-serif;
-  --font-body:    'Barlow', sans-serif;
+  --bg:       #07090e; --surface:  #0f1319; --card: #131820; --card2: #171e28;
+  --border:   #1d2738; --text: #e6ecf3; --text2: #8a9bb0; --muted: #3d4f62;
+  --success:  #27c97a; --radius: 14px; --shadow: 0 4px 24px rgba(0,0,0,.45);
+  --font-display:'Bebas Neue',sans-serif; --font-ui:'Barlow Condensed',sans-serif; --font-body:'Barlow',sans-serif;
 }
 body.light {
-  --bg:      #eef0f4;
-  --surface: #ffffff;
-  --card:    #ffffff;
-  --card2:   #f4f6f9;
-  --border:  #d8dde6;
-  --text:    #111827;
-  --text2:   #4b5563;
-  --muted:   #9ca3af;
-  --shadow:  0 4px 24px rgba(0,0,0,.10);
+  --bg:#eef0f4; --surface:#fff; --card:#fff; --card2:#f4f6f9;
+  --border:#d8dde6; --text:#111827; --text2:#4b5563; --muted:#9ca3af; --shadow:0 4px 24px rgba(0,0,0,.10);
 }
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);overflow:hidden;transition:background .3s,color .3s;}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--font-body); overflow:hidden; transition:background .3s,color .3s; }
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:200;}
+#loading-logo{font-family:var(--font-display);font-size:2.8rem;letter-spacing:6px;color:var(--pv-primary);}
+#loading-step{font-family:var(--font-ui);font-size:.82rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--pv-primary);border-radius:50%;animation:spin .7s linear infinite;}
 
-/* ── LOADING ── */
-#loading { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; z-index:200; }
-#loading-logo { font-family:var(--font-display); font-size:2.8rem; letter-spacing:6px; color:var(--pv-primary); }
-#loading-step { font-family:var(--font-ui); font-size:.82rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); }
-.spinner { width:36px; height:36px; border:2px solid var(--border); border-top-color:var(--pv-primary); border-radius:50%; animation:spin .7s linear infinite; }
+/* APP SHELL */
+#app{display:none;width:100vw;height:100vh;flex-direction:column;}
+#app.visible{display:flex;}
 
-/* ── APP SHELL ── */
-#app { display:none; width:100vw; height:100vh; flex-direction:column; }
-#app.visible { display:flex; }
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);gap:20px;min-height:64px;}
+.header-left{display:flex;align-items:center;gap:14px;min-width:0;flex:1;}
+#pv-logo{height:40px;width:auto;max-width:130px;object-fit:contain;display:none;flex-shrink:0;}
+.title-block{min-width:0;}
+#pv-name{font-family:var(--font-display);font-size:1.8rem;letter-spacing:3px;color:var(--pv-primary);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pv-tagline{font-family:var(--font-ui);font-size:.72rem;color:var(--text2);letter-spacing:2px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pv-tagline a{color:var(--pv-primary);text-decoration:none;}
+#pv-tagline a:hover{text-decoration:underline;}
+.header-right{display:flex;align-items:center;gap:12px;flex-shrink:0;}
 
-/* ── HEADER ── */
-header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:10px 28px 10px; border-bottom:1px solid var(--border);
-  flex-shrink:0; background:var(--surface); gap:20px; min-height:64px;
-}
-.header-left { display:flex; align-items:center; gap:14px; min-width:0; flex:1; }
-#pv-logo { height:40px; width:auto; max-width:130px; object-fit:contain; display:none; flex-shrink:0; }
-.title-block { min-width:0; }
-#pv-name { font-family:var(--font-display); font-size:1.8rem; letter-spacing:3px; color:var(--pv-primary); line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#pv-tagline { font-family:var(--font-ui); font-size:.72rem; color:var(--text2); letter-spacing:2px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#pv-tagline a { color:var(--pv-primary); text-decoration:none; }
-#pv-tagline a:hover { text-decoration:underline; }
+/* VIEW SWITCHER in header */
+.view-tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:3px;}
+.view-tab{font-family:var(--font-ui);font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;color:var(--text2);background:transparent;transition:all .2s;white-space:nowrap;}
+.view-tab.active{background:var(--pv-primary);color:#000;}
+.view-tab:not(.active):hover{color:var(--text);}
 
-.header-right { display:flex; align-items:center; gap:16px; flex-shrink:0; }
-#clock { font-family:var(--font-ui); font-size:1.55rem; font-weight:300; color:var(--text2); letter-spacing:3px; }
-#menu-btn { background:var(--card); border:1px solid var(--border); color:var(--text); padding:8px 16px; border-radius:8px; font-family:var(--font-ui); font-size:.85rem; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:border-color .2s,color .2s; white-space:nowrap; }
-#menu-btn:hover { border-color:var(--pv-primary); color:var(--pv-primary); }
+#clock{font-family:var(--font-ui);font-size:1.55rem;font-weight:300;color:var(--text2);letter-spacing:3px;}
+#menu-btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-family:var(--font-ui);font-size:.82rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s;white-space:nowrap;}
+#menu-btn:hover{border-color:var(--pv-primary);color:var(--pv-primary);}
+.accent-line{height:2px;background:linear-gradient(90deg,var(--pv-primary) 0%,var(--pv-secondary) 40%,transparent 80%);flex-shrink:0;}
 
-.accent-line { height:2px; background:linear-gradient(90deg,var(--pv-primary) 0%,var(--pv-secondary) 40%,transparent 80%); flex-shrink:0; }
+/* MAIN CONTENT */
+#main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:12px 24px 0;}
+.section-label{font-family:var(--font-ui);font-size:.68rem;font-weight:600;letter-spacing:5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;flex-shrink:0;display:flex;align-items:center;gap:8px;}
+.section-label::before{content:'';display:inline-block;width:5px;height:5px;background:var(--pv-primary);border-radius:50%;}
 
-/* ── MAIN ── */
-#main-content { flex:1; display:flex; flex-direction:column; overflow:hidden; padding:12px 24px 0; }
-.section-label { font-family:var(--font-ui); font-size:.68rem; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; flex-shrink:0; display:flex; align-items:center; gap:8px; }
-.section-label::before { content:''; display:inline-block; width:5px; height:5px; background:var(--pv-primary); border-radius:50%; }
+/* VIEWS — only one visible at a time */
+.view{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;}
+.view.active{display:flex;}
 
-/* ── GRID ── */
-#jackpots-grid { flex:1; display:grid; gap:10px; overflow:hidden; padding-bottom:12px; }
+/* ════════ VIEW 1: JACKPOTS GRID ════════ */
+#jackpots-grid{flex:1;display:grid;gap:10px;overflow:hidden;padding-bottom:12px;}
 
-/* ── CARD ── */
-.jackpot-card {
-  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
-  padding:14px 16px; display:flex; flex-direction:column;
-  position:relative; overflow:hidden; box-shadow:var(--shadow);
-  animation:fadeUp .35s ease both; transition:transform .2s,box-shadow .2s,border-color .2s;
-  min-height:0;
-}
-.jackpot-card:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,.35); border-color:var(--pv-primary); }
+.jackpot-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .35s ease both;transition:transform .2s,box-shadow .2s,border-color .2s;min-height:0;}
+.jackpot-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.35);border-color:var(--pv-primary);}
+.jackpot-card.is-highest{border-color:var(--pv-primary);box-shadow:0 0 0 2px var(--pv-primary),0 8px 32px rgba(0,0,0,.4);}
+.jackpot-card.is-highest::after{content:'★ MAYOR BOTE';position:absolute;top:8px;right:12px;font-family:var(--font-ui);font-size:.6rem;font-weight:700;letter-spacing:2px;color:var(--pv-primary);animation:pulseLabel 2s ease-in-out infinite;}
+.jackpot-card.is-next{border-color:var(--pv-secondary);box-shadow:0 0 0 2px var(--pv-secondary),0 8px 32px rgba(0,0,0,.4);}
+.jackpot-card.is-next:not(.is-highest)::after{content:'⚡ PRÓXIMO SORTEO';position:absolute;top:8px;right:12px;font-family:var(--font-ui);font-size:.6rem;font-weight:700;letter-spacing:2px;color:var(--pv-secondary);animation:pulseLabel 2s ease-in-out infinite;}
+.card-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0;}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-shrink:0;}
+.card-logo{width:34px;height:34px;object-fit:contain;border-radius:6px;flex-shrink:0;}
+.card-name{font-family:var(--font-ui);font-size:1.15rem;font-weight:700;letter-spacing:.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;line-height:1.1;}
+.card-amount-wrap{flex:1;display:flex;align-items:center;justify-content:flex-end;min-height:0;padding-right:4px;}
+.card-amount{font-family:var(--font-display);letter-spacing:1px;line-height:1;text-align:right;}
+.card-currency{font-size:.5em;opacity:.65;margin-right:2px;vertical-align:super;}
+.card-footer{flex-shrink:0;margin-top:6px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;}
+.card-footer-left{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.card-date{font-family:var(--font-ui);font-size:.85rem;font-weight:600;color:var(--text2);letter-spacing:.5px;}
+.card-addons{display:flex;flex-wrap:wrap;gap:4px;}
+.addon-pill{display:flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:3px 9px;font-family:var(--font-ui);font-size:.7rem;}
+.addon-name{color:var(--text2);}.addon-amt{color:var(--success);font-weight:700;}
+.card-countdown{font-family:var(--font-ui);font-size:.78rem;font-weight:600;letter-spacing:1px;color:var(--text2);text-align:right;white-space:nowrap;flex-shrink:0;}
+.card-countdown.urgent{color:var(--pv-secondary);animation:pulseLabel 1s ease-in-out infinite;}
+.card-countdown.soon{color:var(--pv-primary);}
 
-/* ── HIGHLIGHT: highest jackpot ── */
-.jackpot-card.is-highest {
-  border-color: var(--pv-primary);
-  box-shadow: 0 0 0 2px var(--pv-primary), 0 8px 32px rgba(0,0,0,.4);
-}
-.jackpot-card.is-highest::after {
-  content: '★ MAYOR BOTE';
-  position: absolute;
-  top: 8px; right: 12px;
-  font-family: var(--font-ui);
-  font-size: .6rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--pv-primary);
-  animation: pulseLabel 2s ease-in-out infinite;
-}
+/* ════════ VIEW 2: RESULTADOS ════════ */
+#results-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:12px;}
+#results-scroll::-webkit-scrollbar{width:4px;}
+#results-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
-/* ── HIGHLIGHT: next draw (soonest date) ── */
-.jackpot-card.is-next {
-  border-color: var(--pv-secondary);
-  box-shadow: 0 0 0 2px var(--pv-secondary), 0 8px 32px rgba(0,0,0,.4);
-}
-.jackpot-card.is-next:not(.is-highest)::after {
-  content: '⚡ PRÓXIMO SORTEO';
-  position: absolute;
-  top: 8px; right: 12px;
-  font-family: var(--font-ui);
-  font-size: .6rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--pv-secondary);
-  animation: pulseLabel 2s ease-in-out infinite;
-}
+/* grid of game result blocks */
+#results-grid{display:grid;gap:10px;align-content:start;}
 
-.card-bar { position:absolute; top:0; left:0; right:0; height:3px; border-radius:var(--radius) var(--radius) 0 0; }
+/* one block per game */
+.result-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .35s ease both;}
+.result-block-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.result-block-bar{width:4px;height:32px;border-radius:2px;flex-shrink:0;}
+.result-block-logo{width:28px;height:28px;object-fit:contain;flex-shrink:0;}
+.result-block-name{font-family:var(--font-ui);font-size:1rem;font-weight:700;letter-spacing:1px;color:var(--text);flex:1;}
+.result-week-label{font-family:var(--font-ui);font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
 
-/* ── CARD HEADER ── */
-.card-header { display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-shrink:0; }
-.card-logo { width:34px; height:34px; object-fit:contain; border-radius:6px; flex-shrink:0; }
-.card-name { font-family:var(--font-ui); font-size:1.15rem; font-weight:700; letter-spacing:.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; line-height:1.1; }
+/* table of draws */
+.result-table{width:100%;border-collapse:collapse;}
+.result-table th{font-family:var(--font-ui);font-size:.65rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:6px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--card2);}
+.result-table th.num{text-align:center;}
+.result-table td{padding:7px 14px;border-bottom:1px solid var(--border);font-family:var(--font-ui);font-size:.88rem;vertical-align:middle;}
+.result-table tr:last-child td{border-bottom:none;}
+.result-table tr.pending td{color:var(--muted);}
+.result-table tr.has-result td{color:var(--text);}
 
-/* ── AMOUNT ── */
-.card-amount-wrap { flex:1; display:flex; align-items:center; justify-content:flex-end; min-height:0; padding-right:4px; }
-.card-amount { font-family:var(--font-display); letter-spacing:1px; line-height:1; text-align:right; }
-.card-currency { font-size:.5em; opacity:.65; margin-right:2px; vertical-align:super; }
+/* day cell */
+td.r-day{font-weight:700;font-size:.8rem;color:var(--text2);width:30px;}
+td.r-date{font-size:.78rem;color:var(--muted);width:70px;}
 
-/* ── FOOTER ── */
-.card-footer { flex-shrink:0; margin-top:6px; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; }
-.card-footer-left { display:flex; flex-direction:column; gap:4px; min-width:0; }
-.card-date { font-family:var(--font-ui); font-size:.85rem; font-weight:600; color:var(--text2); letter-spacing:.5px; }
-.card-addons { display:flex; flex-wrap:wrap; gap:4px; }
-.addon-pill { display:flex; align-items:center; gap:5px; background:var(--card2); border:1px solid var(--border); border-radius:20px; padding:3px 9px; font-family:var(--font-ui); font-size:.7rem; }
-.addon-name { color:var(--text2); }
-.addon-amt  { color:var(--success); font-weight:700; }
+/* number balls */
+.balls{display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
+.ball{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-family:var(--font-ui);font-size:.72rem;font-weight:700;flex-shrink:0;}
+.ball.main{}
+.ball.extra{border-radius:4px;}/* stars/extras as squares */
+.ball.comp{border-radius:50%;opacity:.8;}
+.ball.refund{border-radius:3px;opacity:.85;}
+.ball-sep{color:var(--muted);font-size:.8rem;margin:0 2px;}
 
-/* ── COUNTDOWN ── */
-.card-countdown {
-  font-family: var(--font-ui);
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: var(--text2);
-  text-align: right;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.card-countdown.urgent { color: var(--pv-secondary); animation: pulseLabel 1s ease-in-out infinite; }
-.card-countdown.soon   { color: var(--pv-primary); }
+/* extra fields (joker code, etc) */
+td.r-extra{font-family:var(--font-ui);font-size:.8rem;color:var(--success);}
+td.r-pending{color:var(--border);font-size:.85rem;text-align:center;}
 
-/* ── EMPTY ── */
-#empty-state { display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:14px; color:var(--muted); }
-#empty-state .ei { font-size:3rem; }
-#empty-state p { font-family:var(--font-ui); font-size:.85rem; letter-spacing:4px; text-transform:uppercase; }
+/* EMPTY STATE */
+#empty-state{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:14px;color:var(--muted);}
+#empty-state .ei{font-size:3rem;}
+#empty-state p{font-family:var(--font-ui);font-size:.85rem;letter-spacing:4px;text-transform:uppercase;}
 
-/* ── STATUS ── */
-#status-bar { display:flex; align-items:center; justify-content:space-between; padding:6px 24px; border-top:1px solid var(--border); flex-shrink:0; background:var(--surface); gap:12px; }
-#status-msg { font-size:.68rem; color:var(--muted); font-family:var(--font-ui); letter-spacing:1px; }
-#status-msg.error { color:#e05c2a; } #status-msg.ok { color:var(--success); }
-.status-right { display:flex; align-items:center; gap:16px; }
-#last-update,#app-ver { font-size:.65rem; color:var(--muted); font-family:var(--font-ui); letter-spacing:1px; white-space:nowrap; }
+/* STATUS BAR */
+#status-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 24px;border-top:1px solid var(--border);flex-shrink:0;background:var(--surface);gap:12px;}
+#status-msg{font-size:.68rem;color:var(--muted);font-family:var(--font-ui);letter-spacing:1px;}
+#status-msg.error{color:#e05c2a;}#status-msg.ok{color:var(--success);}
+.status-right{display:flex;align-items:center;gap:16px;}
+#last-update,#app-ver{font-size:.65rem;color:var(--muted);font-family:var(--font-ui);letter-spacing:1px;white-space:nowrap;}
 
-/* ── OVERLAY ── */
-#overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); backdrop-filter:blur(8px); z-index:100; align-items:center; justify-content:center; }
-#overlay.visible { display:flex; }
-.modal { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:26px 30px; width:520px; max-width:95vw; max-height:90vh; overflow-y:auto; position:relative; box-shadow:0 24px 64px rgba(0,0,0,.5); }
-.modal::-webkit-scrollbar { width:3px; } .modal::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-.modal h2 { font-family:var(--font-display); font-size:1.6rem; letter-spacing:3px; color:var(--pv-primary); margin-bottom:3px; }
-.modal-sub { font-size:.68rem; color:var(--muted); margin-bottom:20px; font-family:var(--font-ui); letter-spacing:3px; text-transform:uppercase; }
-.close-btn { position:absolute; top:14px; right:16px; background:none; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer; transition:color .2s; line-height:1; }
-.close-btn:hover { color:var(--text); }
-.cfg-section { font-family:var(--font-ui); font-size:.68rem; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--pv-primary); margin:16px 0 10px; display:flex; align-items:center; gap:8px; }
-.cfg-section::after { content:''; flex:1; height:1px; background:var(--border); }
-.form-group { margin-bottom:12px; }
-.form-group label { display:block; font-family:var(--font-ui); font-size:.68rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
-.form-group input, .form-group select { width:100%; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--font-body); font-size:.9rem; padding:8px 12px; outline:none; transition:border-color .2s; appearance:none; }
-.form-group input:focus, .form-group select:focus { border-color:var(--pv-primary); }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.color-row { display:flex; align-items:center; gap:8px; }
-.color-row input[type="color"] { width:40px; height:36px; padding:2px 4px; border-radius:6px; cursor:pointer; flex-shrink:0; }
-.color-row input[type="text"] { flex:1; font-family:monospace; font-size:.85rem; }
-.modal-actions { display:flex; gap:8px; margin-top:18px; flex-wrap:wrap; }
-.btn { font-family:var(--font-ui); font-size:.85rem; font-weight:600; letter-spacing:2px; text-transform:uppercase; border:none; border-radius:8px; padding:9px 18px; cursor:pointer; transition:opacity .2s,transform .1s; white-space:nowrap; }
-.btn:hover { opacity:.85; } .btn:active { transform:scale(.97); }
-.btn-primary   { background:var(--pv-primary); color:#000; }
-.btn-secondary { background:var(--card); border:1px solid var(--border); color:var(--text); }
-.btn-danger    { background:#b03020; color:#fff; margin-left:auto; }
-.menu-list { list-style:none; display:flex; flex-direction:column; gap:7px; margin-bottom:20px; }
-.menu-list li button { width:100%; text-align:left; background:var(--card); border:1px solid var(--border); border-radius:10px; color:var(--text); padding:12px 16px; font-family:var(--font-ui); font-size:1rem; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; gap:12px; transition:border-color .2s,color .2s; }
-.menu-list li button:hover { border-color:var(--pv-primary); color:var(--pv-primary); }
-.menu-icon { font-size:1.1rem; width:24px; text-align:center; }
-.app-version { font-size:.65rem; color:var(--muted); font-family:var(--font-ui); letter-spacing:1px; }
-#diag-output { background:#050709; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:'Courier New',monospace; font-size:.7rem; line-height:1.6; color:#8ab4c8; max-height:50vh; overflow-y:auto; white-space:pre-wrap; word-break:break-all; }
+/* OVERLAY */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;}
+#overlay.visible{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 30px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 64px rgba(0,0,0,.5);}
+.modal::-webkit-scrollbar{width:3px;}.modal::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.modal h2{font-family:var(--font-display);font-size:1.6rem;letter-spacing:3px;color:var(--pv-primary);margin-bottom:3px;}
+.modal-sub{font-size:.68rem;color:var(--muted);margin-bottom:20px;font-family:var(--font-ui);letter-spacing:3px;text-transform:uppercase;}
+.close-btn{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;transition:color .2s;line-height:1;}
+.close-btn:hover{color:var(--text);}
+.cfg-section{font-family:var(--font-ui);font-size:.68rem;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:var(--pv-primary);margin:16px 0 10px;display:flex;align-items:center;gap:8px;}
+.cfg-section::after{content:'';flex:1;height:1px;background:var(--border);}
+.form-group{margin-bottom:12px;}
+.form-group label{display:block;font-family:var(--font-ui);font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.form-group input,.form-group select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:.9rem;padding:8px 12px;outline:none;transition:border-color .2s;appearance:none;}
+.form-group input:focus,.form-group select:focus{border-color:var(--pv-primary);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.color-row{display:flex;align-items:center;gap:8px;}
+.color-row input[type="color"]{width:40px;height:36px;padding:2px 4px;border-radius:6px;cursor:pointer;flex-shrink:0;}
+.color-row input[type="text"]{flex:1;font-family:monospace;font-size:.85rem;}
+.modal-actions{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.btn{font-family:var(--font-ui);font-size:.85rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:8px;padding:9px 18px;cursor:pointer;transition:opacity .2s,transform .1s;white-space:nowrap;}
+.btn:hover{opacity:.85;}.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--pv-primary);color:#000;}
+.btn-secondary{background:var(--card);border:1px solid var(--border);color:var(--text);}
+.btn-danger{background:#b03020;color:#fff;margin-left:auto;}
+.menu-list{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:20px;}
+.menu-list li button{width:100%;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:12px 16px;font-family:var(--font-ui);font-size:1rem;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color .2s,color .2s;}
+.menu-list li button:hover{border-color:var(--pv-primary);color:var(--pv-primary);}
+.menu-icon{font-size:1.1rem;width:24px;text-align:center;}
+.app-version{font-size:.65rem;color:var(--muted);font-family:var(--font-ui);letter-spacing:1px;}
+#diag-output{background:#050709;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.6;color:#8ab4c8;max-height:50vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;}
 
-/* ── VERTICAL OVERRIDES ── */
-body.orient-v header { padding:8px 16px; min-height:54px; }
-body.orient-v #pv-name { font-size:1.4rem; }
-body.orient-v #clock { font-size:1.2rem; }
-body.orient-v #main-content { padding:10px 14px 0; }
-body.orient-v #status-bar { padding:5px 14px; }
+/* VERTICAL */
+body.orient-v header{padding:8px 16px;min-height:54px;}
+body.orient-v #pv-name{font-size:1.4rem;}
+body.orient-v #clock{font-size:1.2rem;}
+body.orient-v #main-content{padding:10px 14px 0;}
+body.orient-v #status-bar{padding:5px 14px;}
+body.orient-v .view-tabs{display:none;}
 
-/* ── ANIMATIONS ── */
-@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-@keyframes spin { to{transform:rotate(360deg)} }
-@keyframes pulseLabel {
-  0%,100% { opacity:1; }
-  50%      { opacity:.4; }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulseLabel{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 </head>
 <body class="orient-h">
@@ -233,26 +200,45 @@ body.orient-v #status-bar { padding:5px 14px; }
 <div id="app">
   <header>
     <div class="header-left">
-      <img id="pv-logo" src="" alt="Logo PV">
+      <img id="pv-logo" src="" alt="">
       <div class="title-block">
         <div id="pv-name">—</div>
         <div id="pv-tagline">Juega con nosotros en <a id="pv-url" href="#" target="_blank">webpremium.eu</a></div>
       </div>
     </div>
     <div class="header-right">
+      <!-- View switcher -->
+      <div class="view-tabs">
+        <button class="view-tab active" id="tab-jackpots" onclick="switchView('jackpots')">🏆 Botes</button>
+        <button class="view-tab" id="tab-results"  onclick="switchView('results')">📋 Resultados</button>
+      </div>
       <div id="clock">--:--</div>
       <button id="menu-btn" onclick="openMenu()">☰ Menú</button>
     </div>
   </header>
   <div class="accent-line"></div>
+
   <div id="main-content">
-    <div class="section-label">Próximos Sorteos</div>
-    <div id="jackpots-grid"></div>
-    <div id="empty-state">
-      <div class="ei">🎰</div>
-      <p>No hay botes disponibles</p>
+    <!-- SECTION LABEL changes with view -->
+    <div class="section-label" id="section-label">Próximos Sorteos</div>
+
+    <!-- VIEW 1: JACKPOTS -->
+    <div class="view active" id="view-jackpots">
+      <div id="jackpots-grid"></div>
+      <div id="empty-state">
+        <div class="ei">🎰</div>
+        <p>No hay botes disponibles</p>
+      </div>
+    </div>
+
+    <!-- VIEW 2: RESULTS -->
+    <div class="view" id="view-results">
+      <div id="results-scroll">
+        <div id="results-grid"></div>
+      </div>
     </div>
   </div>
+
   <div id="status-bar">
     <span id="status-msg">Listo</span>
     <div class="status-right">
@@ -269,18 +255,18 @@ body.orient-v #status-bar { padding:5px 14px; }
     <h2>Menú</h2>
     <div class="modal-sub">Navegación</div>
     <ul class="menu-list">
-      <li><button onclick="goHome()"><span class="menu-icon">🏠</span>Inicio — Botes</button></li>
+      <li><button onclick="switchView('jackpots');closeOverlay()"><span class="menu-icon">🏆</span>Botes</button></li>
+      <li><button onclick="switchView('results');closeOverlay()"><span class="menu-icon">📋</span>Resultados</button></li>
       <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
       <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
     </ul>
     <div class="app-version" id="menu-version"></div>
   </div>
 
-  <div class="modal" id="modal-config" style="display:none; width:580px;">
+  <div class="modal" id="modal-config" style="display:none;width:580px;">
     <button class="close-btn" onclick="closeOverlay()">✕</button>
     <h2>Configuración</h2>
     <div class="modal-sub">Parámetros del sistema</div>
-
     <div class="cfg-section">WebService</div>
     <div class="form-group"><label>URL del WebService</label><input type="text" id="cfg-url"></div>
     <div class="form-group"><label>URL del Proxy</label><input type="text" id="cfg-proxy"></div>
@@ -289,52 +275,36 @@ body.orient-v #status-bar { padding:5px 14px; }
       <div class="form-group"><label>Token</label><input type="text" id="cfg-token"></div>
     </div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="cfg-pass"></div>
-
     <div class="cfg-section">Punto de Venta</div>
-    <div class="form-group"><label>URL web del PV (para la cabecera)</label><input type="text" id="cfg-pvurl" placeholder="https://www.webpremium.eu"></div>
+    <div class="form-group"><label>URL web del PV</label><input type="text" id="cfg-pvurl" placeholder="https://www.webpremium.eu"></div>
     <div class="form-group"><label>Texto tagline</label><input type="text" id="cfg-tagline" placeholder="Juega con nosotros en"></div>
-
     <div class="cfg-section">Apariencia</div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Color primario</label>
-        <div class="color-row">
-          <input type="color" id="cfg-color1-pick" oninput="syncColor('cfg-color1','cfg-color1-pick')">
-          <input type="text"  id="cfg-color1" maxlength="7" oninput="syncColor('cfg-color1-pick','cfg-color1',true)">
-        </div>
+      <div class="form-group"><label>Color primario</label>
+        <div class="color-row"><input type="color" id="cfg-color1-pick" oninput="syncColor('cfg-color1','cfg-color1-pick')"><input type="text" id="cfg-color1" maxlength="7" oninput="syncColor('cfg-color1-pick','cfg-color1',true)"></div>
       </div>
-      <div class="form-group">
-        <label>Color secundario</label>
-        <div class="color-row">
-          <input type="color" id="cfg-color2-pick" oninput="syncColor('cfg-color2','cfg-color2-pick')">
-          <input type="text"  id="cfg-color2" maxlength="7" oninput="syncColor('cfg-color2-pick','cfg-color2',true)">
-        </div>
+      <div class="form-group"><label>Color secundario</label>
+        <div class="color-row"><input type="color" id="cfg-color2-pick" oninput="syncColor('cfg-color2','cfg-color2-pick')"><input type="text" id="cfg-color2" maxlength="7" oninput="syncColor('cfg-color2-pick','cfg-color2',true)"></div>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Modo</label>
-        <select id="cfg-theme"><option value="dark">Oscuro</option><option value="light">Claro</option></select>
-      </div>
-      <div class="form-group"><label>Orientación</label>
-        <select id="cfg-orient"><option value="h">Horizontal</option><option value="v">Vertical</option></select>
-      </div>
+      <div class="form-group"><label>Modo</label><select id="cfg-theme"><option value="dark">Oscuro</option><option value="light">Claro</option></select></div>
+      <div class="form-group"><label>Orientación</label><select id="cfg-orient"><option value="h">Horizontal</option><option value="v">Vertical</option></select></div>
     </div>
-
     <div class="cfg-section">Actualización automática</div>
     <div class="form-row">
-      <div class="form-group"><label>Refresco botes (min, 0=manual)</label><input type="number" id="cfg-refresh-jackpots" min="0" max="1440"></div>
-      <div class="form-group"><label>Refresco PV+Juegos (horas, 0=manual)</label><input type="number" id="cfg-refresh-pvinfo" min="0" max="168"></div>
+      <div class="form-group"><label>Refresco botes (min)</label><input type="number" id="cfg-refresh-jackpots" min="0" max="1440"></div>
+      <div class="form-group"><label>Refresco PV+Juegos (horas)</label><input type="number" id="cfg-refresh-pvinfo" min="0" max="168"></div>
     </div>
-
     <div class="modal-actions">
-      <button class="btn btn-primary"   onclick="saveConfig()">💾 Guardar</button>
+      <button class="btn btn-primary" onclick="saveConfig()">💾 Guardar</button>
       <button class="btn btn-secondary" onclick="showMenu()">← Volver</button>
       <button class="btn btn-secondary" onclick="showDiag()">🔍 Diagnóstico</button>
-      <button class="btn btn-danger"    onclick="resetConfig()">Restablecer</button>
+      <button class="btn btn-danger" onclick="resetConfig()">Restablecer</button>
     </div>
   </div>
 
-  <div class="modal" id="modal-diag" style="display:none; width:680px;">
+  <div class="modal" id="modal-diag" style="display:none;width:680px;">
     <button class="close-btn" onclick="closeOverlay()">✕</button>
     <h2>Diagnóstico</h2>
     <div class="modal-sub">Prueba de llamadas al WebService</div>
@@ -342,6 +312,7 @@ body.orient-v #status-bar { padding:5px 14px; }
       <button class="btn btn-secondary" onclick="diagRun('pv-info')">▶ pv-info</button>
       <button class="btn btn-secondary" onclick="diagRun('get-games')">▶ get-games</button>
       <button class="btn btn-secondary" onclick="diagRun('next-jackpots')">▶ next-jackpots</button>
+      <button class="btn btn-secondary" onclick="diagRun('last-results')">▶ last-results</button>
       <button class="btn btn-secondary" style="margin-left:auto" onclick="diagClear()">Limpiar</button>
     </div>
     <div id="diag-output">Pulsa un botón para ejecutar la llamada...</div>
@@ -353,249 +324,272 @@ body.orient-v #status-bar { padding:5px 14px; }
 </div>
 
 <script>
-// ════════════════════════════════════════════
-const APP_VERSION  = '1.3';
-const APP_REVISION = '20260531-006';
-const STORAGE_KEY  = 'infolot_cfg_v6';
+// ════════════════════════════════════
+const APP_VERSION  = '1.4';
+const APP_REVISION = '20260531-007';
+const STORAGE_KEY  = 'infolot_cfg_v7';
 const LOGO_BASE    = 'https://panel.infolot.es';
+const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
 
 const DEFAULTS = {
-  url:             'https://webservice.infolot.es',
-  proxy:           'https://app.gesloto.es/proxy.php',
-  appid:           '41461407-985d-4834-973f-1a672edb74e2',
-  token:           '1d446400-a63a-4467-bef9-1e661971c931',
-  pass:            '48].-.TuNa&Pu%26',
-  pvurl:           'https://www.webpremium.eu',
-  tagline:         'Juega con nosotros en',
-  color1:          '#f0b429',
-  color2:          '#e05c2a',
-  theme:           'dark',
-  orient:          null,
-  refreshJackpots: 0,
-  refreshPvInfo:   0
+  url:'https://webservice.infolot.es', proxy:'https://app.gesloto.es/proxy.php',
+  appid:'41461407-985d-4834-973f-1a672edb74e2', token:'1d446400-a63a-4467-bef9-1e661971c931',
+  pass:'48].-.TuNa&Pu%26', pvurl:'https://www.webpremium.eu', tagline:'Juega con nosotros en',
+  color1:'#f0b429', color2:'#e05c2a', theme:'dark', orient:null,
+  refreshJackpots:0, refreshPvInfo:0
 };
 
-const DAY_NAMES = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
-let gamesMap = {}, pvData = {}, timers = {}, countdownTimers = [];
+let gamesMap={}, pvData={}, timers={}, countdownTimers=[];
+let lastResultsData=[], currentView='jackpots';
 
-// ── CONFIG ──────────────────────────────────
-function loadConfig() {
-  try { const s=localStorage.getItem(STORAGE_KEY); return s?{...DEFAULTS,...JSON.parse(s)}:{...DEFAULTS}; }
-  catch { return {...DEFAULTS}; }
-}
-function persistConfig(cfg) { localStorage.setItem(STORAGE_KEY,JSON.stringify(cfg)); }
+// ── CONFIG ──────────────────────────
+function loadConfig(){try{const s=localStorage.getItem(STORAGE_KEY);return s?{...DEFAULTS,...JSON.parse(s)}:{...DEFAULTS};}catch{return{...DEFAULTS};}}
+function persistConfig(cfg){localStorage.setItem(STORAGE_KEY,JSON.stringify(cfg));}
 
-function saveConfig() {
-  const cfg = {
-    url:             document.getElementById('cfg-url').value.trim()    || DEFAULTS.url,
-    proxy:           document.getElementById('cfg-proxy').value.trim()  || DEFAULTS.proxy,
-    appid:           document.getElementById('cfg-appid').value.trim()  || DEFAULTS.appid,
-    token:           document.getElementById('cfg-token').value.trim()  || DEFAULTS.token,
-    pass:            document.getElementById('cfg-pass').value          || DEFAULTS.pass,
-    pvurl:           document.getElementById('cfg-pvurl').value.trim()  || DEFAULTS.pvurl,
-    tagline:         document.getElementById('cfg-tagline').value.trim()|| DEFAULTS.tagline,
-    color1:          document.getElementById('cfg-color1').value        || DEFAULTS.color1,
-    color2:          document.getElementById('cfg-color2').value        || DEFAULTS.color2,
-    theme:           document.getElementById('cfg-theme').value,
-    orient:          document.getElementById('cfg-orient').value,
-    refreshJackpots: parseInt(document.getElementById('cfg-refresh-jackpots').value)||0,
-    refreshPvInfo:   parseInt(document.getElementById('cfg-refresh-pvinfo').value)||0
+function saveConfig(){
+  const cfg={
+    url:document.getElementById('cfg-url').value.trim()||DEFAULTS.url,
+    proxy:document.getElementById('cfg-proxy').value.trim()||DEFAULTS.proxy,
+    appid:document.getElementById('cfg-appid').value.trim()||DEFAULTS.appid,
+    token:document.getElementById('cfg-token').value.trim()||DEFAULTS.token,
+    pass:document.getElementById('cfg-pass').value||DEFAULTS.pass,
+    pvurl:document.getElementById('cfg-pvurl').value.trim()||DEFAULTS.pvurl,
+    tagline:document.getElementById('cfg-tagline').value.trim()||DEFAULTS.tagline,
+    color1:document.getElementById('cfg-color1').value||DEFAULTS.color1,
+    color2:document.getElementById('cfg-color2').value||DEFAULTS.color2,
+    theme:document.getElementById('cfg-theme').value,
+    orient:document.getElementById('cfg-orient').value,
+    refreshJackpots:parseInt(document.getElementById('cfg-refresh-jackpots').value)||0,
+    refreshPvInfo:parseInt(document.getElementById('cfg-refresh-pvinfo').value)||0
   };
   persistConfig(cfg);
-  applyTheme(cfg.theme); applyOrientation(cfg.orient); applyBrandColors(cfg.color1,cfg.color2);
-  applyTagline(cfg.tagline, cfg.pvurl);
-  closeOverlay(); setupTimers(cfg); loadAllData();
+  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyTagline(cfg.tagline,cfg.pvurl);
+  closeOverlay();setupTimers(cfg);loadAllData();
 }
 
-function fillConfigForm(cfg) {
-  document.getElementById('cfg-url').value              = cfg.url;
-  document.getElementById('cfg-proxy').value            = cfg.proxy;
-  document.getElementById('cfg-appid').value            = cfg.appid;
-  document.getElementById('cfg-token').value            = cfg.token;
-  document.getElementById('cfg-pass').value             = cfg.pass;
-  document.getElementById('cfg-pvurl').value            = cfg.pvurl;
-  document.getElementById('cfg-tagline').value          = cfg.tagline;
-  document.getElementById('cfg-color1').value           = cfg.color1;
-  document.getElementById('cfg-color1-pick').value      = cfg.color1;
-  document.getElementById('cfg-color2').value           = cfg.color2;
-  document.getElementById('cfg-color2-pick').value      = cfg.color2;
-  document.getElementById('cfg-theme').value            = cfg.theme;
-  document.getElementById('cfg-orient').value           = cfg.orient||detectOrientation();
-  document.getElementById('cfg-refresh-jackpots').value = cfg.refreshJackpots;
-  document.getElementById('cfg-refresh-pvinfo').value   = cfg.refreshPvInfo;
+function fillConfigForm(cfg){
+  document.getElementById('cfg-url').value=cfg.url;
+  document.getElementById('cfg-proxy').value=cfg.proxy;
+  document.getElementById('cfg-appid').value=cfg.appid;
+  document.getElementById('cfg-token').value=cfg.token;
+  document.getElementById('cfg-pass').value=cfg.pass;
+  document.getElementById('cfg-pvurl').value=cfg.pvurl;
+  document.getElementById('cfg-tagline').value=cfg.tagline;
+  document.getElementById('cfg-color1').value=cfg.color1;
+  document.getElementById('cfg-color1-pick').value=cfg.color1;
+  document.getElementById('cfg-color2').value=cfg.color2;
+  document.getElementById('cfg-color2-pick').value=cfg.color2;
+  document.getElementById('cfg-theme').value=cfg.theme;
+  document.getElementById('cfg-orient').value=cfg.orient||detectOrientation();
+  document.getElementById('cfg-refresh-jackpots').value=cfg.refreshJackpots;
+  document.getElementById('cfg-refresh-pvinfo').value=cfg.refreshPvInfo;
 }
 
-function resetConfig() {
-  if(!confirm('¿Restablecer la configuración por defecto?')) return;
+function resetConfig(){
+  if(!confirm('¿Restablecer la configuración por defecto?'))return;
   localStorage.removeItem(STORAGE_KEY);
-  const fresh={...DEFAULTS,orient:detectOrientation()};
-  fillConfigForm(fresh); applyTheme(fresh.theme); applyBrandColors(fresh.color1,fresh.color2);
-  applyTagline(fresh.tagline,fresh.pvurl);
+  const f={...DEFAULTS,orient:detectOrientation()};
+  fillConfigForm(f);applyTheme(f.theme);applyBrandColors(f.color1,f.color2);applyTagline(f.tagline,f.pvurl);
   setStatus('Configuración restablecida','ok');
 }
 
-function syncColor(targetId,sourceId,fromText) {
-  const src=document.getElementById(sourceId), tgt=document.getElementById(targetId);
-  if(!src||!tgt) return;
-  if(fromText&&!/^#[0-9a-fA-F]{6}$/.test(src.value)) return;
-  tgt.value=src.value;
+function syncColor(tid,sid,fromText){
+  const s=document.getElementById(sid),t=document.getElementById(tid);
+  if(!s||!t)return;if(fromText&&!/^#[0-9a-fA-F]{6}$/.test(s.value))return;t.value=s.value;
 }
 
-// ── APPEARANCE ──────────────────────────────
-function detectOrientation() {
-  try { const t=screen.orientation?screen.orientation.type:''; if(t.includes('portrait')) return 'v'; if(t.includes('landscape')) return 'h'; return window.innerHeight>window.innerWidth?'v':'h'; } catch { return 'h'; }
-}
-function applyTheme(t)             { document.body.classList.toggle('light',t==='light'); }
-function applyOrientation(o)       { document.body.classList.remove('orient-h','orient-v'); document.body.classList.add('orient-'+(o||'h')); }
-function applyBrandColors(c1,c2)   { const r=document.documentElement.style; r.setProperty('--pv-primary',c1||DEFAULTS.color1); r.setProperty('--pv-secondary',c2||DEFAULTS.color2); }
-
-function applyTagline(tagline, pvurl) {
-  const el  = document.getElementById('pv-tagline');
-  const link = document.getElementById('pv-url');
-  if (!el || !link) return;
-  const display = pvurl ? pvurl.replace(/^https?:\/\//,'') : '';
-  el.childNodes[0].textContent = (tagline || 'Juega con nosotros en') + ' ';
-  link.textContent = display;
-  link.href = pvurl || '#';
+// ── APPEARANCE ───────────────────────
+function detectOrientation(){try{const t=screen.orientation?screen.orientation.type:'';if(t.includes('portrait'))return 'v';if(t.includes('landscape'))return 'h';return window.innerHeight>window.innerWidth?'v':'h';}catch{return 'h';}}
+function applyTheme(t){document.body.classList.toggle('light',t==='light');}
+function applyOrientation(o){document.body.classList.remove('orient-h','orient-v');document.body.classList.add('orient-'+(o||'h'));}
+function applyBrandColors(c1,c2){const r=document.documentElement.style;r.setProperty('--pv-primary',c1||DEFAULTS.color1);r.setProperty('--pv-secondary',c2||DEFAULTS.color2);}
+function applyTagline(tagline,pvurl){
+  const el=document.getElementById('pv-tagline'),link=document.getElementById('pv-url');
+  if(!el||!link)return;
+  const display=pvurl?pvurl.replace(/^https?:\/\//,''):'';
+  el.childNodes[0].textContent=(tagline||'Juega con nosotros en')+' ';
+  link.textContent=display;link.href=pvurl||'#';
 }
 
-// ── CLOCK ────────────────────────────────────
-function updateClock() {
+// ── VIEW SWITCHER ────────────────────
+function switchView(view){
+  currentView=view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.getElementById('tab-'+view).classList.add('active');
+  if(view==='jackpots'){
+    document.getElementById('section-label').textContent='Próximos Sorteos';
+  } else if(view==='results'){
+    document.getElementById('section-label').textContent=resultsWeekLabel();
+    if(!lastResultsData.length) fetchResults();
+    else renderResults(lastResultsData);
+  }
+}
+
+// ── CLOCK ────────────────────────────
+function updateClock(){
   const n=new Date();
   document.getElementById('clock').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
 }
 
-// ── WS CALL ──────────────────────────────────
-async function wsCall(endpoint, extra={}) {
+// ── WS CALL ──────────────────────────
+async function wsCall(endpoint,extra={}){
   const cfg=loadConfig();
   const body={_endpoint:endpoint,token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
   const resp=await fetch(cfg.proxy.replace('http://','https://'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
   const json=await resp.json();
-  if(json.error) throw new Error(json.error);
+  if(json.error)throw new Error(json.error);
   return json.data;
 }
 
-// ── PV-INFO ──────────────────────────────────
-async function fetchPvInfo() {
+// ── PV-INFO ──────────────────────────
+async function fetchPvInfo(){
   setLoadingStep('Cargando datos del punto de venta...');
-  try {
+  try{
     pvData=await wsCall('pv-info')||{};
     const name=pvData?.company?.name_comercial||pvData?.company?.name_social||'Mi Lotería';
     document.getElementById('pv-name').textContent=name;
     document.getElementById('loading-logo').textContent=name;
     document.title=name+' · Botes';
-    // tagline URL from pv-info if available
     const cfg=loadConfig();
-    const pvurl=pvData?.url?.main||cfg.pvurl;
-    applyTagline(cfg.tagline, pvurl);
-  } catch(e) {
-    console.warn('pv-info:',e.message);
-    document.getElementById('pv-name').textContent='Mi Lotería';
-  }
+    applyTagline(cfg.tagline,pvData?.url?.main||cfg.pvurl);
+  }catch(e){console.warn('pv-info:',e.message);document.getElementById('pv-name').textContent='Mi Lotería';}
 }
 
-// ── GET-GAMES ────────────────────────────────
-async function fetchGames() {
+// ── GET-GAMES ─────────────────────────
+async function fetchGames(){
   setLoadingStep('Cargando juegos...');
-  try {
+  try{
     const data=await wsCall('get-games');
     gamesMap={};
-    if(data&&typeof data==='object') Object.values(data).forEach(g=>{ if(g.lae) gamesMap[g.id]=g; });
-  } catch(e) { console.warn('get-games:',e.message); gamesMap={}; }
+    if(data&&typeof data==='object')Object.values(data).forEach(g=>{if(g.lae)gamesMap[g.id]=g;});
+  }catch(e){console.warn('get-games:',e.message);}
 }
 
-// ── NEXT-JACKPOTS ────────────────────────────
-async function fetchJackpots() {
+// ── NEXT-JACKPOTS ─────────────────────
+async function fetchJackpots(){
   setStatus('Actualizando botes...','');
-  try {
+  try{
     const data=await wsCall('next-jackpots');
     renderJackpots(Array.isArray(data)?data:[]);
     document.getElementById('last-update').textContent='Act: '+new Date().toLocaleTimeString('es-ES');
     setStatus('Datos actualizados','ok');
-  } catch(e) { setStatus('Error: '+e.message,'error'); renderJackpots([]); }
+  }catch(e){setStatus('Error: '+e.message,'error');renderJackpots([]);}
 }
 
-// ── RENDER ───────────────────────────────────
-function renderJackpots(data) {
-  // clear countdown timers
-  countdownTimers.forEach(clearInterval); countdownTimers=[];
+// ── LAST-RESULTS ──────────────────────
+async function fetchResults(){
+  setStatus('Actualizando resultados...','');
+  try{
+    const data=await wsCall('last-results');
+    lastResultsData=Array.isArray(data)?data:[];
+    if(currentView==='results'){
+      document.getElementById('section-label').textContent=resultsWeekLabel();
+      renderResults(lastResultsData);
+    }
+    setStatus('Datos actualizados','ok');
+  }catch(e){setStatus('Error resultados: '+e.message,'error');}
+}
 
+// ── WEEK HELPERS ──────────────────────
+function getWeekBounds(refDate){
+  // Week: Mon–Sun. Returns {mon, sun} as Date objects
+  const d=new Date(refDate);
+  const day=d.getDay(); // 0=Sun
+  const diffToMon=day===0?-6:1-day;
+  const mon=new Date(d);mon.setDate(d.getDate()+diffToMon);mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  return {mon,sun};
+}
+
+function toYMD(d){return d.toISOString().slice(0,10);}
+
+function isCurrentWeekResults(){
+  // On Mondays before first draw (~14:00), show previous week
+  const now=new Date();
+  if(now.getDay()===1 && now.getHours()<14) return false;
+  return true;
+}
+
+function getResultsWeekRef(){
+  const now=new Date();
+  if(now.getDay()===1 && now.getHours()<14){
+    const prev=new Date(now);prev.setDate(now.getDate()-1);return prev;
+  }
+  return now;
+}
+
+function resultsWeekLabel(){
+  const ref=getResultsWeekRef();
+  const {mon,sun}=getWeekBounds(ref);
+  const fmt=d=>d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+  const wk=getISOWeek(ref);
+  return `Resultados Semana ${wk} · ${fmt(mon)} – ${fmt(sun)}`;
+}
+
+function getISOWeek(d){
+  const date=new Date(d);
+  date.setHours(0,0,0,0);
+  date.setDate(date.getDate()+3-(date.getDay()+6)%7);
+  const week1=new Date(date.getFullYear(),0,4);
+  return 1+Math.round(((date-week1)/86400000-3+(week1.getDay()+6)%7)/7);
+}
+
+// ── RENDER JACKPOTS ───────────────────
+function renderJackpots(data){
+  countdownTimers.forEach(clearInterval);countdownTimers=[];
   const grid=document.getElementById('jackpots-grid');
   const empty=document.getElementById('empty-state');
   grid.innerHTML='';
-
   const items=data.filter(item=>!Object.keys(gamesMap).length||gamesMap[item.id_game]);
-  if(!items.length) { grid.style.display='none'; empty.style.display='flex'; return; }
-  grid.style.display=''; empty.style.display='none';
-
-  // Find highest jackpot and next draw date
-  const maxJackpot = Math.max(...items.map(i=>parseFloat(i.jackpot)||0));
-  const minDate    = items.reduce((min,i)=>{ if(!i.date) return min; return (!min||i.date<min)?i.date:min; }, null);
-
-  // Grid dimensions
+  if(!items.length){grid.style.display='none';empty.style.display='flex';return;}
+  grid.style.display='';empty.style.display='none';
+  const maxJ=Math.max(...items.map(i=>parseFloat(i.jackpot)||0));
+  const minDate=items.reduce((m,i)=>(!i.date?m:(!m||i.date<m?i.date:m)),null);
   const isV=document.body.classList.contains('orient-v');
-  const n=items.length;
-  let cols,rows;
-  if(isV) { cols=1; rows=n; }
-  else {
-    if      (n<=2) { cols=n;   rows=1; }
-    else if (n<=4) { cols=2;   rows=Math.ceil(n/2); }
-    else if (n<=6) { cols=3;   rows=Math.ceil(n/3); }
-    else if (n<=8) { cols=4;   rows=Math.ceil(n/4); }
-    else if (n<=9) { cols=3;   rows=3; }
-    else           { cols=4;   rows=Math.ceil(n/4); }
+  const n=items.length;let cols,rows;
+  if(isV){cols=1;rows=n;}
+  else{
+    if(n<=2){cols=n;rows=1;}else if(n<=4){cols=2;rows=Math.ceil(n/2);}
+    else if(n<=6){cols=3;rows=Math.ceil(n/3);}else if(n<=8){cols=4;rows=Math.ceil(n/4);}
+    else if(n<=9){cols=3;rows=3;}else{cols=4;rows=Math.ceil(n/4);}
   }
   grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
   grid.style.gridTemplateRows=`repeat(${rows},1fr)`;
-
-  items.forEach((item,i) => {
-    const game    = gamesMap[item.id_game]||{};
-    const barClr  = game.bg_color||'var(--pv-primary)';
-    const amtClr  = game.jackpot_fg_color||'var(--pv-primary)';
-    const jackpot = parseFloat(item.jackpot)||0;
-    const isHighest = jackpot>0 && jackpot===maxJackpot;
-    const isNext    = item.date && item.date===minDate;
-
-    // logo
+  items.forEach((item,i)=>{
+    const game=gamesMap[item.id_game]||{};
+    const barClr=game.bg_color||'var(--pv-primary)';
+    const amtClr=game.jackpot_fg_color||'var(--pv-primary)';
+    const jackpot=parseFloat(item.jackpot)||0;
+    const isHighest=jackpot>0&&jackpot===maxJ;
+    const isNext=item.date&&item.date===minDate;
     let logoSrc='';
-    if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
-    else if(game.logo)     logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
-
-    // date — bigger, no day-of-week abbreviations
-    const dateStr=item.date
-      ? new Date(item.date+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})
-      : '';
-
-    // amount — full integer with thousands separator
+    if(game.logo_official)logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
+    else if(game.logo)logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
+    const dateStr=item.date?new Date(item.date+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}):'';
     const amount=Math.floor(jackpot).toLocaleString('es-ES');
-
-    // addons
     let addonsHtml='';
-    if(item.addons&&item.addons.length) {
-      addonsHtml='<div class="card-addons">'+
-        item.addons.map(a=>{
-          const aAmt=Math.floor(parseFloat(a.jackpot)||0).toLocaleString('es-ES');
-          return `<div class="addon-pill"><span class="addon-name">${esc(a.name)}</span><span class="addon-amt">+ ${aAmt} €</span></div>`;
-        }).join('')+'</div>';
+    if(item.addons&&item.addons.length){
+      addonsHtml='<div class="card-addons">'+item.addons.map(a=>{
+        const aAmt=Math.floor(parseFloat(a.jackpot)||0).toLocaleString('es-ES');
+        return `<div class="addon-pill"><span class="addon-name">${esc(a.name)}</span><span class="addon-amt">+ ${aAmt} €</span></div>`;
+      }).join('')+'</div>';
     }
-
-    // countdown placeholder
     const cdId=`cd-${i}`;
-
     const card=document.createElement('div');
     card.className='jackpot-card'+(isHighest?' is-highest':'')+(isNext?' is-next':'');
     card.style.animationDelay=`${i*45}ms`;
     card.innerHTML=`
       <div class="card-bar" style="background:${barClr}"></div>
       <div class="card-header">
-        ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` : ''}
+        ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
         <div class="card-name">${esc(item.name||game.name||'—')}</div>
       </div>
       <div class="card-amount-wrap">
-        <div class="card-amount" style="color:${amtClr}">
-          <span class="card-currency">€</span>${amount}
-        </div>
+        <div class="card-amount" style="color:${amtClr}"><span class="card-currency">€</span>${amount}</div>
       </div>
       <div class="card-footer">
         <div class="card-footer-left">
@@ -603,154 +597,282 @@ function renderJackpots(data) {
           ${addonsHtml}
         </div>
         <div class="card-countdown" id="${cdId}"></div>
-      </div>
-    `;
+      </div>`;
     grid.appendChild(card);
-
-    // Start countdown if we have a date
-    if(item.date) startCountdown(cdId, item.date, game);
+    if(item.date)startCountdown(cdId,item.date,game);
   });
-
   requestAnimationFrame(()=>fitAmountFonts());
 }
 
-// ── COUNTDOWN ────────────────────────────────
-function startCountdown(elId, dateStr, game) {
-  // Try to get draw hour from game data
-  let drawHour = '20:00';
-  try {
-    const hours = JSON.parse(game.draw_hours||'{}');
-    const vals  = Object.values(hours);
-    if(vals.length) drawHour = vals[0];
-  } catch {}
+// ── RENDER RESULTS ────────────────────
+function renderResults(data){
+  const grid=document.getElementById('results-grid');
+  grid.innerHTML='';
+  if(!data||!data.length){grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN DATOS</div>';return;}
 
-  const target = new Date(dateStr + 'T' + drawHour + ':00');
+  // Determine week range to display
+  const ref=getResultsWeekRef();
+  const {mon,sun}=getWeekBounds(ref);
 
-  function update() {
-    const el = document.getElementById(elId);
-    if(!el) return;
-    const diff = target - new Date();
-    if(diff <= 0) { el.textContent = 'Hoy'; el.className='card-countdown urgent'; return; }
-
-    const days  = Math.floor(diff/86400000);
-    const hours = Math.floor((diff%86400000)/3600000);
-    const mins  = Math.floor((diff%3600000)/60000);
-
-    let txt='', cls='card-countdown';
-    if(days > 1)       { txt=`${days}d ${hours}h`; }
-    else if(days === 1){ txt=`${hours}h ${mins}m`; cls+=' soon'; }
-    else if(hours > 0) { txt=`${hours}h ${mins}m`;  cls+=' soon'; }
-    else               { txt=`${mins}m`;             cls+=' urgent'; }
-
-    el.textContent=txt; el.className=cls;
+  // Build list of dates Mon→Sun
+  const weekDates=[];
+  for(let d=new Date(mon);d<=sun;d.setDate(d.getDate()+1)){
+    weekDates.push(toYMD(new Date(d)));
   }
 
-  update();
-  const t=setInterval(update, 30000);
-  countdownTimers.push(t);
-}
+  // Group results by id_game, keep only current week
+  const byGame={};
+  data.forEach(r=>{
+    if(!r.date)return;
+    if(r.date<toYMD(mon)||r.date>toYMD(sun))return;
+    if(Object.keys(gamesMap).length&&!gamesMap[r.id_game])return;
+    if(!byGame[r.id_game])byGame[r.id_game]=[];
+    byGame[r.id_game].push(r);
+  });
 
-// ── FONT SIZING ──────────────────────────────
-function fitAmountFonts() {
-  document.querySelectorAll('.jackpot-card').forEach(card=>{
-    const wrap=card.querySelector('.card-amount-wrap');
-    const amt =card.querySelector('.card-amount');
-    if(!wrap||!amt) return;
-    // Fit font to available width and height
-    const maxW = wrap.clientWidth  * 0.95;
-    const maxH = wrap.clientHeight * 0.90;
-    let size = Math.min(maxH, 90);
-    amt.style.fontSize = size+'px';
-    // Shrink if overflows width
-    while(amt.scrollWidth > maxW && size > 20) {
-      size -= 2;
-      amt.style.fontSize = size+'px';
-    }
+  // Determine grid columns for result blocks
+  const gameIds=Object.keys(byGame);
+  if(!gameIds.length){grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN RESULTADOS ESTA SEMANA</div>';return;}
+
+  const isV=document.body.classList.contains('orient-v');
+  const cols=isV?1:(gameIds.length<=2?gameIds.length:gameIds.length<=4?2:3);
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+
+  gameIds.forEach((gameId,gi)=>{
+    const game=gamesMap[gameId]||{};
+    const draws=byGame[gameId];
+    const barClr=game.bg_color||'var(--pv-primary)';
+    const numBgClr=game.number_bg_color||'#1a2535';
+    const numFgClr=game.number_fg_color||'#ffffff';
+    const extBgClr=game.extra_bg_color||'#c8a000';
+    const extFgClr=game.extra_fg_color||'#000000';
+    const compBgClr=game.num_complementary_bg_color||'#333';
+    const compFgClr=game.num_complementary_fg_color||'#fff';
+    const refBgClr=game.num_refund_bg_color||'#555';
+    const refFgClr=game.num_refund_fg_color||'#fff';
+
+    let logoSrc='';
+    if(game.logo_official)logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
+    else if(game.logo)logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
+
+    // Detect which columns to show from game config
+    const hasExtra     = game.num_extra_per_bet>0;
+    const hasComp      = game.is_num_complementary===1;
+    const hasRefund    = game.is_num_refund===1;
+    const hasCodeA     = game.is_code_a===1;
+    const hasCodeB     = game.is_code_b===1&&game.code_b_name&&game.code_b_name.trim();
+    const isSerie      = game.is_num_serie===1;   // Lotería Nacional style
+    const isFraction   = game.is_num_fraction===1;
+
+    // Build draw map by date for quick lookup
+    const drawByDate={};
+    draws.forEach(d=>{drawByDate[d.date]=d;});
+
+    // Determine which days this game plays
+    const gameDays=game.id_days?game.id_days.split(',').map(x=>parseInt(x.trim())):[];
+    // Map ISO weekday (1=Mon..7=Sun) to our date strings
+    const playDates=weekDates.filter(dateStr=>{
+      const dow=new Date(dateStr+'T12:00:00').getDay();
+      const iso=dow===0?7:dow;
+      return !gameDays.length||gameDays.includes(iso);
+    });
+
+    // Build table rows
+    let rowsHtml='';
+    playDates.forEach(dateStr=>{
+      const result=drawByDate[dateStr];
+      const d=new Date(dateStr+'T12:00:00');
+      const dow=d.getDay();
+      const dayLabel=DAY_SHORT[dow];
+      const dateLabel=(d.getDate())+'/'+(String(d.getMonth()+1).padStart(2,'0'));
+      const now=new Date();
+      const isPast=d<=now;
+
+      if(!result||!result.is_confirmed){
+        // No result yet
+        rowsHtml+=`<tr class="${isPast?'has-result':'pending'}">
+          <td class="r-day">${dayLabel}</td>
+          <td class="r-date">${dateLabel}</td>
+          <td colspan="10" class="r-pending">${isPast?'—':'·'}</td>
+        </tr>`;
+        return;
+      }
+
+      // Build bet balls
+      let betHtml='<div class="balls">';
+      if(result.bet&&result.bet.length){
+        result.bet.forEach(n=>{ betHtml+=`<span class="ball main" style="background:${numBgClr};color:${numFgClr}">${n}</span>`; });
+      }
+      betHtml+='</div>';
+
+      // Extra balls (estrellas, etc.)
+      let extraHtml='';
+      if(hasExtra&&result.extra&&result.extra.length){
+        extraHtml='<div class="balls">';
+        result.extra.forEach(n=>{ extraHtml+=`<span class="ball extra" style="background:${extBgClr};color:${extFgClr}">${n}</span>`; });
+        extraHtml+='</div>';
+      }
+
+      // Complementary
+      let compHtml='';
+      if(hasComp&&result.other?.complementary?.length){
+        compHtml='<div class="balls">';
+        result.other.complementary.forEach(n=>{ compHtml+=`<span class="ball comp" style="background:${compBgClr};color:${compFgClr}">${n}</span>`; });
+        compHtml+='</div>';
+      }
+
+      // Refund
+      let refHtml='';
+      if(hasRefund&&result.other?.refund!=null){
+        refHtml=`<span class="ball refund" style="background:${refBgClr};color:${refFgClr}">${result.other.refund}</span>`;
+      }
+
+      // Code A (El Millón, Joker, etc.)
+      let codeAHtml='';
+      if(hasCodeA&&result.other?.code_a?.length){
+        codeAHtml=result.other.code_a.slice(0,2).join(' · ');
+      }
+
+      rowsHtml+=`<tr class="has-result">
+        <td class="r-day">${dayLabel}</td>
+        <td class="r-date">${dateLabel}</td>
+        <td>${betHtml}</td>
+        ${hasExtra?`<td>${extraHtml}</td>`:''}
+        ${hasComp?`<td>${compHtml}</td>`:''}
+        ${hasRefund?`<td>${refHtml}</td>`:''}
+        ${hasCodeA?`<td class="r-extra">${esc(codeAHtml)}</td>`:''}
+        ${hasCodeB?`<td class="r-extra">${esc(result.other?.code_b||'')}</td>`:''}
+      </tr>`;
+    });
+
+    // Build table headers
+    let thHtml=`<th>Día</th><th>Fecha</th><th>Combinación</th>`;
+    if(hasExtra) thHtml+=`<th>${esc(game.extra_name||'Extras')}</th>`;
+    if(hasComp)  thHtml+=`<th>C</th>`;
+    if(hasRefund)thHtml+=`<th>R</th>`;
+    if(hasCodeA) thHtml+=`<th>${esc(game.code_a_name||'Código')}</th>`;
+    if(hasCodeB) thHtml+=`<th>${esc(game.code_b_name||'Código B')}</th>`;
+
+    const block=document.createElement('div');
+    block.className='result-block';
+    block.style.animationDelay=`${gi*50}ms`;
+    block.innerHTML=`
+      <div class="result-block-header">
+        <div class="result-block-bar" style="background:${barClr}"></div>
+        ${logoSrc?`<img class="result-block-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
+        <div class="result-block-name">${esc(game.name||'Juego '+gameId)}</div>
+        <div class="result-week-label">${draws.length} resultado${draws.length!==1?'s':''}</div>
+      </div>
+      <table class="result-table">
+        <thead><tr>${thHtml}</tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>`;
+    grid.appendChild(block);
   });
 }
 
-// ── LOAD ALL ─────────────────────────────────
-async function loadAllData() {
+// ── COUNTDOWN ────────────────────────
+function startCountdown(elId,dateStr,game){
+  let drawHour='20:00';
+  try{const h=JSON.parse(game.draw_hours||'{}');const v=Object.values(h);if(v.length)drawHour=v[0];}catch{}
+  const target=new Date(dateStr+'T'+drawHour+':00');
+  function update(){
+    const el=document.getElementById(elId);if(!el)return;
+    const diff=target-new Date();
+    if(diff<=0){el.textContent='Hoy';el.className='card-countdown urgent';return;}
+    const days=Math.floor(diff/86400000);const hours=Math.floor((diff%86400000)/3600000);const mins=Math.floor((diff%3600000)/60000);
+    let txt='',cls='card-countdown';
+    if(days>1){txt=`${days}d ${hours}h`;}
+    else if(days===1){txt=`${hours}h ${mins}m`;cls+=' soon';}
+    else if(hours>0){txt=`${hours}h ${mins}m`;cls+=' soon';}
+    else{txt=`${mins}m`;cls+=' urgent';}
+    el.textContent=txt;el.className=cls;
+  }
+  update();
+  const t=setInterval(update,30000);countdownTimers.push(t);
+}
+
+// ── FIT AMOUNTS ───────────────────────
+function fitAmountFonts(){
+  document.querySelectorAll('.jackpot-card').forEach(card=>{
+    const wrap=card.querySelector('.card-amount-wrap'),amt=card.querySelector('.card-amount');
+    if(!wrap||!amt)return;
+    let size=Math.min(wrap.clientHeight*.9,90);
+    amt.style.fontSize=size+'px';
+    while(amt.scrollWidth>wrap.clientWidth*.95&&size>20){size-=2;amt.style.fontSize=size+'px';}
+  });
+}
+
+// ── LOAD ALL ──────────────────────────
+async function loadAllData(){
   showLoading(true);
-  await fetchPvInfo(); await fetchGames(); await fetchJackpots();
+  await fetchPvInfo();await fetchGames();
+  await fetchJackpots();await fetchResults();
   showLoading(false);
 }
-async function refreshPvAndGames() { await fetchPvInfo(); await fetchGames(); }
+async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();}
 
-// ── TIMERS ───────────────────────────────────
-function setupTimers(cfg) {
-  Object.values(timers).forEach(clearInterval); timers={};
-  if(cfg.refreshJackpots>0) timers.j=setInterval(fetchJackpots,cfg.refreshJackpots*60000);
-  if(cfg.refreshPvInfo>0)   timers.p=setInterval(refreshPvAndGames,cfg.refreshPvInfo*3600000);
+// ── TIMERS ────────────────────────────
+function setupTimers(cfg){
+  Object.values(timers).forEach(clearInterval);timers={};
+  if(cfg.refreshJackpots>0)timers.j=setInterval(()=>{fetchJackpots();fetchResults();},cfg.refreshJackpots*60000);
+  if(cfg.refreshPvInfo>0)timers.p=setInterval(refreshPvAndGames,cfg.refreshPvInfo*3600000);
 }
 
-// ── UI HELPERS ───────────────────────────────
-function showLoading(show) {
-  document.getElementById('loading').style.display=show?'flex':'none';
-  document.getElementById('app').classList.toggle('visible',!show);
-}
-function setLoadingStep(msg) { document.getElementById('loading-step').textContent=msg; }
-function setStatus(msg,type) { const el=document.getElementById('status-msg'); el.textContent=msg; el.className=type||''; }
-function esc(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+// ── UI HELPERS ────────────────────────
+function showLoading(s){document.getElementById('loading').style.display=s?'flex':'none';document.getElementById('app').classList.toggle('visible',!s);}
+function setLoadingStep(m){document.getElementById('loading-step').textContent=m;}
+function setStatus(m,t){const el=document.getElementById('status-msg');el.textContent=m;el.className=t||'';}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
 
-// ── NAVIGATION ───────────────────────────────
-function openMenu() {
-  showMenu(); document.getElementById('overlay').classList.add('visible');
+// ── NAVIGATION ────────────────────────
+function openMenu(){
+  showMenu();document.getElementById('overlay').classList.add('visible');
   document.getElementById('menu-version').textContent=`v${APP_VERSION} · r${APP_REVISION} · Infolot TV App`;
 }
-function closeOverlay() { document.getElementById('overlay').classList.remove('visible'); }
-function showMenu()   { document.getElementById('modal-menu').style.display='';   document.getElementById('modal-config').style.display='none'; document.getElementById('modal-diag').style.display='none'; }
-function showConfig() { fillConfigForm(loadConfig()); document.getElementById('modal-menu').style.display='none'; document.getElementById('modal-config').style.display=''; document.getElementById('modal-diag').style.display='none'; }
-function showDiag()   { document.getElementById('modal-menu').style.display='none'; document.getElementById('modal-config').style.display='none'; document.getElementById('modal-diag').style.display=''; }
-function goHome()        { closeOverlay(); }
-function manualRefresh() { closeOverlay(); loadAllData(); }
+function closeOverlay(){document.getElementById('overlay').classList.remove('visible');}
+function showMenu(){document.getElementById('modal-menu').style.display='';document.getElementById('modal-config').style.display='none';document.getElementById('modal-diag').style.display='none';}
+function showConfig(){fillConfigForm(loadConfig());document.getElementById('modal-menu').style.display='none';document.getElementById('modal-config').style.display='';document.getElementById('modal-diag').style.display='none';}
+function showDiag(){document.getElementById('modal-menu').style.display='none';document.getElementById('modal-config').style.display='none';document.getElementById('modal-diag').style.display='';}
+function manualRefresh(){closeOverlay();loadAllData();}
 
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'||e.key==='Back') closeOverlay(); });
-window.addEventListener('resize',()=>{ if(document.querySelectorAll('.jackpot-card').length) fitAmountFonts(); });
+document.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Back')closeOverlay();});
+window.addEventListener('resize',()=>{if(document.querySelectorAll('.jackpot-card').length)fitAmountFonts();});
 
-// ── DIAGNOSTICO ──────────────────────────────
-function diagLog(msg,color) { const el=document.getElementById('diag-output'); const line=document.createElement('div'); line.style.color=color||'#8ab4c8'; line.textContent=msg; el.appendChild(line); el.scrollTop=el.scrollHeight; }
-function diagClear() { document.getElementById('diag-output').innerHTML=''; }
-async function diagRun(endpoint) {
-  diagClear();
-  const cfg=loadConfig();
+// ── DIAGNOSTICO ───────────────────────
+function diagLog(m,c){const el=document.getElementById('diag-output');const l=document.createElement('div');l.style.color=c||'#8ab4c8';l.textContent=m;el.appendChild(l);el.scrollTop=el.scrollHeight;}
+function diagClear(){document.getElementById('diag-output').innerHTML='';}
+async function diagRun(endpoint){
+  diagClear();const cfg=loadConfig();
   diagLog(`► Llamada via proxy: ${cfg.proxy}`,'#f0b429');
   diagLog(`  endpoint: ${endpoint}`,'#f0b429');
   diagLog(`  token:  ${cfg.token}`,'#5a7a8e');
   diagLog(`  pass:   ${'•'.repeat(cfg.pass.length)}`,'#5a7a8e');
   diagLog(`  app_id: ${cfg.appid}`,'#5a7a8e');
   diagLog('Enviando petición...','#3a5a6e');
-  try {
+  try{
     const body={_endpoint:endpoint,token:cfg.token,pass:cfg.pass,app_id:cfg.appid};
     const t0=Date.now();
     const resp=await fetch(cfg.proxy.replace('http://','https://'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const ms=Date.now()-t0;
-    const text=await resp.text();
-    diagLog(`✓ Respuesta en ${ms}ms — HTTP ${resp.status}`,resp.ok?'#27c97a':'#e05c2a');
-    diagLog('','');
-    try {
-      const json=JSON.parse(text);
-      const lines=JSON.stringify(json,null,2).split('\n');
-      const MAX=120;
+    const ms=Date.now()-t0;const text=await resp.text();
+    diagLog(`✓ Respuesta en ${ms}ms — HTTP ${resp.status}`,resp.ok?'#27c97a':'#e05c2a');diagLog('','');
+    try{
+      const json=JSON.parse(text);const lines=JSON.stringify(json,null,2).split('\n');const MAX=120;
       lines.slice(0,MAX).forEach(l=>diagLog(l,'#b0ccd8'));
-      if(lines.length>MAX) diagLog(`... (${lines.length-MAX} líneas más en consola)`,'#3a5a6e');
+      if(lines.length>MAX)diagLog(`... (${lines.length-MAX} líneas más en consola)`,'#3a5a6e');
       console.log(`[Diag] ${endpoint}:`,json);
-    } catch { diagLog(text.substring(0,2000),'#b0ccd8'); }
-  } catch(e) { diagLog(`✗ Error: ${e.message}`,'#e05c2a'); }
+    }catch{diagLog(text.substring(0,2000),'#b0ccd8');}
+  }catch(e){diagLog(`✗ Error: ${e.message}`,'#e05c2a');}
 }
 
-// ── BOOT ─────────────────────────────────────
-(function boot() {
+// ── BOOT ──────────────────────────────
+(function boot(){
   const cfg=loadConfig();
-  if(cfg.orient===null) { cfg.orient=detectOrientation(); persistConfig(cfg); }
-  applyTheme(cfg.theme);
-  applyOrientation(cfg.orient);
-  applyBrandColors(cfg.color1,cfg.color2);
-  applyTagline(cfg.tagline, cfg.pvurl);
+  if(cfg.orient===null){cfg.orient=detectOrientation();persistConfig(cfg);}
+  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyTagline(cfg.tagline,cfg.pvurl);
   document.getElementById('app-ver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
-  updateClock(); setInterval(updateClock,30000);
-  setupTimers(cfg);
-  loadAllData();
+  updateClock();setInterval(updateClock,30000);
+  setupTimers(cfg);loadAllData();
 })();
 </script>
 </body>
