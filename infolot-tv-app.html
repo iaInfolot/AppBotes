@@ -646,9 +646,43 @@ body.orient-v #status-bar { padding: 8px 24px; }
     </div>
 
     <div class="modal-actions">
-      <button class="btn btn-primary"   onclick="saveConfig()">💾 Guardar</button>
-      <button class="btn btn-secondary" onclick="showMenu()">← Volver</button>
+      <button class="btn btn-primary"   onclick="saveConfig()">&#128190; Guardar</button>
+      <button class="btn btn-secondary" onclick="showMenu()">&#8592; Volver</button>
       <button class="btn btn-danger"    onclick="resetConfig()">Restablecer</button>
+      <button class="btn btn-secondary" onclick="showDiag()" style="margin-left:8px;">&#128269; Diagn&oacute;stico</button>
+    </div>
+  </div>
+
+  <!-- DIAGNOSTICO -->
+  <div class="modal" id="modal-diag" style="display:none; width:700px; max-width:95vw;">
+    <button class="close-btn" onclick="closeOverlay()">&#10005;</button>
+    <h2>Diagn&oacute;stico</h2>
+    <div class="modal-sub">Prueba de llamadas al WebService</div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+      <button class="btn btn-secondary" onclick="diagRun('pv-info')">&#9654; pv-info</button>
+      <button class="btn btn-secondary" onclick="diagRun('get-games')">&#9654; get-games</button>
+      <button class="btn btn-secondary" onclick="diagRun('next-jackpots')">&#9654; next-jackpots</button>
+      <button class="btn btn-secondary" style="margin-left:auto" onclick="diagClear()">Limpiar</button>
+    </div>
+
+    <div id="diag-output" style="
+      background:#080a0f;
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:14px;
+      font-family:'Courier New',monospace;
+      font-size:.72rem;
+      line-height:1.6;
+      color:#a8c0d0;
+      max-height:50vh;
+      overflow-y:auto;
+      white-space:pre-wrap;
+      word-break:break-all;
+    ">Pulsa un boton para ejecutar la llamada...</div>
+
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn btn-secondary" onclick="showConfig()">&#8592; Volver</button>
     </div>
   </div>
 
@@ -982,6 +1016,72 @@ function showConfig() {
 }
 function goHome()        { closeOverlay(); }
 function manualRefresh() { closeOverlay(); loadAllData(); }
+
+function showDiag() {
+  document.getElementById('modal-config').style.display = 'none';
+  document.getElementById('modal-diag').style.display   = '';
+  document.getElementById('modal-menu').style.display   = 'none';
+}
+
+// ════════════════════════════════════════════
+//  DIAGNÓSTICO
+// ════════════════════════════════════════════
+function diagLog(msg, color) {
+  const el = document.getElementById('diag-output');
+  const line = document.createElement('div');
+  line.style.color = color || '#a8c0d0';
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function diagClear() {
+  document.getElementById('diag-output').innerHTML = '';
+}
+
+async function diagRun(endpoint) {
+  diagClear();
+  const cfg = loadConfig();
+  diagLog(`► Llamada: POST ${cfg.url}/ws/${endpoint}`, '#f0b429');
+  diagLog(`  token:  ${cfg.token}`, '#6a8a9e');
+  diagLog(`  pass:   ${'•'.repeat(cfg.pass.length)}`, '#6a8a9e');
+  diagLog(`  app_id: ${cfg.appid}`, '#6a8a9e');
+  diagLog('', '');
+  diagLog('Enviando petición...', '#5a7a8e');
+
+  try {
+    const body = { token: cfg.token, pass: cfg.pass, app_id: cfg.appid };
+    const t0   = Date.now();
+    const resp = await fetch(`${cfg.url}/ws/${endpoint}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify(body)
+    });
+    const ms   = Date.now() - t0;
+    const text = await resp.text();
+
+    diagLog(`✓ Respuesta en ${ms}ms — HTTP ${resp.status}`, resp.ok ? '#2ecc8a' : '#e05c2a');
+    diagLog('', '');
+
+    try {
+      const json = JSON.parse(text);
+      // Pretty print truncated to avoid flooding
+      const pretty = JSON.stringify(json, null, 2);
+      const lines  = pretty.split('\n');
+      const MAX    = 120;
+      lines.slice(0, MAX).forEach(l => diagLog(l, '#c8dde8'));
+      if (lines.length > MAX)
+        diagLog(`... (${lines.length - MAX} líneas más — copia completa en consola)`, '#5a7a8e');
+      console.log(`[Diagnóstico] ${endpoint}:`, json);
+    } catch {
+      diagLog(text.substring(0, 2000), '#c8dde8');
+    }
+
+  } catch(e) {
+    diagLog(`✗ Error: ${e.message}`, '#e05c2a');
+    console.error(`[Diagnóstico] ${endpoint}:`, e);
+  }
+}
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' || e.key === 'Back') closeOverlay();
