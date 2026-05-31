@@ -707,7 +707,7 @@ const DEFAULTS = {
   refreshPvInfo:   0       // horas
 };
 
-const STORAGE_KEY = 'infolot_cfg_v2';
+const STORAGE_KEY = 'infolot_cfg_v3';
 let gamesMap   = {};   // id_game -> game data
 let pvInfo     = {};
 let timers     = {};
@@ -1055,7 +1055,8 @@ function diagClear() {
 async function diagRun(endpoint) {
   diagClear();
   const cfg = loadConfig();
-  diagLog(`► Llamada: POST ${cfg.url}/ws/${endpoint}`, '#f0b429');
+  diagLog(`► Llamada via proxy: ${cfg.proxy}`, '#f0b429');
+  diagLog(`  endpoint: ${endpoint}`, '#f0b429');
   diagLog(`  token:  ${cfg.token}`, '#6a8a9e');
   diagLog(`  pass:   ${'•'.repeat(cfg.pass.length)}`, '#6a8a9e');
   diagLog(`  app_id: ${cfg.appid}`, '#6a8a9e');
