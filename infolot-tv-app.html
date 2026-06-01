@@ -245,7 +245,7 @@ body.orient-v #main-content{padding:10px 14px 0;}
 body.orient-v #status-bar{padding:5px 14px;}
 body.orient-v .view-tabs{display:none;}
 
-/* D-PAD FOCUS STYLES */
+/* D-PAD FOCUS STYLES — TV Remote Navigation */
 button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
   outline: 3px solid var(--pv-primary) !important;
   outline-offset: 2px;
@@ -429,8 +429,8 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-029';
-const STORAGE_KEY  = 'infolot_cfg_v16';
+const APP_REVISION = '20260601-030';
+const STORAGE_KEY  = 'infolot_cfg_v17';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -614,6 +614,7 @@ async function fetchResults(){
     const gameIds = Object.keys(gamesMap);
     if(!gameIds.length){ setStatus('Sin juegos','error'); return; }
 
+    console.log('[Results] ref:',toYMD(ref),'mon:',monStr,'sun:',sunStr,'today:',toYMD(new Date()));
     setLoadingStep('Cargando resultados semana...');
     const calls = gameIds.map(id => wsCall('last-game-results',{id_game:parseInt(id),limit:7})
       .then(d => Array.isArray(d)?d:[])
@@ -633,7 +634,7 @@ async function fetchResults(){
         }
       });
     });
-    console.log('[Results] week:',monStr,'→',sunStr,'today:',todayStr,'flat results:',flat.length);
+    console.log('[Results] week:',monStr,'→',sunStr,'today:',todayStr,'flat:',flat.length,'sample:',flat.slice(0,3).map(r=>r.id_game+':'+r.date));
 
     lastResultsData = flat;
     if(currentView==='mixed')   renderMixedResults(lastResultsData);
@@ -1170,8 +1171,26 @@ function openMenu(){
   document.getElementById('menu-version').textContent=`v${APP_VERSION} · r${APP_REVISION} · Infolot TV App`;
 }
 function closeOverlay(){document.getElementById('overlay').classList.remove('visible');}
-function showMenu(){document.getElementById('modal-menu').style.display='';document.getElementById('modal-config').style.display='none';document.getElementById('modal-diag').style.display='none';}
-function showConfig(){fillConfigForm(loadConfig());document.getElementById('modal-menu').style.display='none';document.getElementById('modal-config').style.display='';document.getElementById('modal-diag').style.display='none';}
+function showMenu(){
+  document.getElementById('modal-menu').style.display='';
+  document.getElementById('modal-config').style.display='none';
+  document.getElementById('modal-diag').style.display='none';
+  setTimeout(()=>{
+    const first=document.querySelector('#modal-menu button');
+    if(first) first.focus();
+  },50);
+}
+function showConfig(){
+  fillConfigForm(loadConfig());
+  document.getElementById('modal-menu').style.display='none';
+  document.getElementById('modal-config').style.display='';
+  document.getElementById('modal-diag').style.display='none';
+  // Focus first input for D-Pad navigation
+  setTimeout(()=>{
+    const first=document.querySelector('#modal-config input, #modal-config select');
+    if(first) first.focus();
+  },50);
+}
 function showDiag(){document.getElementById('modal-menu').style.display='none';document.getElementById('modal-config').style.display='none';document.getElementById('modal-diag').style.display='';}
 function manualRefresh(){closeOverlay();loadAllData();}
 
