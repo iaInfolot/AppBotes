@@ -1203,14 +1203,12 @@ async function diagRunGameResults(){
       }catch{diagLog(`   Raw: ${text.substring(0,200)}`,'#b0ccd8');}
     }catch(e){diagLog(`   ERROR: ${e.message}`,'#e05c2a');}
   }
-  diagLog('
-✓ Diagnóstico completado','#27c97a');
+  diagLog('✓ Diagnóstico completado','#27c97a');
 }
 
 function diagCopyLog(){
   const el=document.getElementById('diag-output');
-  const text=[...el.querySelectorAll('div')].map(d=>d.textContent).join('
-');
+  const text=[...el.querySelectorAll('div')].map(d=>d.textContent).join('\n');
   navigator.clipboard.writeText(text).then(()=>{
     const btn=event.target;
     const orig=btn.textContent;
