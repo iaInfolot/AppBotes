@@ -245,9 +245,10 @@ body.orient-v #status-bar{padding:5px 14px;}
 body.orient-v .view-tabs{display:none;}
 
 /* D-PAD FOCUS STYLES — TV Remote Navigation */
-button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
-  outline: 3px solid var(--pv-primary) !important;
-  outline-offset: 2px;
+button:focus, select:focus, input:focus, [tabindex]:focus {
+  outline: 4px solid var(--pv-primary) !important;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(240,180,41,0.25) !important;
 }
 .view-tab:focus {
   background: var(--pv-primary) !important;
@@ -259,7 +260,13 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
   background: var(--card2) !important;
 }
 .btn:focus {
-  outline: 3px solid var(--pv-primary) !important;
+  outline: 4px solid var(--pv-primary) !important;
+  box-shadow: 0 0 0 6px rgba(240,180,41,0.25) !important;
+  transform: scale(1.03);
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--pv-primary) !important;
+  box-shadow: 0 0 0 3px rgba(240,180,41,0.3) !important;
 }
 
 /* ANIMATIONS */
@@ -397,10 +404,10 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
       <div class="form-group"><label>Refresco PV+Juegos (horas)</label><input type="number" id="cfg-refresh-pvinfo" min="0" max="168"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="saveConfig()">💾 Guardar</button>
-      <button class="btn btn-secondary" onclick="showMenu()">← Volver</button>
-      <button class="btn btn-secondary" onclick="showDiag()">🔍 Diagnóstico</button>
-      <button class="btn btn-danger" onclick="resetConfig()">Restablecer</button>
+      <button class="btn btn-primary" tabindex="0" onclick="saveConfig()">💾 Guardar</button>
+      <button class="btn btn-secondary" tabindex="0" onclick="showMenu()">← Volver</button>
+      <button class="btn btn-secondary" tabindex="0" onclick="showDiag()">🔍 Diagnóstico</button>
+      <button class="btn btn-danger" tabindex="0" onclick="resetConfig()">Restablecer</button>
     </div>
   </div>
 
@@ -428,7 +435,7 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-035';
+const APP_REVISION = '20260601-036';
 const STORAGE_KEY  = 'infolot_cfg_v21';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -1179,8 +1186,11 @@ function showConfig(){
   document.getElementById('modal-menu').style.display='none';
   document.getElementById('modal-config').style.display='';
   document.getElementById('modal-diag').style.display='none';
-  // Focus first input for D-Pad navigation
   setTimeout(()=>{
+    // Ensure all focusable elements have tabindex
+    document.querySelectorAll('#modal-config input, #modal-config select, #modal-config button').forEach((el,i)=>{
+      el.setAttribute('tabindex', String(i+1));
+    });
     const first=document.querySelector('#modal-config input, #modal-config select');
     if(first) first.focus();
   },50);
