@@ -242,6 +242,24 @@ body.orient-v #main-content{padding:10px 14px 0;}
 body.orient-v #status-bar{padding:5px 14px;}
 body.orient-v .view-tabs{display:none;}
 
+/* D-PAD FOCUS STYLES */
+button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
+  outline: 3px solid var(--pv-primary) !important;
+  outline-offset: 2px;
+}
+.view-tab:focus {
+  background: var(--pv-primary) !important;
+  color: #000 !important;
+}
+.menu-list li button:focus {
+  border-color: var(--pv-primary) !important;
+  color: var(--pv-primary) !important;
+  background: var(--card2) !important;
+}
+.btn:focus {
+  outline: 3px solid var(--pv-primary) !important;
+}
+
 /* ANIMATIONS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
