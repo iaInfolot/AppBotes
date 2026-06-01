@@ -429,8 +429,8 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-030';
-const STORAGE_KEY  = 'infolot_cfg_v17';
+const APP_REVISION = '20260601-031';
+const STORAGE_KEY  = 'infolot_cfg_v18';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -676,8 +676,10 @@ function isCurrentWeekResults(){
 }
 
 function getResultsWeekRef(){
+  // On Mondays, always show previous week until we have results for current week
+  // First Monday sorteo (Bonoloto) is ~21:30, so we can't have results before then
   const now=new Date();
-  if(now.getDay()===1 && now.getHours()<14){
+  if(now.getDay()===1){
     const prev=new Date(now);prev.setDate(now.getDate()-1);return prev;
   }
   return now;
