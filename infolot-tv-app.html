@@ -177,6 +177,63 @@ td.r-pending{color:var(--border);font-size:.85rem;text-align:center;}
 .app-version{font-size:.65rem;color:var(--muted);font-family:var(--font-ui);letter-spacing:1px;}
 #diag-output{background:#050709;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.6;color:#8ab4c8;max-height:50vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;}
 
+/* MIXED VIEW */
+#view-mixed {
+  display:none;
+  flex-direction:row;
+  overflow:hidden;
+  gap:10px;
+  padding:0 24px 12px;
+}
+#view-mixed.active { display:flex; }
+#mixed-jackpots {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+  min-width:0;
+}
+#mixed-results {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  min-height:0;
+  min-width:0;
+}
+.mixed-label {
+  font-family:var(--font-ui);
+  font-size:.65rem;
+  font-weight:600;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:8px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.mixed-label::before { content:''; display:inline-block; width:4px; height:4px; background:var(--pv-primary); border-radius:50%; }
+#mixed-jackpots-grid {
+  flex:1;
+  display:grid;
+  gap:8px;
+  overflow:hidden;
+  min-height:0;
+}
+#mixed-results-scroll {
+  flex:1;
+  overflow-y:auto;
+  min-height:0;
+}
+#mixed-results-grid {
+  display:grid;
+  gap:8px;
+  align-content:start;
+}
+
 /* VERTICAL */
 body.orient-v header{padding:8px 16px;min-height:54px;}
 body.orient-v #pv-name{font-size:1.4rem;}
@@ -213,6 +270,7 @@ body.orient-v .view-tabs{display:none;}
       <div class="view-tabs">
         <button class="view-tab active" id="tab-jackpots" onclick="switchView('jackpots')">🏆 Botes</button>
         <button class="view-tab" id="tab-results"  onclick="switchView('results')">📋 Resultados</button>
+        <button class="view-tab" id="tab-mixed"    onclick="switchView('mixed')">⊞ Mixta</button>
       </div>
       <div id="clock">--:--</div>
       <button id="menu-btn" onclick="openMenu()">☰ Menú</button>
@@ -230,6 +288,18 @@ body.orient-v .view-tabs{display:none;}
       <div id="empty-state">
         <div class="ei">🎰</div>
         <p>No hay botes disponibles</p>
+      </div>
+    </div>
+
+    <!-- VIEW 3: MIXED -->
+    <div class="view" id="view-mixed">
+      <div id="mixed-jackpots">
+        <div class="mixed-label">Próximos Botes</div>
+        <div id="mixed-jackpots-grid"></div>
+      </div>
+      <div id="mixed-results">
+        <div class="mixed-label">Resultados</div>
+        <div id="mixed-results-scroll"><div id="mixed-results-grid"></div></div>
       </div>
     </div>
 
@@ -259,6 +329,7 @@ body.orient-v .view-tabs{display:none;}
     <ul class="menu-list">
       <li><button onclick="switchView('jackpots');closeOverlay()"><span class="menu-icon">🏆</span>Botes</button></li>
       <li><button onclick="switchView('results');closeOverlay()"><span class="menu-icon">📋</span>Resultados</button></li>
+      <li><button onclick="switchView('mixed');closeOverlay()"><span class="menu-icon">⊞</span>Vista Mixta</button></li>
       <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
       <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
     </ul>
@@ -294,6 +365,13 @@ body.orient-v .view-tabs{display:none;}
       <div class="form-group"><label>Orientación</label><select id="cfg-orient"><option value="h">Horizontal</option><option value="v">Vertical</option></select></div>
     </div>
     <div class="cfg-section">Actualización automática</div>
+    <div class="form-group"><label>Vista por defecto al arrancar</label>
+      <select id="cfg-default-view">
+        <option value="jackpots">Botes</option>
+        <option value="results">Resultados</option>
+        <option value="mixed">Mixta (Botes + Resultados)</option>
+      </select>
+    </div>
     <div class="form-row">
       <div class="form-group"><label>Refresco botes (min)</label><input type="number" id="cfg-refresh-jackpots" min="0" max="1440"></div>
       <div class="form-group"><label>Refresco PV+Juegos (horas)</label><input type="number" id="cfg-refresh-pvinfo" min="0" max="168"></div>
@@ -328,8 +406,8 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-018';
-const STORAGE_KEY  = 'infolot_cfg_v11';
+const APP_REVISION = '20260601-020';
+const STORAGE_KEY  = 'infolot_cfg_v13';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -339,7 +417,8 @@ const DEFAULTS = {
   appid:'41461407-985d-4834-973f-1a672edb74e2', token:'1d446400-a63a-4467-bef9-1e661971c931',
   pass:'48].-.TuNa&Pu%26', pvurl:'https://www.webpremium.eu', tagline:'Juega con nosotros en',
   color1:'#f0b429', color2:'#e05c2a', theme:'dark', orient:null,
-  refreshJackpots:0, refreshPvInfo:0
+  refreshJackpots:0, refreshPvInfo:0,
+  defaultView:'jackpots'  // 'jackpots' | 'results' | 'mixed'
 };
 
 let gamesMap={}, pvData={}, timers={}, countdownTimers=[];
@@ -364,7 +443,8 @@ function saveConfig(){
     theme:document.getElementById('cfg-theme').value,
     orient:document.getElementById('cfg-orient').value,
     refreshJackpots:parseInt(document.getElementById('cfg-refresh-jackpots').value)||0,
-    refreshPvInfo:parseInt(document.getElementById('cfg-refresh-pvinfo').value)||0
+    refreshPvInfo:parseInt(document.getElementById('cfg-refresh-pvinfo').value)||0,
+    defaultView:document.getElementById('cfg-default-view').value||'jackpots'
   };
   persistConfig(cfg);
   applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyTagline(cfg.tagline,cfg.pvurl);
@@ -387,6 +467,7 @@ function fillConfigForm(cfg){
   document.getElementById('cfg-orient').value=cfg.orient||detectOrientation();
   document.getElementById('cfg-refresh-jackpots').value=cfg.refreshJackpots;
   document.getElementById('cfg-refresh-pvinfo').value=cfg.refreshPvInfo;
+  document.getElementById('cfg-default-view').value=cfg.defaultView||'jackpots';
 }
 
 function resetConfig(){
@@ -421,14 +502,24 @@ function switchView(view){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
-  document.getElementById('tab-'+view).classList.add('active');
+  const tabEl=document.getElementById('tab-'+view);
+  if(tabEl) tabEl.classList.add('active');
+
+  const sl=document.getElementById('section-label');
   if(view==='jackpots'){
-    document.getElementById('section-label').textContent='Próximos Sorteos';
+    sl.textContent='Próximos Sorteos';
+    sl.style.display='';
     if(lastJackpotsData.length) renderJackpots(lastJackpotsData);
   } else if(view==='results'){
-    document.getElementById('section-label').textContent=resultsWeekLabel();
+    sl.textContent=resultsWeekLabel();
+    sl.style.display='';
     if(lastResultsData.length) renderResults(lastResultsData);
     else fetchResults();
+  } else if(view==='mixed'){
+    sl.style.display='none'; // mixed has own labels inside
+    if(lastJackpotsData.length) renderMixedJackpots(lastJackpotsData);
+    if(lastResultsData.length) renderMixedResults(lastResultsData);
+    else if(!lastResultsData.length) fetchResults();
   }
 }
 
@@ -441,8 +532,9 @@ function updateClock(){
 // ── WS CALL ──────────────────────────
 async function wsCall(endpoint,extra={}){
   const cfg=loadConfig();
-  const body={_endpoint:endpoint,token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
-  const resp=await fetch(cfg.proxy.replace('http://','https://'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const body={token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
+  const url=`${cfg.url}/ws/${endpoint}`;
+  const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
   const json=await resp.json();
   if(json.error)throw new Error(json.error);
@@ -480,6 +572,7 @@ async function fetchJackpots(){
     const data=await wsCall('next-jackpots');
     lastJackpotsData=Array.isArray(data)?data:[];
     renderJackpots(lastJackpotsData);
+    if(currentView==='mixed') renderMixedJackpots(lastJackpotsData);
     document.getElementById('last-update').textContent='Act: '+new Date().toLocaleTimeString('es-ES');
     setStatus('Datos actualizados','ok');
   }catch(e){setStatus('Error: '+e.message,'error');renderJackpots([]);}
@@ -491,6 +584,7 @@ async function fetchResults(){
   try{
     const data=await wsCall('last-results');
     lastResultsData=Array.isArray(data)?data:[];
+    if(currentView==='mixed') renderMixedResults(lastResultsData);
     if(currentView==='results'){
       document.getElementById('section-label').textContent=resultsWeekLabel();
       renderResults(lastResultsData);
@@ -630,7 +724,9 @@ function renderJackpots(data){
 }
 
 // ── RENDER RESULTS ────────────────────
-function renderResults(data){
+function renderResultsInto(data, grid, forceVertical){ return _renderResults(data, grid, forceVertical); }
+function renderResults(data){ _renderResults(data, document.getElementById('results-grid'), false); }
+function _renderResults(data, grid, forceVertical){
   const grid=document.getElementById('results-grid');
   grid.innerHTML='';
 
@@ -659,32 +755,36 @@ function renderResults(data){
     return 'loto';
   }
 
-  // Count match-type games for grid proportions
-  const isV = document.body.classList.contains('orient-v');
+  const isV = forceVertical || document.body.classList.contains('orient-v');
   const matchGames = items.filter(i => getGameType(gamesMap[i.id_game]||{})==='match');
   const otherGames = items.filter(i => getGameType(gamesMap[i.id_game]||{})!=='match');
-
-  // Build grid: match games get narrow columns, others get wider
-  // We use CSS grid with named proportions
-  const allItems = [...otherGames, ...matchGames]; // other games first, match games last
+  // Loto/nacional games first, then all match games in a single narrow column group
+  const allItems = [...otherGames, ...matchGames];
   const nOther = otherGames.length;
   const nMatch = matchGames.length;
 
   let gridCols;
   if(isV){
-    gridCols = '1fr';
+    gridCols='1fr';
   } else if(nMatch===0){
-    const cols = nOther<=2?nOther:nOther<=4?2:nOther<=6?3:4;
-    gridCols = `repeat(${cols},1fr)`;
+    const cols=nOther<=2?nOther:nOther<=4?2:nOther<=6?3:4;
+    gridCols=`repeat(${cols},1fr)`;
   } else if(nOther===0){
-    gridCols = `repeat(${nMatch},1fr)`;
+    // Only match games — single column each
+    gridCols=`repeat(${nMatch},1fr)`;
   } else {
-    // Mix: other games get 2fr each, match games get 1fr each
-    const otherCols = Array(nOther).fill('2fr').join(' ');
-    const matchCols = Array(nMatch).fill('1fr').join(' ');
-    gridCols = otherCols + ' ' + matchCols;
+    // Loto games share most space; all match games share ONE narrow column
+    // We use subgrid trick: loto cols + 1 narrow col for all match games
+    const lotoColW = Math.min(3,nOther);
+    const lotoColStr = Array(nOther).fill('1fr').join(' ');
+    gridCols = lotoColStr + ' 180px'; // narrow fixed col for quiniela/quinigol
   }
-  grid.style.gridTemplateColumns = gridCols;
+  grid.style.gridTemplateColumns=gridCols;
+
+  // Match games must stack in the last column
+  if(!isV && nOther>0 && nMatch>0){
+    grid.style.gridTemplateRows=''; // let rows auto
+  }
 
   allItems.forEach((item, gi) => {
     const game = gamesMap[item.id_game] || {};
@@ -859,6 +959,10 @@ function renderResults(data){
         </div>
       </div>
       <div style="padding:8px 10px;overflow:auto;flex:1">${bodyHtml}</div>`;
+    // Match games go to last column, stacked
+    if(!isV && nOther>0 && nMatch>0 && gameType==='match'){
+      block.style.gridColumn = String(nOther+1);
+    }
     grid.appendChild(block);
   });
 }
@@ -905,6 +1009,89 @@ function fitAmountFonts(){
   document.querySelectorAll('.jackpot-card .card-amount').forEach(amt=>{
     amt.style.fontSize=minSize+'px';
   });
+}
+
+// ── MIXED VIEW RENDERS ──────────────────────────────────────────────────────
+function renderMixedJackpots(data){
+  const grid=document.getElementById('mixed-jackpots-grid');
+  if(!grid) return;
+  grid.innerHTML='';
+  const items=data.filter(item=>!Object.keys(gamesMap).length||gamesMap[item.id_game]);
+  if(!items.length) return;
+  const n=items.length;
+  // In mixed, jackpots panel is vertical-ish — use 1-2 cols
+  const cols=n<=3?1:2;
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  grid.style.gridTemplateRows=`repeat(${Math.ceil(n/cols)},1fr)`;
+  // Reuse jackpots render logic but into mixed grid
+  const maxJ=Math.max(...items.map(i=>parseFloat(i.jackpot)||0));
+  const minDate=items.reduce((m,i)=>(!i.date?m:(!m||i.date<m?i.date:m)),null);
+  items.forEach((item,i)=>{
+    const game=gamesMap[item.id_game]||{};
+    const barClr=game.bg_color||'var(--pv-primary)';
+    const amtClr=game.jackpot_fg_color||'var(--pv-primary)';
+    const jackpot=parseFloat(item.jackpot)||0;
+    const isHighest=jackpot>0&&jackpot===maxJ;
+    const isNext=item.date&&item.date===minDate;
+    let logoSrc='';
+    if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
+    else if(game.logo)     logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
+    const millones=jackpot/1000000;
+    let amountHtml;
+    if(jackpot>=1000000){
+      const milStr=Number.isInteger(millones)?millones.toString():millones.toFixed(1).replace('.',',');
+      const label=millones===1?'MILLÓN DE EUROS':'MILLONES DE EUROS';
+      amountHtml=`<span class="card-amount-number">${milStr}</span><span class="card-amount-label">${label}</span>`;
+    } else {
+      amountHtml=`<span class="card-amount-number">${Math.floor(jackpot).toLocaleString('es-ES')}</span><span class="card-amount-label">EUROS</span>`;
+    }
+    const card=document.createElement('div');
+    card.className='jackpot-card'+(isHighest?' is-highest':'')+(isNext?' is-next':'');
+    card.style.animationDelay=`${i*30}ms`;
+    card.innerHTML=`
+      <div class="card-bar" style="background:${barClr}"></div>
+      <div class="card-header">
+        ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
+        <div class="card-name">${esc(item.name||game.name||'—')}</div>
+      </div>
+      <div class="card-amount-wrap">
+        <div class="card-amount" style="color:${amtClr}">${amountHtml}</div>
+      </div>`;
+    grid.appendChild(card);
+  });
+  setTimeout(()=>{
+    grid.querySelectorAll('.card-amount').forEach(amt=>{
+      const wrap=amt.closest('.card-amount-wrap');
+      if(!wrap) return;
+      let size=Math.min(wrap.clientHeight*.7,60);
+      amt.style.fontSize=size+'px';
+      while(amt.scrollWidth>wrap.clientWidth*.95&&size>14){size-=2;amt.style.fontSize=size+'px';}
+    });
+    // Normalize
+    const sizes=[...grid.querySelectorAll('.card-amount')].map(a=>parseFloat(a.style.fontSize)||60);
+    const minS=Math.min(...sizes);
+    grid.querySelectorAll('.card-amount').forEach(a=>a.style.fontSize=minS+'px');
+  },100);
+}
+
+function renderMixedResults(data){
+  const grid=document.getElementById('mixed-results-grid');
+  if(!grid) return;
+  // In mixed mode, results are in vertical (orient-v) layout
+  // Temporarily fake orient-v for renderResults, then restore
+  document.body.classList.add('orient-v');
+  grid.innerHTML='';
+  // Mini version: just call renderResults logic directing to mixed grid
+  // We swap the target grid temporarily
+  const realGrid=document.getElementById('results-grid');
+  realGrid.style.display='none';
+  // Render into mixed grid directly
+  const tempDiv=document.createElement('div');
+  document.getElementById('results-grid').insertAdjacentElement('afterend',tempDiv);
+  // Simple: clone renderResults output
+  renderResultsInto(data, grid, true);
+  document.body.classList.remove('orient-v');
+  realGrid.style.display='';
 }
 
 // ── LOAD ALL ──────────────────────────
@@ -955,16 +1142,16 @@ function diagLog(m,c){const el=document.getElementById('diag-output');const l=do
 function diagClear(){document.getElementById('diag-output').innerHTML='';}
 async function diagRun(endpoint){
   diagClear();const cfg=loadConfig();
-  diagLog(`► Llamada via proxy: ${cfg.proxy}`,'#f0b429');
-  diagLog(`  endpoint: ${endpoint}`,'#f0b429');
+  diagLog(`► Llamada directa: ${cfg.url}/ws/${endpoint}`,'#f0b429');
   diagLog(`  token:  ${cfg.token}`,'#5a7a8e');
   diagLog(`  pass:   ${'•'.repeat(cfg.pass.length)}`,'#5a7a8e');
   diagLog(`  app_id: ${cfg.appid}`,'#5a7a8e');
   diagLog('Enviando petición...','#3a5a6e');
   try{
-    const body={_endpoint:endpoint,token:cfg.token,pass:cfg.pass,app_id:cfg.appid};
+    const body={token:cfg.token,pass:cfg.pass,app_id:cfg.appid};
     const t0=Date.now();
-    const resp=await fetch(cfg.proxy.replace('http://','https://'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const url=`${cfg.url}/ws/${endpoint}`;
+    const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const ms=Date.now()-t0;const text=await resp.text();
     diagLog(`✓ Respuesta en ${ms}ms — HTTP ${resp.status}`,resp.ok?'#27c97a':'#e05c2a');diagLog('','');
     try{
@@ -983,7 +1170,10 @@ async function diagRun(endpoint){
   applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyTagline(cfg.tagline,cfg.pvurl);
   document.getElementById('app-ver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
   updateClock();setInterval(updateClock,30000);
-  setupTimers(cfg);loadAllData();
+  setupTimers(cfg);
+  // Apply default view before loading data
+  if(cfg.defaultView&&cfg.defaultView!=='jackpots') switchView(cfg.defaultView);
+  loadAllData();
 })();
 </script>
 </body>
