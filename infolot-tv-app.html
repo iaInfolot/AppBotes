@@ -326,7 +326,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-013';
+const APP_REVISION = '20260601-014';
 const STORAGE_KEY  = 'infolot_cfg_v10';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -711,6 +711,7 @@ function renderResults(data){
       // Show all days of the week for this game
       weekDates.forEach(dateStr => {
         const isResult = dateStr === item.date;
+        if(!isResult) console.log('[Results] game',item.id_game,'weekDate',dateStr,'vs result',item.date,'match:',isResult);
         const dd2 = new Date(dateStr + 'T12:00:00');
         const dow = dd2.getDay();
         const dayLabel = DAY_SHORT[dow];
