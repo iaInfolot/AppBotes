@@ -406,7 +406,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-023';
+const APP_REVISION = '20260601-025';
 const STORAGE_KEY  = 'infolot_cfg_v14';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -698,7 +698,10 @@ function renderJackpots(data){
   items.forEach((item,i)=>{
     const game=gamesMap[item.id_game]||{};
     const barClr=game.bg_color||'var(--pv-primary)';
-    const amtClr=game.jackpot_fg_color||'var(--pv-primary)';
+    // Always use game jackpot color; fallback to pv-primary
+    const rawAmtClr=game.jackpot_fg_color||'';
+    const amtClr = (rawAmtClr&&rawAmtClr!=='#000000'&&rawAmtClr!=='#FFFFFF'&&rawAmtClr!=='#ffffff'&&rawAmtClr!=='#000')
+      ? rawAmtClr : 'var(--pv-primary)';
     const jackpot=parseFloat(item.jackpot)||0;
     const isHighest=jackpot>0&&jackpot===maxJ;
     const isNext=item.date&&item.date===minDate;
@@ -860,7 +863,7 @@ function _renderResults(data, grid, forceVertical){
       const hasRefund = game.is_num_refund===1;
       const hasCodeA  = game.is_code_a===1;
 
-      bodyHtml='<table style="width:100%;border-collapse:collapse;table-layout:fixed">';
+      bodyHtml='<div style="width:100%">';
       draws.forEach(r=>{
         const d  = new Date(r.date+'T12:00:00');
         const fd = d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
@@ -869,21 +872,18 @@ function _renderResults(data, grid, forceVertical){
         const cmpB  = hasComp&&r.other?.complementary?.length?balls(r.other.complementary,compBg,compFg,'circle'):'';
         const refB  = hasRefund&&r.other?.refund!=null?ball(r.other.refund,refBg,refFg,'sq'):'';
         const codeA = hasCodeA&&r.other?.code_a?.length?`<span style="font-family:var(--font-ui);font-size:.72rem;color:var(--success);font-weight:700">${esc(r.other.code_a[0])}</span>`:'';
-        bodyHtml+=`
-          <tr><td colspan="10" style="padding:2px 0 0 0;font-family:var(--font-ui);font-size:.7rem;color:var(--muted);letter-spacing:1px">${esc(fd)}</td></tr>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:3px 0 4px 0">
-              <div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">
-                ${betB}
-                ${extB?`<span style="color:var(--muted);font-size:.6rem;margin:0 2px">|</span>${extB}`:''}
-                ${cmpB?`<span style="color:var(--muted);font-size:.6rem;margin:0 2px">C</span>${cmpB}`:''}
-                ${refB?`<span style="color:var(--muted);font-size:.6rem;margin:0 2px">R</span>${refB}`:''}
-                ${codeA?`<span style="color:var(--muted);font-size:.6rem;margin:0 4px">${esc(game.code_a_name||'')}</span>${codeA}`:''}
-              </div>
-            </td>
-          </tr>`;
+        bodyHtml+=`<div style="padding:3px 0 5px 0;border-bottom:1px solid var(--border)">
+            <div style="font-family:var(--font-ui);font-size:.68rem;color:var(--muted);letter-spacing:1px;margin-bottom:4px">${esc(fd)}</div>
+            <div style="display:flex;flex-direction:row;flex-wrap:nowrap;gap:3px;align-items:center;overflow:hidden">
+              ${betB}
+              ${extB?`<span style="color:var(--muted);font-size:.65rem;padding:0 2px">|</span>${extB}`:''}
+              ${cmpB?`<span style="color:var(--muted);font-size:.65rem;padding:0 2px">C</span>${cmpB}`:''}
+              ${refB?`<span style="color:var(--muted);font-size:.65rem;padding:0 2px">R</span>${refB}`:''}
+              ${codeA?`<span style="color:var(--muted);font-size:.65rem;padding:0 3px">${esc(game.code_a_name||'')}</span>${codeA}`:''}
+            </div>
+          </div>`;
       });
-      bodyHtml+='</table>';
+      bodyHtml+='</div>';
     }
 
     // ── MATCH (Quiniela/Quinigol) ─────────────────────────────────
@@ -1040,7 +1040,10 @@ function renderMixedJackpots(data){
   items.forEach((item,i)=>{
     const game=gamesMap[item.id_game]||{};
     const barClr=game.bg_color||'var(--pv-primary)';
-    const amtClr=game.jackpot_fg_color||'var(--pv-primary)';
+    // Always use game jackpot color; fallback to pv-primary
+    const rawAmtClr=game.jackpot_fg_color||'';
+    const amtClr = (rawAmtClr&&rawAmtClr!=='#000000'&&rawAmtClr!=='#FFFFFF'&&rawAmtClr!=='#ffffff'&&rawAmtClr!=='#000')
+      ? rawAmtClr : 'var(--pv-primary)';
     const jackpot=parseFloat(item.jackpot)||0;
     const isHighest=jackpot>0&&jackpot===maxJ;
     const isNext=item.date&&item.date===minDate;
