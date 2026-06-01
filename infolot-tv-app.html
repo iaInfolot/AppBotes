@@ -328,7 +328,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-015';
+const APP_REVISION = '20260601-016';
 const STORAGE_KEY  = 'infolot_cfg_v10';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -590,11 +590,11 @@ function renderJackpots(data){
     let amountHtml;
     if(jackpot >= 1000000){
       const milStr = Number.isInteger(millones) ? millones.toString() : millones.toFixed(1).replace('.',',');
-      const label = millones === 1 ? 'MILLÓN' : 'MILLONES';
-      amountHtml = `<span class="card-amount-number"><span class="card-currency">€</span>${milStr}</span><span class="card-amount-label">${label}</span>`;
+      const label = millones === 1 ? 'MILLÓN DE EUROS' : 'MILLONES DE EUROS';
+      amountHtml = `<span class="card-amount-number">${milStr}</span><span class="card-amount-label">${label}</span>`;
     } else {
       const eurosStr = Math.floor(jackpot).toLocaleString('es-ES');
-      amountHtml = `<span class="card-amount-number"><span class="card-currency">€</span>${eurosStr}</span><span class="card-amount-label">EUROS</span>`;
+      amountHtml = `<span class="card-amount-number">${eurosStr}</span><span class="card-amount-label">EUROS</span>`;
     }
     let addonsHtml='';
     if(item.addons&&item.addons.length){
