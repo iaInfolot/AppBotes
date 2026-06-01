@@ -411,7 +411,9 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
       <button class="btn btn-secondary" onclick="diagRun('get-games')">▶ get-games</button>
       <button class="btn btn-secondary" onclick="diagRun('next-jackpots')">▶ next-jackpots</button>
       <button class="btn btn-secondary" onclick="diagRun('last-results')">▶ last-results</button>
-      <button class="btn btn-secondary" style="margin-left:auto" onclick="diagClear()">Limpiar</button>
+      <button class="btn btn-secondary" onclick="diagRunGameResults()">▶ last-game-results</button>
+      <button class="btn btn-secondary" style="margin-left:auto" onclick="diagCopyLog()">📋 Copiar</button>
+      <button class="btn btn-secondary" onclick="diagClear()">Limpiar</button>
     </div>
     <div id="diag-output">Pulsa un botón para ejecutar la llamada...</div>
     <div class="modal-actions" style="margin-top:12px;">
@@ -424,7 +426,7 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-025';
+const APP_REVISION = '20260601-026';
 const STORAGE_KEY  = 'infolot_cfg_v14';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -1170,6 +1172,65 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Back')clos
 window.addEventListener('resize',()=>{if(document.querySelectorAll('.jackpot-card').length)fitAmountFonts();});
 
 // ── DIAGNOSTICO ───────────────────────
+async function diagRunGameResults(){
+  diagClear();
+  const cfg=loadConfig();
+  const gameIds=Object.keys(gamesMap);
+  if(!gameIds.length){
+    diagLog('ERROR: gamesMap vacío — ejecuta get-games primero','#e05c2a');
+    return;
+  }
+  diagLog(`► last-game-results para ${gameIds.length} juegos LAE`,'#f0b429');
+  diagLog(`  URL: ${cfg.url}/ws/last-game-results`,'#5a7a8e');
+  for(const id of gameIds){
+    const game=gamesMap[id]||{};
+    diagLog(`
+── Juego ${id}: ${game.name||'?'}`,'#f0b429');
+    try{
+      const t0=Date.now();
+      const body={token:cfg.token,pass:cfg.pass,app_id:cfg.appid,id_game:parseInt(id),limit:7};
+      const resp=await fetch(`${cfg.url}/ws/last-game-results`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const ms=Date.now()-t0;
+      const text=await resp.text();
+      diagLog(`   HTTP ${resp.status} en ${ms}ms`,resp.ok?'#27c97a':'#e05c2a');
+      try{
+        const json=JSON.parse(text);
+        const results=json.data||[];
+        diagLog(`   Resultados: ${Array.isArray(results)?results.length:JSON.stringify(results).substring(0,80)}`,'#b0ccd8');
+        if(Array.isArray(results)&&results.length){
+          results.forEach(r=>diagLog(`   ${r.date} is_confirmed:${r.is_confirmed} bet:${JSON.stringify(r.bet).substring(0,60)}`,'#8ab4c8'));
+        }
+      }catch{diagLog(`   Raw: ${text.substring(0,200)}`,'#b0ccd8');}
+    }catch(e){diagLog(`   ERROR: ${e.message}`,'#e05c2a');}
+  }
+  diagLog('
+✓ Diagnóstico completado','#27c97a');
+}
+
+function diagCopyLog(){
+  const el=document.getElementById('diag-output');
+  const text=[...el.querySelectorAll('div')].map(d=>d.textContent).join('
+');
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=event.target;
+    const orig=btn.textContent;
+    btn.textContent='✓ Copiado';
+    setTimeout(()=>btn.textContent=orig,2000);
+  }).catch(()=>{
+    // Fallback for WebView
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn=event.target;
+    const orig=btn.textContent;
+    btn.textContent='✓ Copiado';
+    setTimeout(()=>btn.textContent=orig,2000);
+  });
+}
+
 function diagLog(m,c){const el=document.getElementById('diag-output');const l=document.createElement('div');l.style.color=c||'#8ab4c8';l.textContent=m;el.appendChild(l);el.scrollTop=el.scrollHeight;}
 function diagClear(){document.getElementById('diag-output').innerHTML='';}
 async function diagRun(endpoint){
