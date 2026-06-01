@@ -406,7 +406,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-020';
+const APP_REVISION = '20260601-021';
 const STORAGE_KEY  = 'infolot_cfg_v13';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -545,6 +545,7 @@ async function wsCall(endpoint,extra={}){
 async function fetchPvInfo(){
   setLoadingStep('Cargando datos del punto de venta...');
   try{
+    console.log('[WS] Calling pv-info via',loadConfig().url);
     pvData=await wsCall('pv-info')||{};
     const name=pvData?.company?.name_comercial||pvData?.company?.name_social||'Mi Lotería';
     document.getElementById('pv-name').textContent=name;
@@ -552,17 +553,17 @@ async function fetchPvInfo(){
     document.title=name+' · Botes';
     const cfg=loadConfig();
     applyTagline(cfg.tagline,pvData?.url?.main||cfg.pvurl);
-  }catch(e){console.warn('pv-info:',e.message);document.getElementById('pv-name').textContent='Mi Lotería';}
+  }catch(e){console.error('[WS] pv-info FAILED:',e.message,e);document.getElementById('pv-name').textContent='Mi Lotería';}
 }
 
 // ── GET-GAMES ─────────────────────────
 async function fetchGames(){
-  setLoadingStep('Cargando juegos...');
+  setLoadingStep('Cargando juegos...'); console.log('[WS] Calling get-games via',loadConfig().url);
   try{
     const data=await wsCall('get-games');
     gamesMap={};
     if(data&&typeof data==='object')Object.values(data).forEach(g=>{if(g.lae)gamesMap[g.id]=g;});
-  }catch(e){console.warn('get-games:',e.message);}
+  }catch(e){console.error('[WS] get-games FAILED:',e.message,e);}
 }
 
 // ── NEXT-JACKPOTS ─────────────────────
