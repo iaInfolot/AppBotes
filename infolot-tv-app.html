@@ -326,8 +326,8 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260531-010';
-const STORAGE_KEY  = 'infolot_cfg_v9';
+const APP_REVISION = '20260601-011';
+const STORAGE_KEY  = 'infolot_cfg_v10';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -615,167 +615,158 @@ function renderJackpots(data){
 function renderResults(data){
   const grid=document.getElementById('results-grid');
   grid.innerHTML='';
-  if(!data||!data.length){grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN DATOS</div>';return;}
 
-  // Determine week range to display
-  const ref=getResultsWeekRef();
-  const {mon,sun}=getWeekBounds(ref);
-
-  // Build list of dates Mon→Sun
-  const weekDates=[];
-  for(let d=new Date(mon);d<=sun;d.setDate(d.getDate()+1)){
-    weekDates.push(toYMD(new Date(d)));
+  if(!data||!data.length){
+    grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN DATOS</div>';
+    return;
   }
 
-  // Group results by id_game — last-results returns latest per game
-  // We build week skeleton from game id_days and fill in what we have
-  const byGame={};
-  data.forEach(r=>{
-    if(!r.date)return;
-    if(Object.keys(gamesMap).length&&!gamesMap[r.id_game])return;
-    if(!byGame[r.id_game])byGame[r.id_game]=[];
-    byGame[r.id_game].push(r);
-  });
-  // Also include LAE games that have no results yet this week
-  Object.keys(gamesMap).forEach(id=>{
-    if(!byGame[id])byGame[id]=[];
-  });
+  // Filter to LAE games only
+  const items = data.filter(r => !Object.keys(gamesMap).length || gamesMap[r.id_game]);
+  if(!items.length){
+    grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN RESULTADOS</div>';
+    return;
+  }
 
-  // Determine grid columns for result blocks
-  // Sort game IDs by game name
-  const gameIds=Object.keys(Object.keys(gamesMap).length?gamesMap:byGame);
-  if(!gameIds.length){grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN RESULTADOS ESTA SEMANA</div>';return;}
+  // Determine week label
+  const ref = getResultsWeekRef();
+  const {mon, sun} = getWeekBounds(ref);
 
-  const isV=document.body.classList.contains('orient-v');
-  const cols=isV?1:(gameIds.length<=2?gameIds.length:gameIds.length<=4?2:3);
-  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  // Grid columns
+  const isV = document.body.classList.contains('orient-v');
+  const n = items.length;
+  const cols = isV ? 1 : (n <= 2 ? n : n <= 4 ? 2 : n <= 6 ? 3 : n <= 9 ? 3 : 4);
+  grid.style.gridTemplateColumns = `repeat(${cols},1fr)`;
 
-  gameIds.forEach((gameId,gi)=>{
-    const game=gamesMap[gameId]||{};
-    const draws=byGame[gameId];
-    const barClr=game.bg_color||'var(--pv-primary)';
-    const numBgClr=game.number_bg_color||'#1a2535';
-    const numFgClr=game.number_fg_color||'#ffffff';
-    const extBgClr=game.extra_bg_color||'#c8a000';
-    const extFgClr=game.extra_fg_color||'#000000';
-    const compBgClr=game.num_complementary_bg_color||'#333';
-    const compFgClr=game.num_complementary_fg_color||'#fff';
-    const refBgClr=game.num_refund_bg_color||'#555';
-    const refFgClr=game.num_refund_fg_color||'#fff';
+  items.forEach((item, gi) => {
+    const game = gamesMap[item.id_game] || {};
+    const barClr   = game.bg_color || 'var(--pv-primary)';
+    const numBg    = game.number_bg_color   || '#1a2535';
+    const numFg    = game.number_fg_color   || '#ffffff';
+    const extBg    = game.extra_bg_color    || '#c8a000';
+    const extFg    = game.extra_fg_color    || '#000000';
+    const compBg   = game.num_complementary_bg_color || '#444';
+    const compFg   = game.num_complementary_fg_color || '#fff';
+    const refBg    = game.num_refund_bg_color || '#555';
+    const refFg    = game.num_refund_fg_color || '#fff';
 
     let logoSrc='';
-    if(game.logo_official)logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
-    else if(game.logo)logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
+    if(game.logo_official) logoSrc = game.logo_official.startsWith('http') ? game.logo_official : LOGO_BASE+game.logo_official;
+    else if(game.logo)     logoSrc = game.logo.startsWith('http') ? game.logo : LOGO_BASE+game.logo;
 
-    // Detect which columns to show from game config
-    const hasExtra     = game.num_extra_per_bet>0;
-    const hasComp      = game.is_num_complementary===1;
-    const hasRefund    = game.is_num_refund===1;
-    const hasCodeA     = game.is_code_a===1;
-    const hasCodeB     = game.is_code_b===1&&game.code_b_name&&game.code_b_name.trim();
-    const isSerie      = game.is_num_serie===1;   // Lotería Nacional style
-    const isFraction   = game.is_num_fraction===1;
+    // Detect fields from game config
+    const hasExtra  = game.num_extra_per_bet > 0;
+    const hasComp   = game.is_num_complementary === 1;
+    const hasRefund = game.is_num_refund === 1;
+    const hasCodeA  = game.is_code_a === 1;
+    const hasCodeB  = game.is_code_b === 1 && game.code_b_name && game.code_b_name.trim();
 
-    // Build draw map by date for quick lookup
-    const drawByDate={};
-    draws.forEach(d=>{if(d.date)drawByDate[d.date]=d;});
-    // Also index by game results irrespective of week
-    const allResults=[...draws].sort((a,b)=>a.date>b.date?-1:1);
+    // Date label
+    const d = new Date(item.date + 'T12:00:00');
+    const dateLabel = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
 
-    // Determine which days this game plays
-    const gameDays=game.id_days?game.id_days.split(',').map(x=>parseInt(x.trim())):[];
-    // Map ISO weekday (1=Mon..7=Sun) to our date strings
-    const playDates=weekDates.filter(dateStr=>{
-      const dow=new Date(dateStr+'T12:00:00').getDay();
-      const iso=dow===0?7:dow;
-      return !gameDays.length||gameDays.includes(iso);
-    });
+    // Build bet balls — handle both array and object formats
+    function makeBalls(arr, bg, fg, shape) {
+      if(!arr) return '';
+      const values = Array.isArray(arr) ? arr : Object.values(arr);
+      if(!values.length) return '';
+      const br = shape === 'square' ? '4px' : '50%';
+      return '<div class="balls">' +
+        values.map(n => `<span class="ball" style="background:${bg};color:${fg};border-radius:${br}">${n}</span>`).join('') +
+        '</div>';
+    }
 
-    // Build table rows
-    let rowsHtml='';
-    playDates.forEach(dateStr=>{
-      const result=drawByDate[dateStr];
-      const d=new Date(dateStr+'T12:00:00');
-      const dow=d.getDay();
-      const dayLabel=DAY_SHORT[dow];
-      const dateLabel=(d.getDate())+'/'+(String(d.getMonth()+1).padStart(2,'0'));
-      const now=new Date();
-      const isPast=d<=now;
+    const betHtml   = makeBalls(item.bet, numBg, numFg, 'circle');
+    const extraHtml = hasExtra ? makeBalls(item.extra, extBg, extFg, 'square') : '';
+    const compHtml  = hasComp && item.other?.complementary?.length
+      ? makeBalls(item.other.complementary, compBg, compFg, 'circle') : '';
+    const refHtml   = hasRefund && item.other?.refund != null
+      ? `<span class="ball" style="background:${refBg};color:${refFg};border-radius:4px">${item.other.refund}</span>` : '';
+    const codeAHtml = hasCodeA && item.other?.code_a?.length
+      ? item.other.code_a.slice(0,2).join(' \u00B7 ') : '';
 
-      if(!result||!result.is_confirmed){
-        // No result yet
-        rowsHtml+=`<tr class="${isPast?'has-result':'pending'}">
-          <td class="r-day">${dayLabel}</td>
-          <td class="r-date">${dateLabel}</td>
-          <td colspan="10" class="r-pending">${isPast?'—':'·'}</td>
-        </tr>`;
-        return;
-      }
+    // Confirmed badge
+    const confirmed = item.is_confirmed || item.other?.porc_complete >= 100;
+    const badge = confirmed
+      ? `<span style="font-family:var(--font-ui);font-size:.65rem;letter-spacing:1px;color:var(--success);margin-left:8px;">&#10003; OFICIAL</span>`
+      : `<span style="font-family:var(--font-ui);font-size:.65rem;letter-spacing:1px;color:var(--muted);margin-left:8px;">PROVISIONAL</span>`;
 
-      // Build bet balls
-      let betHtml='<div class="balls">';
-      if(result.bet&&result.bet.length){
-        result.bet.forEach(n=>{ betHtml+=`<span class="ball main" style="background:${numBgClr};color:${numFgClr}">${n}</span>`; });
-      }
-      betHtml+='</div>';
+    // Build rows — one result per entry (last-results gives 1 per game)
+    // Show skeleton of week days from id_days, fill with result where date matches
+    const gameDays = game.id_days ? game.id_days.split(',').map(x=>parseInt(x.trim())) : [];
+    const weekDates = [];
+    for(let dd=new Date(mon); dd<=sun; dd.setDate(dd.getDate()+1)){
+      const iso = dd.getDay()===0?7:dd.getDay();
+      if(!gameDays.length || gameDays.includes(iso)) weekDates.push(toYMD(new Date(dd)));
+    }
 
-      // Extra balls (estrellas, etc.)
-      let extraHtml='';
-      if(hasExtra&&result.extra&&result.extra.length){
-        extraHtml='<div class="balls">';
-        result.extra.forEach(n=>{ extraHtml+=`<span class="ball extra" style="background:${extBgClr};color:${extFgClr}">${n}</span>`; });
-        extraHtml+='</div>';
-      }
+    let rowsHtml = '';
+    const now = new Date();
 
-      // Complementary
-      let compHtml='';
-      if(hasComp&&result.other?.complementary?.length){
-        compHtml='<div class="balls">';
-        result.other.complementary.forEach(n=>{ compHtml+=`<span class="ball comp" style="background:${compBgClr};color:${compFgClr}">${n}</span>`; });
-        compHtml+='</div>';
-      }
+    // If result date is in current week, use week skeleton
+    const resultInWeek = item.date >= toYMD(mon) && item.date <= toYMD(sun);
 
-      // Refund
-      let refHtml='';
-      if(hasRefund&&result.other?.refund!=null){
-        refHtml=`<span class="ball refund" style="background:${refBgClr};color:${refFgClr}">${result.other.refund}</span>`;
-      }
+    if(resultInWeek && weekDates.length > 0) {
+      // Show all days of the week for this game
+      weekDates.forEach(dateStr => {
+        const isResult = dateStr === item.date;
+        const dd2 = new Date(dateStr + 'T12:00:00');
+        const dow = dd2.getDay();
+        const dayLabel = DAY_SHORT[dow];
+        const fmtDate = dd2.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+        const isPast = dd2 <= now;
 
-      // Code A (El Millón, Joker, etc.)
-      let codeAHtml='';
-      if(hasCodeA&&result.other?.code_a?.length){
-        codeAHtml=result.other.code_a.slice(0,2).join(' · ');
-      }
-
-      rowsHtml+=`<tr class="has-result">
-        <td class="r-day">${dayLabel}</td>
-        <td class="r-date">${dateLabel}</td>
+        if(isResult) {
+          rowsHtml += `<tr class="has-result">
+            <td class="r-day">${dayLabel}</td>
+            <td class="r-date">${fmtDate}</td>
+            <td>${betHtml}</td>
+            ${hasExtra  ? `<td>${extraHtml}</td>` : ''}
+            ${hasComp   ? `<td>${compHtml}</td>` : ''}
+            ${hasRefund ? `<td>${refHtml}</td>` : ''}
+            ${hasCodeA  ? `<td class="r-extra">${esc(codeAHtml)}</td>` : ''}
+          </tr>`;
+        } else {
+          rowsHtml += `<tr class="${isPast?'has-result':'pending'}">
+            <td class="r-day">${dayLabel}</td>
+            <td class="r-date">${fmtDate}</td>
+            <td colspan="10" style="color:var(--muted);text-align:center">${isPast?'\u2014':'\u00B7'}</td>
+          </tr>`;
+        }
+      });
+    } else {
+      // Result is from previous week or no id_days — just show what we have
+      const dd2 = new Date(item.date + 'T12:00:00');
+      const dow = dd2.getDay();
+      rowsHtml = `<tr class="has-result">
+        <td class="r-day">${DAY_SHORT[dow]}</td>
+        <td class="r-date">${dd2.toLocaleDateString('es-ES',{day:'numeric',month:'short'})}</td>
         <td>${betHtml}</td>
-        ${hasExtra?`<td>${extraHtml}</td>`:''}
-        ${hasComp?`<td>${compHtml}</td>`:''}
-        ${hasRefund?`<td>${refHtml}</td>`:''}
-        ${hasCodeA?`<td class="r-extra">${esc(codeAHtml)}</td>`:''}
-        ${hasCodeB?`<td class="r-extra">${esc(result.other?.code_b||'')}</td>`:''}
+        ${hasExtra  ? `<td>${extraHtml}</td>` : ''}
+        ${hasComp   ? `<td>${compHtml}</td>` : ''}
+        ${hasRefund ? `<td>${refHtml}</td>` : ''}
+        ${hasCodeA  ? `<td class="r-extra">${esc(codeAHtml)}</td>` : ''}
       </tr>`;
-    });
+    }
 
-    // Build table headers
-    let thHtml=`<th>Día</th><th>Fecha</th><th>Combinación</th>`;
-    if(hasExtra) thHtml+=`<th>${esc(game.extra_name||'Extras')}</th>`;
-    if(hasComp)  thHtml+=`<th>C</th>`;
-    if(hasRefund)thHtml+=`<th>R</th>`;
-    if(hasCodeA) thHtml+=`<th>${esc(game.code_a_name||'Código')}</th>`;
-    if(hasCodeB) thHtml+=`<th>${esc(game.code_b_name||'Código B')}</th>`;
+    // Table headers
+    let thHtml = `<th>D\u00EDa</th><th>Fecha</th><th>Combinaci\u00F3n</th>`;
+    if(hasExtra)  thHtml += `<th>${esc(game.extra_name||'Extras')}</th>`;
+    if(hasComp)   thHtml += `<th>C</th>`;
+    if(hasRefund) thHtml += `<th>R</th>`;
+    if(hasCodeA)  thHtml += `<th>${esc(game.code_a_name||'C\u00F3digo')}</th>`;
 
-    const block=document.createElement('div');
-    block.className='result-block';
-    block.style.animationDelay=`${gi*50}ms`;
-    block.innerHTML=`
+    const block = document.createElement('div');
+    block.className = 'result-block';
+    block.style.animationDelay = `${gi*50}ms`;
+    block.innerHTML = `
       <div class="result-block-header">
         <div class="result-block-bar" style="background:${barClr}"></div>
-        ${logoSrc?`<img class="result-block-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
-        <div class="result-block-name">${esc(game.name||'Juego '+gameId)}</div>
-        <div class="result-week-label">${draws.length} resultado${draws.length!==1?'s':''}</div>
+        ${logoSrc ? `<img class="result-block-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` : ''}
+        <div class="result-block-name">${esc(game.name||'Juego '+item.id_game)}</div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          ${badge}
+        </div>
       </div>
       <table class="result-table">
         <thead><tr>${thHtml}</tr></thead>
