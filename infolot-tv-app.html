@@ -430,7 +430,7 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
 const APP_REVISION = '20260601-026';
-const STORAGE_KEY  = 'infolot_cfg_v15';
+const STORAGE_KEY  = 'infolot_cfg_v16';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -621,15 +621,19 @@ async function fetchResults(){
     const results = await Promise.all(calls);
 
     // Flatten and filter to current week only
+    // Also accept today's date (lunes) as it may have a new result
+    const todayStr = toYMD(new Date());
     const flat = [];
     results.forEach((gameResults,idx)=>{
       const id = parseInt(gameIds[idx]);
       gameResults.forEach(r=>{
-        if(r.date && r.date>=monStr && r.date<=sunStr){
+        // Include if in week range OR is today
+        if(r.date && (r.date>=monStr && r.date<=sunStr || r.date===todayStr)){
           flat.push({...r, id_game:id});
         }
       });
     });
+    console.log('[Results] week:',monStr,'→',sunStr,'today:',todayStr,'flat results:',flat.length);
 
     lastResultsData = flat;
     if(currentView==='mixed')   renderMixedResults(lastResultsData);
@@ -1187,8 +1191,7 @@ async function diagRunGameResults(){
   diagLog(`  URL: ${cfg.url}/ws/last-game-results`,'#5a7a8e');
   for(const id of gameIds){
     const game=gamesMap[id]||{};
-    diagLog(`
-── Juego ${id}: ${game.name||'?'}`,'#f0b429');
+    diagLog(`\n── Juego ${id}: ${game.name||'?'}`,'#f0b429');
     try{
       const t0=Date.now();
       const body={token:cfg.token,pass:cfg.pass,app_id:cfg.appid,id_game:parseInt(id),limit:7};
