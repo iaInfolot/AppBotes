@@ -406,7 +406,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-021';
+const APP_REVISION = '20260601-022';
 const STORAGE_KEY  = 'infolot_cfg_v13';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -728,7 +728,6 @@ function renderJackpots(data){
 function renderResultsInto(data, grid, forceVertical){ return _renderResults(data, grid, forceVertical); }
 function renderResults(data){ _renderResults(data, document.getElementById('results-grid'), false); }
 function _renderResults(data, grid, forceVertical){
-  const grid=document.getElementById('results-grid');
   grid.innerHTML='';
 
   if(!data||!data.length){
