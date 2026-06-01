@@ -77,8 +77,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .card-logo{width:34px;height:34px;object-fit:contain;border-radius:6px;flex-shrink:0;}
 .card-name{font-family:var(--font-ui);font-size:1.15rem;font-weight:700;letter-spacing:.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;line-height:1.1;}
 .card-amount-wrap{flex:1;display:flex;align-items:center;justify-content:flex-end;min-height:0;padding-right:4px;}
-.card-amount{font-family:var(--font-display);letter-spacing:1px;line-height:1;text-align:right;}
+.card-amount{font-family:var(--font-display);letter-spacing:1px;line-height:1;text-align:right;display:flex;flex-direction:column;align-items:flex-end;}
+.card-amount-number{display:block;line-height:1;}
 .card-currency{font-size:.5em;opacity:.65;margin-right:2px;vertical-align:super;}
+.card-amount-label{font-family:var(--font-ui);font-size:.28em;font-weight:700;letter-spacing:4px;opacity:.75;line-height:1.2;text-align:right;}
 .card-footer{flex-shrink:0;margin-top:6px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;}
 .card-footer-left{display:flex;flex-direction:column;gap:4px;min-width:0;}
 .card-date{font-family:var(--font-ui);font-size:.85rem;font-weight:600;color:var(--text2);letter-spacing:.5px;}
@@ -326,7 +328,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-014';
+const APP_REVISION = '20260601-015';
 const STORAGE_KEY  = 'infolot_cfg_v10';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -509,7 +511,13 @@ function getWeekBounds(refDate){
   return {mon,sun};
 }
 
-function toYMD(d){return d.toISOString().slice(0,10);}
+function toYMD(d){
+  // Use local date parts to avoid UTC offset shifting the day
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
 
 function isCurrentWeekResults(){
   // On Mondays before first draw (~14:00), show previous week
@@ -577,7 +585,17 @@ function renderJackpots(data){
     if(game.logo_official)logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
     else if(game.logo)logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
     const dateStr=item.date?new Date(item.date+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}):'';
-    const amount=Math.floor(jackpot).toLocaleString('es-ES');
+    // Format amount: millions label or euros label
+    const millones = jackpot / 1000000;
+    let amountHtml;
+    if(jackpot >= 1000000){
+      const milStr = Number.isInteger(millones) ? millones.toString() : millones.toFixed(1).replace('.',',');
+      const label = millones === 1 ? 'MILLÓN' : 'MILLONES';
+      amountHtml = `<span class="card-amount-number"><span class="card-currency">€</span>${milStr}</span><span class="card-amount-label">${label}</span>`;
+    } else {
+      const eurosStr = Math.floor(jackpot).toLocaleString('es-ES');
+      amountHtml = `<span class="card-amount-number"><span class="card-currency">€</span>${eurosStr}</span><span class="card-amount-label">EUROS</span>`;
+    }
     let addonsHtml='';
     if(item.addons&&item.addons.length){
       addonsHtml='<div class="card-addons">'+item.addons.map(a=>{
@@ -596,7 +614,7 @@ function renderJackpots(data){
         <div class="card-name">${esc(item.name||game.name||'—')}</div>
       </div>
       <div class="card-amount-wrap">
-        <div class="card-amount" style="color:${amtClr}"><span class="card-currency">€</span>${amount}</div>
+        <div class="card-amount" style="color:${amtClr}">${amountHtml}</div>
       </div>
       <div class="card-footer">
         <div class="card-footer-left">
@@ -711,7 +729,7 @@ function renderResults(data){
       // Show all days of the week for this game
       weekDates.forEach(dateStr => {
         const isResult = dateStr === item.date;
-        if(!isResult) console.log('[Results] game',item.id_game,'weekDate',dateStr,'vs result',item.date,'match:',isResult);
+
         const dd2 = new Date(dateStr + 'T12:00:00');
         const dow = dd2.getDay();
         const dayLabel = DAY_SHORT[dow];
@@ -804,9 +822,10 @@ function fitAmountFonts(){
   document.querySelectorAll('.jackpot-card').forEach(card=>{
     const wrap=card.querySelector('.card-amount-wrap'),amt=card.querySelector('.card-amount');
     if(!wrap||!amt)return;
-    let size=Math.min(wrap.clientHeight*.9,90);
+    // Reserve ~25% height for the label below the number
+    let size=Math.min(wrap.clientHeight*.72,80);
     amt.style.fontSize=size+'px';
-    while(amt.scrollWidth>wrap.clientWidth*.95&&size>20){size-=2;amt.style.fontSize=size+'px';}
+    while(amt.scrollWidth>wrap.clientWidth*.95&&size>18){size-=2;amt.style.fontSize=size+'px';}
   });
 }
 
