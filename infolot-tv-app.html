@@ -42,8 +42,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .title-block{min-width:0;}
 #pv-name{font-family:var(--font-display);font-size:1.8rem;letter-spacing:3px;color:var(--pv-primary);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #pv-tagline{font-family:var(--font-ui);font-size:.72rem;color:var(--text2);letter-spacing:2px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#pv-tagline a{color:var(--pv-primary);text-decoration:none;}
-#pv-tagline a:hover{text-decoration:underline;}
+#pv-tagline span{color:var(--pv-primary);}
 .header-right{display:flex;align-items:center;gap:12px;flex-shrink:0;}
 
 /* VIEW SWITCHER in header */
@@ -283,7 +282,7 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
       <img id="pv-logo" src="" alt="">
       <div class="title-block">
         <div id="pv-name">—</div>
-        <div id="pv-tagline">Juega con nosotros en <a id="pv-url" href="#" target="_blank">webpremium.eu</a></div>
+        <div id="pv-tagline">Juega con nosotros en <span id="pv-url">webpremium.eu</span></div>
       </div>
     </div>
     <div class="header-right">
@@ -429,7 +428,7 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-034';
+const APP_REVISION = '20260601-035';
 const STORAGE_KEY  = 'infolot_cfg_v21';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -516,7 +515,7 @@ function applyTagline(tagline,pvurl){
   if(!el||!link)return;
   const display=pvurl?pvurl.replace(/^https?:\/\//,''):'';
   el.childNodes[0].textContent=(tagline||'Juega con nosotros en')+' ';
-  link.textContent=display;link.href=pvurl||'#';
+  link.textContent=display;
 }
 
 // ── VIEW SWITCHER ────────────────────
