@@ -429,8 +429,8 @@ button:focus, select:focus, input:focus, a:focus, [tabindex]:focus {
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-032';
-const STORAGE_KEY  = 'infolot_cfg_v19';
+const APP_REVISION = '20260601-033';
+const STORAGE_KEY  = 'infolot_cfg_v20';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -788,12 +788,12 @@ function renderResultsInto(data, grid, forceVertical){ return _renderResults(dat
 function renderResults(data){ _renderResults(data, document.getElementById('results-grid'), false); }
 function _renderResults(data, grid, forceVertical){
   grid.innerHTML='';
-
   if(!data||!data.length){
     grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN RESULTADOS</div>';
     return;
   }
 
+  // ── GAME TYPE DETECTION ─────────────────────────────────────
   function getGameType(game){
     if(game.is_link_match===1) return 'match';
     if(game.is_num_serie===1||game.is_num_fraction===1) return 'nacional';
@@ -802,7 +802,7 @@ function _renderResults(data, grid, forceVertical){
 
   const isV = forceVertical || document.body.classList.contains('orient-v');
 
-  // Group results by game, sort by date asc
+  // Group by game, sort by date asc
   const byGame = {};
   data.forEach(r=>{
     if(!gamesMap[r.id_game]) return;
@@ -811,68 +811,113 @@ function _renderResults(data, grid, forceVertical){
   });
   Object.values(byGame).forEach(arr=>arr.sort((a,b)=>a.date>b.date?1:-1));
 
-  const matchIds = Object.keys(byGame).filter(id=>getGameType(gamesMap[id]||{})==='match');
-  const otherIds = Object.keys(byGame).filter(id=>getGameType(gamesMap[id]||{})!=='match');
-  const allIds   = [...otherIds, ...matchIds];
-  const nOther   = otherIds.length;
-  const nMatch   = matchIds.length;
+  // ── LAYOUT ASSIGNMENT ────────────────────────────────────────
+  // Fixed game IDs from SELAE:
+  // 1=Euromillón, 2=Primitiva, 3=EuroDreams? 4=Bonoloto, 5=El Gordo,
+  // 7=Lotería Nacional, 21=LotoTurf, 25=Quiniela, 26=QuiniGol, 43=EuroDreams
+  // Layout:
+  //   col1: Euromillón(1) + EuroDreams(3/43)
+  //   col2: La Primitiva(2) + El Gordo(5)
+  //   col3: Bonoloto(4)
+  //   col4: Quiniela(25) + QuiniGol(26)  [narrow]
+  //   bottom row col1-3: Lotería Nacional(7) + LotoTurf(21)
 
-  if(!allIds.length){
-    grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN RESULTADOS ESTA SEMANA</div>';
+  const LAYOUT = {
+    1:  {col:1, group:'top'},    // Euromillón
+    3:  {col:1, group:'top'},    // EuroDreams (alt id)
+    43: {col:1, group:'top'},    // EuroDreams
+    2:  {col:2, group:'top'},    // La Primitiva
+    5:  {col:2, group:'top'},    // El Gordo
+    4:  {col:3, group:'top'},    // Bonoloto
+    25: {col:4, group:'match'},  // Quiniela
+    26: {col:4, group:'match'},  // QuiniGol
+    7:  {col:'bottom', group:'bottom'}, // Lotería Nacional
+    21: {col:'bottom', group:'bottom'}, // LotoTurf
+  };
+
+  // Collect games by column
+  const cols = {1:[], 2:[], 3:[], 4:[], bottom:[]};
+  const unknownGames = [];
+  Object.keys(byGame).forEach(id=>{
+    const lid = LAYOUT[parseInt(id)];
+    if(lid) cols[lid.col].push(parseInt(id));
+    else unknownGames.push(parseInt(id));
+  });
+  // Put unknown games in col1 or col2
+  unknownGames.forEach((id,i)=> cols[i%2===0?1:2].push(id));
+
+  if(isV){
+    // Vertical: simple single column
+    grid.style.cssText = 'display:flex;flex-direction:column;gap:8px;overflow:hidden;height:100%';
+    [...cols[1],...cols[2],...cols[3],...cols[4],...cols.bottom].forEach((gameId,gi)=>{
+      const block = buildBlock(gameId, byGame[gameId]||[], gi, false);
+      if(block) grid.appendChild(block);
+    });
     return;
   }
 
-  // Layout:
-  // - Other games: auto-fit columns, rows height = auto (content-driven, no fixed rows)
-  // - Match games: single narrow-ish column on the right, stacked, spanning all rows
-  // Grid uses: repeat(lCols, 1fr) [matchColW]
-  // Other blocks placed normally; match blocks placed in last column, auto rows
+  // ── HORIZONTAL LAYOUT ────────────────────────────────────────
+  // Grid: 3 equal cols + 1 narrow col (Quiniela)
+  // Rows: top row (auto height) + bottom row (auto height)
+  grid.style.cssText = `
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 200px;
+    grid-template-rows: 1fr auto;
+    gap: 8px;
+    height: 100%;
+    overflow: hidden;
+    align-items: stretch;
+  `;
 
-  let lCols, matchColW;
-  if(isV){
-    lCols = 1; matchColW = '1fr';
-    grid.style.gridTemplateColumns = '1fr';
-    grid.style.gridTemplateRows    = '';
-    grid.style.alignItems          = 'start';
-  } else if(nMatch===0){
-    lCols = nOther<=2?nOther:nOther<=4?2:nOther<=6?3:4;
-    grid.style.gridTemplateColumns = `repeat(${lCols},1fr)`;
-    grid.style.gridTemplateRows    = '';
-    grid.style.alignItems          = 'start';
-  } else if(nOther===0){
-    lCols = 0; matchColW = `repeat(${nMatch},1fr)`;
-    grid.style.gridTemplateColumns = matchColW;
-    grid.style.gridTemplateRows    = '';
-    grid.style.alignItems          = 'start';
-  } else {
-    lCols = nOther<=2?nOther:nOther<=4?2:nOther<=6?3:4;
-    // Match column: wider for team names — 220px per match game
-    matchColW = nMatch===1 ? '220px' : `repeat(${nMatch},220px)`;
-    grid.style.gridTemplateColumns = `repeat(${lCols},1fr) ${matchColW}`;
-    grid.style.gridTemplateRows    = '';
-    grid.style.alignItems          = 'start';
-  }
+  // ── COLUMN WRAPPERS ──────────────────────────────────────────
+  // Col 1 top: Euromillón + EuroDreams stacked
+  const col1 = document.createElement('div');
+  col1.style.cssText = 'display:flex;flex-direction:column;gap:8px;grid-column:1;grid-row:1;min-height:0;overflow:hidden;';
+  cols[1].forEach((gameId,gi)=>{
+    const b = buildBlock(gameId, byGame[gameId]||[], gi, false);
+    if(b){ b.style.flex='1'; b.style.minHeight='0'; col1.appendChild(b); }
+  });
+  grid.appendChild(col1);
 
-  // Ball size — auto-fit based on available space
-  // With 4 cols and 7 rows of balls, ~28px works well
-  const ballSz = 28;
+  // Col 2 top: La Primitiva + El Gordo stacked
+  const col2 = document.createElement('div');
+  col2.style.cssText = 'display:flex;flex-direction:column;gap:8px;grid-column:2;grid-row:1;min-height:0;overflow:hidden;';
+  cols[2].forEach((gameId,gi)=>{
+    const b = buildBlock(gameId, byGame[gameId]||[], gi, false);
+    if(b){ b.style.flex='1'; b.style.minHeight='0'; col2.appendChild(b); }
+  });
+  grid.appendChild(col2);
 
-  function ball(n, bg, fg, shape){
-    const br = shape==='sq' ? '4px' : '50%';
-    return `<span style="display:inline-flex;align-items:center;justify-content:center;` +
-      `width:${ballSz}px;height:${ballSz}px;background:${bg};color:${fg};` +
-      `border-radius:${br};font-family:var(--font-ui);font-size:.78rem;font-weight:700;` +
-      `flex-shrink:0;margin:1px">${n}</span>`;
-  }
-  function balls(arr, bg, fg, shape){
-    if(!arr) return '';
-    const vals = Array.isArray(arr)?arr:Object.values(arr);
-    return vals.map(n=>ball(n,bg,fg,shape)).join('');
-  }
+  // Col 3 top: Bonoloto alone
+  const col3 = document.createElement('div');
+  col3.style.cssText = 'display:flex;flex-direction:column;gap:8px;grid-column:3;grid-row:1;min-height:0;overflow:hidden;';
+  cols[3].forEach((gameId,gi)=>{
+    const b = buildBlock(gameId, byGame[gameId]||[], gi, false);
+    if(b){ b.style.flex='1'; b.style.minHeight='0'; col3.appendChild(b); }
+  });
+  grid.appendChild(col3);
 
-  allIds.forEach((gameId, gi)=>{
+  // Col 4: Quiniela + QuiniGol spanning both rows
+  const col4 = document.createElement('div');
+  col4.style.cssText = 'display:flex;flex-direction:column;gap:8px;grid-column:4;grid-row:1/3;min-height:0;overflow:hidden;';
+  cols[4].forEach((gameId,gi)=>{
+    const b = buildBlock(gameId, byGame[gameId]||[], gi, true); // isMatch=true → compact
+    if(b){ b.style.flex='1'; b.style.minHeight='0'; col4.appendChild(b); }
+  });
+  grid.appendChild(col4);
+
+  // Bottom row cols 1-3: Lotería Nacional + LotoTurf side by side
+  const colBottom = document.createElement('div');
+  colBottom.style.cssText = 'display:flex;flex-direction:row;gap:8px;grid-column:1/4;grid-row:2;min-height:0;overflow:hidden;';
+  cols.bottom.forEach((gameId,gi)=>{
+    const b = buildBlock(gameId, byGame[gameId]||[], gi, false);
+    if(b){ b.style.flex='1'; b.style.minHeight='0'; colBottom.appendChild(b); }
+  });
+  if(colBottom.children.length) grid.appendChild(colBottom);
+
+  // ── BUILD BLOCK ──────────────────────────────────────────────
+  function buildBlock(gameId, draws, gi, compactMatch){
     const game     = gamesMap[gameId]||{};
-    const draws    = byGame[gameId]||[];
     const gameType = getGameType(game);
     const barClr   = game.bg_color||'var(--pv-primary)';
     const numBg    = game.number_bg_color||'#1a2535';
@@ -888,127 +933,114 @@ function _renderResults(data, grid, forceVertical){
     if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
     else if(game.logo)     logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
 
+    // Ball renderer
+    const bsz = 30; // ball size px
+    const bfont = '.82rem';
+    function ball(n,bg,fg,shape){
+      const br=shape==='sq'?'4px':'50%';
+      return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${bsz}px;height:${bsz}px;background:${bg};color:${fg};border-radius:${br};font-family:var(--font-ui);font-size:${bfont};font-weight:700;flex-shrink:0;margin:1px">${n}</span>`;
+    }
+    function balls(arr,bg,fg,shape){
+      if(!arr) return '';
+      const vals=Array.isArray(arr)?arr:Object.values(arr);
+      return vals.map(n=>ball(n,bg,fg,shape)).join('');
+    }
+
     let bodyHtml='';
 
-    // ── LOTO ─────────────────────────────────────────────────────
     if(gameType==='loto'){
       const hasExtra  = game.num_extra_per_bet>0;
       const hasComp   = game.is_num_complementary===1;
       const hasRefund = game.is_num_refund===1;
       const hasCodeA  = game.is_code_a===1;
-
       draws.forEach((r,ri)=>{
         const d   = new Date(r.date+'T12:00:00');
         const fd  = d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-        const betB  = balls(r.bet, numBg, numFg, 'circle');
-        const extB  = hasExtra ? balls(r.extra, extBg, extFg, 'sq') : '';
-        const cmpB  = hasComp && r.other?.complementary?.length
-                      ? balls(r.other.complementary, compBg, compFg, 'circle') : '';
-        const refB  = hasRefund && r.other?.refund!=null
-                      ? ball(r.other.refund, refBg, refFg, 'sq') : '';
-        const codeA = hasCodeA && r.other?.code_a?.length
-                      ? `<span style="font-family:var(--font-ui);font-size:.75rem;color:var(--success);font-weight:700;white-space:nowrap">${esc(r.other.code_a[0])}</span>` : '';
-
-        const sep = ri < draws.length-1
-          ? `border-bottom:1px solid var(--border);margin-bottom:4px;padding-bottom:4px;` : '';
-
-        bodyHtml += `<div style="${sep}">
-          <div style="font-family:var(--font-ui);font-size:.68rem;color:var(--muted);margin-bottom:3px">${esc(fd)}</div>
-          <div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:2px;align-items:center">
+        const betB  = balls(r.bet,numBg,numFg,'circle');
+        const extB  = hasExtra?balls(r.extra,extBg,extFg,'sq'):'';
+        const cmpB  = hasComp&&r.other?.complementary?.length?balls(r.other.complementary,compBg,compFg,'circle'):'';
+        const refB  = hasRefund&&r.other?.refund!=null?ball(r.other.refund,refBg,refFg,'sq'):'';
+        const codeA = hasCodeA&&r.other?.code_a?.length
+          ?`<span style="font-family:var(--font-ui);font-size:.8rem;color:var(--success);font-weight:700;white-space:nowrap;margin-left:4px">${esc(r.other.code_a[0])}</span>`:'';
+        const sep = ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:5px;padding-bottom:5px;':'';
+        bodyHtml+=`<div style="${sep}">
+          <div style="font-family:var(--font-ui);font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:4px;letter-spacing:.5px">${esc(fd)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">
             ${betB}
-            ${extB  ? `<span style="width:6px"></span>${extB}` : ''}
-            ${cmpB  ? `<span style="font-family:var(--font-ui);font-size:.6rem;color:var(--muted);margin:0 1px">C</span>${cmpB}` : ''}
-            ${refB  ? `<span style="font-family:var(--font-ui);font-size:.6rem;color:var(--muted);margin:0 1px">R</span>${refB}` : ''}
-            ${codeA ? `<span style="margin-left:4px">${codeA}</span>` : ''}
+            ${extB?`<span style="width:4px"></span>${extB}`:''}
+            ${cmpB?`<span style="font-family:var(--font-ui);font-size:.65rem;color:var(--muted);margin:0 2px">C</span>${cmpB}`:''}
+            ${refB?`<span style="font-family:var(--font-ui);font-size:.65rem;color:var(--muted);margin:0 2px">R</span>${refB}`:''}
+            ${codeA}
           </div>
         </div>`;
       });
     }
-
-    // ── MATCH (Quiniela / Quinigol) ───────────────────────────────
     else if(gameType==='match'){
-      const r = draws[draws.length-1]||{};
-      const betArr = Array.isArray(r.bet)?r.bet:[];
-      const matches = r.other?.matches||[];
-
+      const r=draws[draws.length-1]||{};
+      const betArr=Array.isArray(r.bet)?r.bet:[];
+      const matches=r.other?.matches||[];
+      const d=new Date(r.date+'T12:00:00');
+      const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+      bodyHtml+=`<div style="font-family:var(--font-ui);font-size:.72rem;color:var(--muted);margin-bottom:4px">${esc(fd)}</div>`;
       betArr.forEach((res,idx)=>{
-        const m  = matches.find(x=>parseInt(x.position)===idx+1)||{};
-        const t1 = m.team_1_name ? esc(m.team_1_name) : `Eq${idx*2+1}`;
-        const t2 = m.team_2_name ? esc(m.team_2_name) : `Eq${idx*2+2}`;
-        const rc = res==='1'?'#1a4a9a':res==='2'?'#7a1a1a':res.startsWith('M')?'#1a5a2a':'#4a4020';
-        const sep = idx < betArr.length-1 ? 'border-bottom:1px solid var(--border);' : '';
-        bodyHtml += `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0;${sep}">
-          <div style="font-family:var(--font-ui);font-size:.72rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">
-            ${t1} <span style="color:var(--muted)">-</span> ${t2}
-          </div>
-          <span style="background:${rc};color:#fff;border-radius:3px;padding:1px 6px;font-family:var(--font-ui);font-size:.72rem;font-weight:700;flex-shrink:0">${esc(res)}</span>
+        const m=matches.find(x=>parseInt(x.position)===idx+1)||{};
+        const t1=m.team_1_name?esc(m.team_1_name):`Eq${idx*2+1}`;
+        const t2=m.team_2_name?esc(m.team_2_name):`Eq${idx*2+2}`;
+        const rc=res==='1'?'#1a4a9a':res==='2'?'#7a1a1a':res.startsWith('M')?'#1a5a2a':'#4a4020';
+        const sep=idx<betArr.length-1?'border-bottom:1px solid var(--border);':'';
+        bodyHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:3px 0;${sep}">
+          <div style="font-family:var(--font-ui);font-size:.75rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">${t1} <span style="color:var(--muted)">-</span> ${t2}</div>
+          <span style="background:${rc};color:#fff;border-radius:3px;padding:1px 7px;font-family:var(--font-ui);font-size:.75rem;font-weight:700;flex-shrink:0">${esc(res)}</span>
         </div>`;
       });
     }
-
-    // ── LOTERÍA NACIONAL ─────────────────────────────────────────
     else if(gameType==='nacional'){
       draws.forEach((r,ri)=>{
-        const d   = new Date(r.date+'T12:00:00');
-        const fd  = d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-        const betObj = r.bet&&!Array.isArray(r.bet)?r.bet:{P1:r.bet};
-        const serObj = r.other?.num_serie||{};
-        const wins   = r.winnings||{};
-        const topW   = Object.values(wins).sort((a,b)=>(a.order||99)-(b.order||99)).filter(w=>w.prize>0).slice(0,4);
-        const sep    = ri < draws.length-1 ? 'border-bottom:1px solid var(--border);margin-bottom:6px;padding-bottom:6px;' : '';
-
-        bodyHtml += `<div style="${sep}">
-          <div style="font-family:var(--font-ui);font-size:.68rem;color:var(--muted);margin-bottom:4px">${esc(fd)}</div>`;
-
+        const d=new Date(r.date+'T12:00:00');
+        const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+        const betObj=r.bet&&!Array.isArray(r.bet)?r.bet:{P1:r.bet};
+        const serObj=r.other?.num_serie||{};
+        const wins=r.winnings||{};
+        const topW=Object.values(wins).sort((a,b)=>(a.order||99)-(b.order||99)).filter(w=>w.prize>0).slice(0,4);
+        const sep=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:6px;padding-bottom:6px;':'';
+        bodyHtml+=`<div style="${sep}">
+          <div style="font-family:var(--font-ui);font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:4px">${esc(fd)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin-bottom:4px">`;
         Object.keys(betObj).forEach(key=>{
-          const nums = Array.isArray(betObj[key])?betObj[key]:[betObj[key]];
-          const sers = Array.isArray(serObj[key])?serObj[key]:[serObj[key]||''];
-          bodyHtml += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px">`;
+          const nums=Array.isArray(betObj[key])?betObj[key]:[betObj[key]];
+          const sers=Array.isArray(serObj[key])?serObj[key]:[serObj[key]||''];
           nums.forEach((n,i)=>{
-            bodyHtml += `<div style="text-align:center">
-              <div style="background:${numBg};color:${numFg};border-radius:4px;padding:3px 10px;font-family:var(--font-display);font-size:1rem;letter-spacing:2px">${esc(n)}</div>
-              ${sers[i]?`<div style="font-size:.58rem;color:var(--muted);text-align:center">S.${esc(sers[i])}</div>`:''}
+            bodyHtml+=`<div style="text-align:center">
+              <div style="background:${numBg};color:${numFg};border-radius:4px;padding:3px 12px;font-family:var(--font-display);font-size:1.1rem;letter-spacing:2px">${esc(n)}</div>
+              ${sers[i]?`<div style="font-size:.6rem;color:var(--muted);text-align:center">S.${esc(sers[i])}</div>`:''}
             </div>`;
           });
-          bodyHtml += `</div>`;
         });
-
+        bodyHtml+=`</div>`;
         if(topW.length){
-          bodyHtml += `<div style="display:flex;flex-wrap:wrap;gap:3px">`;
+          bodyHtml+=`<div style="display:flex;flex-wrap:wrap;gap:4px">`;
           topW.forEach(w=>{
-            const p = w.prize>=1000 ? (w.prize/1000).toFixed(0)+'K\u20AC' : w.prize+'\u20AC';
-            bodyHtml += `<span style="background:var(--card2);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:var(--font-ui);font-size:.62rem;color:var(--text2)">${esc(w.name)} <b style="color:var(--success)">${p}</b></span>`;
+            const p=w.prize>=1000?(w.prize/1000).toFixed(0)+'K\u20AC':w.prize+'\u20AC';
+            bodyHtml+=`<span style="background:var(--card2);border:1px solid var(--border);border-radius:3px;padding:2px 8px;font-family:var(--font-ui);font-size:.72rem;color:var(--text2)">${esc(w.name)} <b style="color:var(--success)">${p}</b></span>`;
           });
-          bodyHtml += `</div>`;
+          bodyHtml+=`</div>`;
         }
-        bodyHtml += `</div>`;
+        bodyHtml+=`</div>`;
       });
     }
 
-    // Build block
-    const block = document.createElement('div');
-    block.className = 'result-block';
-    block.style.animationDelay = `${gi*40}ms`;
-    block.style.overflow = 'hidden';
-    block.style.minHeight = '0';
-    block.style.height = 'fit-content'; // KEY: height adapts to content
-
-    // Place match games in last column
-    if(!isV && nOther>0 && nMatch>0 && gameType==='match'){
-      const matchIdx = gi - nOther;
-      block.style.gridColumn = String(lCols+1);
-      block.style.gridRow    = String(matchIdx+1);
-    }
-
-    block.innerHTML = `
+    const block=document.createElement('div');
+    block.className='result-block';
+    block.style.cssText='overflow:hidden;display:flex;flex-direction:column;';
+    block.innerHTML=`
       <div class="result-block-header" style="flex-shrink:0">
         <div class="result-block-bar" style="background:${barClr}"></div>
         ${logoSrc?`<img class="result-block-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
-        <div class="result-block-name">${esc(game.name||'Juego '+gameId)}</div>
+        <div class="result-block-name" style="font-size:1rem">${esc(game.name||'Juego '+gameId)}</div>
       </div>
-      <div style="padding:6px 10px">${bodyHtml}</div>`;
-    grid.appendChild(block);
-  });
+      <div style="padding:8px 12px;overflow:hidden;flex:1">${bodyHtml}</div>`;
+    return block;
+  }
 }
 
 // ── COUNTDOWN ────────────────────────
