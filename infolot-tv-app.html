@@ -326,7 +326,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-012';
+const APP_REVISION = '20260601-013';
 const STORAGE_KEY  = 'infolot_cfg_v10';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -695,7 +695,8 @@ function renderResults(data){
     // Show skeleton of week days from id_days, fill with result where date matches
     const gameDays = game.id_days ? game.id_days.split(',').map(x=>parseInt(x.trim())) : [];
     const weekDates = [];
-    for(let dd=new Date(mon); dd<=sun; dd.setDate(dd.getDate()+1)){
+    const sunStr = toYMD(sun);
+    for(let dd=new Date(mon); toYMD(dd)<=sunStr; dd.setDate(dd.getDate()+1)){
       const iso = dd.getDay()===0?7:dd.getDay();
       if(!gameDays.length || gameDays.includes(iso)) weekDates.push(toYMD(new Date(dd)));
     }
@@ -703,11 +704,8 @@ function renderResults(data){
     let rowsHtml = '';
     const now = new Date();
 
-    // Debug
-    console.log('[Results] game:', item.id_game, 'date:', item.date, 'mon:', toYMD(mon), 'sun:', toYMD(sun), 'weekDates:', weekDates.length, weekDates);
     // If result date is in current week, use week skeleton
     const resultInWeek = item.date >= toYMD(mon) && item.date <= toYMD(sun);
-    console.log('[Results] resultInWeek:', resultInWeek);
 
     if(resultInWeek && weekDates.length > 0) {
       // Show all days of the week for this game
