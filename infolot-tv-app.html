@@ -328,7 +328,7 @@ body.orient-v .view-tabs{display:none;}
 <script>
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
-const APP_REVISION = '20260601-016';
+const APP_REVISION = '20260601-017';
 const STORAGE_KEY  = 'infolot_cfg_v10';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -819,13 +819,24 @@ function startCountdown(elId,dateStr,game){
 
 // ── FIT AMOUNTS ───────────────────────
 function fitAmountFonts(){
+  // First pass: fit each card to available space
   document.querySelectorAll('.jackpot-card').forEach(card=>{
     const wrap=card.querySelector('.card-amount-wrap'),amt=card.querySelector('.card-amount');
     if(!wrap||!amt)return;
-    // Reserve ~25% height for the label below the number
     let size=Math.min(wrap.clientHeight*.72,80);
     amt.style.fontSize=size+'px';
     while(amt.scrollWidth>wrap.clientWidth*.95&&size>18){size-=2;amt.style.fontSize=size+'px';}
+  });
+  // Second pass: normalize — cards with fewer chars should NOT be larger than cards with more chars
+  // Find the minimum font size across all cards and apply it to all (uniform sizing)
+  const sizes=[];
+  document.querySelectorAll('.jackpot-card .card-amount').forEach(amt=>{
+    sizes.push(parseFloat(amt.style.fontSize)||80);
+  });
+  if(!sizes.length) return;
+  const minSize=Math.min(...sizes);
+  document.querySelectorAll('.jackpot-card .card-amount').forEach(amt=>{
+    amt.style.fontSize=minSize+'px';
   });
 }
 
