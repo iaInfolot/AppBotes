@@ -1515,14 +1515,14 @@ function renderMixedResults(data){
 
 // ── LOAD ALL ──────────────────────────
 let _loadingInProgress=false;
-let _bootCount=0;
 async function loadAllData(){
-  _bootCount++;
-  const myCount=_bootCount;
-  // Small delay to let any duplicate calls arrive, then only the last one runs
-  await new Promise(r=>setTimeout(r,800));
-  if(myCount!==_bootCount){ console.log('[boot] duplicate loadAllData suppressed'); return; }
-  if(_loadingInProgress){ console.log('[boot] loadAllData already running, skipping'); return; }
+  // Use sessionStorage to prevent duplicate boots within the same page load
+  if(sessionStorage.getItem('_booted')==='1'){
+    console.log('[boot] sessionStorage flag set — skipping duplicate boot');
+    return;
+  }
+  if(_loadingInProgress){ console.log('[boot] already running'); return; }
+  sessionStorage.setItem('_booted','1');
   _loadingInProgress=true;
   showLoading(true);
   try{
@@ -1594,7 +1594,7 @@ function showConfig(){
   },50);
 }
 function showDiag(){document.getElementById('modal-menu').style.display='none';document.getElementById('modal-config').style.display='none';document.getElementById('modal-diag').style.display='';}
-function manualRefresh(){closeOverlay();loadAllData();}
+function manualRefresh(){closeOverlay();sessionStorage.removeItem('_booted');_loadingInProgress=false;loadAllData();}
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Back')closeOverlay();});
 window.addEventListener('resize',()=>{if(document.querySelectorAll('.jackpot-card').length)fitAmountFonts();});
