@@ -729,15 +729,7 @@ function isCurrentWeekResults(){
   return true;
 }
 
-function getResultsWeekRef(){
-  // On Mondays, always show previous week until we have results for current week
-  // First Monday sorteo (Bonoloto) is ~21:30, so we can't have results before then
-  const now=new Date();
-  if(now.getDay()===1){
-    const prev=new Date(now);prev.setDate(now.getDate()-1);return prev;
-  }
-  return now;
-}
+function getResultsWeekRef(){\n  // DEBUG: force previous week to test with full data\n  const now=new Date();const prev=new Date(now);prev.setDate(now.getDate()-7);return prev;\n  // Normal logic (restore when done testing):\n  // if(now.getDay()===1){ const p=new Date(now);p.setDate(now.getDate()-1);return p; }\n  // return now;\n}
 
 function resultsWeekLabel(){
   const ref=getResultsWeekRef();
