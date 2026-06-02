@@ -569,8 +569,12 @@ function updateClock(){
 // ── WS CALL ──────────────────────────
 async function wsCall(endpoint,extra={}){
   const cfg=loadConfig();
+  // proxy.php expects _endpoint in the POST body alongside credentials
+  const useProxy=!!cfg.proxy;
+  const url=useProxy?cfg.proxy:`${cfg.url}/ws/${endpoint}`;
   const body={token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
-  const url=`${cfg.url}/ws/${endpoint}`;
+  if(useProxy) body._endpoint=endpoint;
+  console.log('[wsCall]',endpoint,'via',useProxy?'proxy':'direct');
   const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
   const json=await resp.json();
