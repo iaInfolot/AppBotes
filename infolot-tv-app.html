@@ -1449,7 +1449,10 @@ function renderMixedResults(data){
 }
 
 // ── LOAD ALL ──────────────────────────
+let _loadingInProgress=false;
 async function loadAllData(){
+  if(_loadingInProgress){ console.log('[boot] loadAllData already running, skipping'); return; }
+  _loadingInProgress=true;
   showLoading(true);
   try{
     setLoadingStep('Conectando pv-info...');
@@ -1466,6 +1469,7 @@ async function loadAllData(){
     await new Promise(r=>setTimeout(r,5000));
   }
   showLoading(false);
+  _loadingInProgress=false;
   switchView(currentView||'jackpots');
 }
 async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();}
