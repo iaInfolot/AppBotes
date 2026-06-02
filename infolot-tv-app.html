@@ -1015,21 +1015,33 @@ function _renderResults(data, grid, forceVertical){
       const nRef=hasR&&firstDraw.other?.refund!=null?1:0;
       const bsz=calcBSZ(nMain, nExtra, nComp, nRef);
 
+      // Build label header row (only once, above all draws)
+      // Labels sit above their corresponding balls using flex alignment
+      if(!hasCA && (hasE||hasC||hasR)){
+        // spacer = main balls width
+        const mainSpan=`<span style="flex:${nMain} 0 0px"></span>`;
+        const parts=[mainSpan];
+        if(hasE){
+          const extLabel=game.extra_name||'Extra';
+          parts.push(`<span style="flex:${nExtra} 0 0px;text-align:center;font-family:var(--font-ui);font-size:.5rem;font-weight:700;color:var(--text2);letter-spacing:.5px">${esc(extLabel)}</span>`);
+        }
+        if(hasC){
+          parts.push(`<span style="flex:1 0 0px;text-align:center;font-family:var(--font-ui);font-size:.5rem;font-weight:700;color:var(--text2)">C</span>`);
+        }
+        if(hasR){
+          parts.push(`<span style="flex:1 0 0px;text-align:center;font-family:var(--font-ui);font-size:.5rem;font-weight:700;color:var(--text2)">R</span>`);
+        }
+        bodyHtml+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:1px">${parts.join('')}</div>`;
+      }
+
       draws.forEach((r,ri)=>{
         const d=new Date(r.date+'T12:00:00');
         const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-        // Build inline labels for C/R/extra — shown next to date only if no code_a
-        const inlineTags=[];
-        if(!hasCA){
-          if(hasE&&game.extra_name) inlineTags.push(`<span style="font-family:var(--font-ui);font-size:.52rem;color:var(--text2);background:var(--border);border-radius:3px;padding:1px 4px;font-weight:700">${esc(game.extra_name)}</span>`);
-          if(hasC) inlineTags.push(`<span style="font-family:var(--font-ui);font-size:.52rem;color:var(--text2);background:var(--border);border-radius:3px;padding:1px 4px;font-weight:700">C</span>`);
-          if(hasR) inlineTags.push(`<span style="font-family:var(--font-ui);font-size:.52rem;color:var(--text2);background:var(--border);border-radius:3px;padding:1px 4px;font-weight:700">R</span>`);
-        }
         let row=ballsWithSize(r.bet,numBg,numFg,'circle',bsz);
         if(hasE) row+=ballSep('')+ballsWithSize(r.extra,extBg,extFg,'sq',bsz);
         if(hasC&&r.other?.complementary?.length) row+=ballSep('')+ballsWithSize(r.other.complementary,compBg,compFg,'circle',bsz);
         if(hasR&&r.other?.refund!=null) row+=ballSep('')+makeBall(r.other.refund,refBg,refFg,'sq',bsz);
-        // code_a label: use game.code_a_name if available, else generic
+        // code_a label: right-aligned next to date
         const codeALabel=game.code_a_name||'Código';
         const codeAHtml=hasCA&&r.other?.code_a?.length
           ?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:.6rem;font-weight:600;background:rgba(39,201,122,.12);border:1px solid rgba(39,201,122,.3);border-radius:4px;padding:1px 6px;white-space:nowrap">
@@ -1038,11 +1050,8 @@ function _renderResults(data, grid, forceVertical){
             </span>`:'';
         const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:4px;padding-bottom:4px;':'';
         bodyHtml+=`<div style="${ds}">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;gap:4px">
-            <div style="display:flex;align-items:center;gap:4px;min-width:0">
-              <span style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2);white-space:nowrap">${esc(fd)}</span>
-              ${inlineTags.join('')}
-            </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;gap:4px">
+            <span style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2);white-space:nowrap">${esc(fd)}</span>
             ${codeAHtml}
           </div>
           ${ballRow(row)}</div>`;
@@ -1268,22 +1277,22 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
     return '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:14px;background:'+bg+';color:#fff;border-radius:3px;font-family:var(--font-ui);font-size:.55rem;font-weight:700;flex-shrink:0">'+esc(g)+'</span>';
   }
   function quiBadge(res){
-    if(res==null||res==='') return '<span style="width:22px;flex-shrink:0"></span>';
+    if(res==null||res==='') return '<span style="width:26px;flex-shrink:0"></span>';
     const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':'#ca8a04';
-    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:16px;background:'+rc+';color:#fff;border-radius:3px;font-family:var(--font-ui);font-size:.55rem;font-weight:700;flex-shrink:0">'+esc(res)+'</span>';
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:22px;background:'+rc+';color:#fff;border-radius:4px;font-family:var(--font-ui);font-size:.85rem;font-weight:700;flex-shrink:0">'+esc(res)+'</span>';
   }
   function qgBadge(res){
-    if(res==null||res==='') return '<span style="width:32px;flex-shrink:0"></span>';
+    if(res==null||res==='') return '<span style="width:40px;flex-shrink:0"></span>';
     const parts=String(res).split('-');
     if(parts.length===2){
-      return '<span style="display:inline-flex;align-items:center;justify-content:center;gap:0px;height:16px;background:#7c3aed;color:#fff;border-radius:3px;padding:0 2px;font-family:var(--font-ui);font-size:.55rem;font-weight:700;flex-shrink:0;min-width:32px">'
-        +'<span style="display:inline-flex;align-items:center;justify-content:center;width:11px">'+esc(parts[0])+'</span>'
-        +'<span style="opacity:.5;font-size:.5rem">-</span>'
-        +'<span style="display:inline-flex;align-items:center;justify-content:center;width:11px">'+esc(parts[1])+'</span>'
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;height:22px;background:#7c3aed;color:#fff;border-radius:4px;padding:0 3px;font-family:var(--font-ui);font-size:.85rem;font-weight:700;flex-shrink:0;min-width:40px">'
+        +'<span style="display:inline-flex;align-items:center;justify-content:center;min-width:14px">'+esc(parts[0])+'</span>'
+        +'<span style="opacity:.5;font-size:.7rem">-</span>'
+        +'<span style="display:inline-flex;align-items:center;justify-content:center;min-width:14px">'+esc(parts[1])+'</span>'
         +'</span>';
     }
     const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':res.startsWith('M')?'#16a34a':'#7c3aed';
-    return '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:16px;background:'+rc+';color:#fff;border-radius:3px;padding:0 3px;font-family:var(--font-ui);font-size:.55rem;font-weight:700;flex-shrink:0">'+esc(res)+'</span>';
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:22px;background:'+rc+';color:#fff;border-radius:4px;padding:0 3px;font-family:var(--font-ui);font-size:.85rem;font-weight:700;flex-shrink:0">'+esc(res)+'</span>';
   }
 
   let bodyHtml='';
