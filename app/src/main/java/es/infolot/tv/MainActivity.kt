@@ -33,7 +33,7 @@ class MainActivity : Activity() {
             javaScriptEnabled                = true
             domStorageEnabled                = true
             databaseEnabled                  = true
-            cacheMode                        = WebSettings.LOAD_DEFAULT
+            cacheMode                        = WebSettings.LOAD_NO_CACHE
             mediaPlaybackRequiresUserGesture = false
             loadWithOverviewMode             = true
             useWideViewPort                  = true
