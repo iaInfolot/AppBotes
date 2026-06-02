@@ -1012,31 +1012,74 @@ function _renderResults(data, grid, forceVertical){
           <span style="background:${rc};color:#fff;border-radius:3px;padding:1px 5px;font-family:var(--font-ui);font-size:${rowFs};font-weight:700;flex-shrink:0">${esc(res)}</span></div>`;
       });
     } else if(gt==='nacional'){
+      // Helper: format prize amount
+      function fmtPrize(v){
+        if(v>=1000000) return (v/1000000).toFixed(v%1000000?1:0).replace('.',',')+' M€';
+        if(v>=1000) return Math.round(v/1000)+'K€';
+        return v+'€';
+      }
       draws.forEach((r,ri)=>{
         const d=new Date(r.date+'T12:00:00');
         const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+        // Numbers: betObj keys P1,P2... each with array of winning numbers
         const betObj=r.bet&&!Array.isArray(r.bet)?r.bet:{P1:r.bet};
         const serObj=r.other?.num_serie||{};
+        // Reintegros: r.other.num_refund is array of up to 3 digits
+        const refunds=Array.isArray(r.other?.num_refund)?r.other.num_refund:
+                      (r.other?.num_refund!=null?[r.other.num_refund]:[]);
+        // Prizes: top 3 ordered
         const wins=r.winnings||{};
-        // Show only top 3 prizes (P1, P2, P3) — key names vary, use order
-        const topW=Object.values(wins).sort((a,b)=>(a.order||99)-(b.order||99)).filter(w=>w.prize>0).slice(0,3);
-        const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:6px;padding-bottom:6px;':'';
-        bodyHtml+=`<div style="${ds}"><div style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:3px">${esc(fd)}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin-bottom:4px">`;
+        const topW=Object.values(wins)
+          .sort((a,b)=>(a.order||99)-(b.order||99))
+          .filter(w=>w.prize>0).slice(0,3);
+        const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:5px;padding-bottom:5px;':'';
+
+        // ── Date row
+        bodyHtml+=`<div style="${ds}">
+          <div style="font-family:var(--font-ui);font-size:.7rem;font-weight:600;color:var(--text2);margin-bottom:4px">${esc(fd)}</div>`;
+
+        // ── Main numbers row (P1, P2...) + reintegros — full width, space-between
+        bodyHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px">`;
+
+        // Numbers block (left)
+        bodyHtml+=`<div style="display:flex;gap:6px;flex-wrap:wrap">`;
         Object.keys(betObj).forEach(key=>{
           const nums=Array.isArray(betObj[key])?betObj[key]:[betObj[key]];
           const sers=Array.isArray(serObj[key])?serObj[key]:[serObj[key]||''];
           nums.forEach((n,i)=>{
-            bodyHtml+=`<div style="text-align:center"><div style="background:${numBg};color:${numFg};border-radius:5px;padding:3px 10px;font-family:var(--font-display);font-size:1rem;letter-spacing:2px">${esc(n)}</div>
-              ${sers[i]?`<div style="font-size:.6rem;color:var(--muted);text-align:center;margin-top:1px">S.${esc(sers[i])}</div>`:''}</div>`;
+            bodyHtml+=`<div style="text-align:center">
+              <div style="background:${numBg};color:${numFg};border-radius:5px;padding:2px 10px;font-family:var(--font-display);font-size:1rem;letter-spacing:2px;white-space:nowrap">${esc(n)}</div>
+              ${sers[i]?`<div style="font-size:.58rem;color:var(--muted);text-align:center;margin-top:1px">S.${esc(sers[i])}</div>`:''}
+            </div>`;
           });
         });
-        bodyHtml+=`</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
-        topW.forEach(w=>{
-          const p=w.prize>=1000?(w.prize/1000).toFixed(0)+'K\u20AC':w.prize+'\u20AC';
-          bodyHtml+=`<span style="background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-family:var(--font-ui);font-size:.65rem;color:var(--text2)">${esc(w.name)} <b style="color:var(--success)">${p}</b></span>`;
-        });
-        bodyHtml+=`</div></div>`;
+        bodyHtml+=`</div>`;
+
+        // Reintegros block (right)
+        if(refunds.length){
+          bodyHtml+=`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0">
+            <div style="font-family:var(--font-ui);font-size:.55rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Reint.</div>
+            <div style="display:flex;gap:3px">`;
+          refunds.forEach(rv=>{
+            bodyHtml+=`<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:${refBg};color:${refFg};border-radius:3px;font-family:var(--font-ui);font-size:.65rem;font-weight:700">${esc(rv)}</span>`;
+          });
+          bodyHtml+=`</div></div>`;
+        }
+        bodyHtml+=`</div>`;
+
+        // ── Prizes row: P1 P2 P3 full width
+        if(topW.length){
+          bodyHtml+=`<div style="display:flex;gap:4px;width:100%">`;
+          topW.forEach(w=>{
+            bodyHtml+=`<div style="flex:1;background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;text-align:center;min-width:0">
+              <div style="font-family:var(--font-ui);font-size:.58rem;color:var(--muted);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.name)}</div>
+              <div style="font-family:var(--font-ui);font-size:.7rem;font-weight:700;color:var(--success);white-space:nowrap">${fmtPrize(w.prize)}</div>
+            </div>`;
+          });
+          bodyHtml+=`</div>`;
+        }
+
+        bodyHtml+=`</div>`;
       });
     }
     return {barClr, logoSrc, name:game.name||'Juego '+gameId, bodyHtml};
