@@ -133,6 +133,9 @@ td.r-date{font-size:.78rem;color:var(--muted);width:70px;}
 
 /* extra fields (joker code, etc) */
 td.r-extra{font-family:var(--font-ui);font-size:.8rem;color:var(--success);}
+
+/* pending game block — slightly dimmed */
+.result-block.result-pending{opacity:.7;}
 td.r-pending{color:var(--border);font-size:.85rem;text-align:center;}
 
 /* EMPTY STATE */
@@ -794,11 +797,8 @@ function renderResultsInto(data, grid, forceVertical){ return _renderResults(dat
 function renderResults(data){ _renderResults(data, document.getElementById('results-grid'), false); }
 function _renderResults(data, grid, forceVertical){
   grid.innerHTML='';
-  if(!data||!data.length){
-    grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--font-ui);letter-spacing:3px;">SIN RESULTADOS</div>';
-    return;
-  }
 
+  // Show full week structure from gamesMap (with or without results)
   function getGameType(game){
     if(game.is_link_match===1) return 'match';
     if(game.is_num_serie===1||game.is_num_fraction===1) return 'nacional';
@@ -807,109 +807,116 @@ function _renderResults(data, grid, forceVertical){
 
   const isV = forceVertical || document.body.classList.contains('orient-v');
 
-  // Group by game, sort by date asc
+  // Group results by game, sort by date asc
   const byGame={};
-  data.forEach(r=>{
+  (data||[]).forEach(r=>{
     if(!gamesMap[r.id_game]) return;
     if(!byGame[r.id_game]) byGame[r.id_game]=[];
     byGame[r.id_game].push(r);
   });
   Object.values(byGame).forEach(arr=>arr.sort((a,b)=>a.date>b.date?1:-1));
 
-  // LAYOUT MAP — fixed columns by game ID
-  // col1: Euromillón(1) + EuroDreams(3,43)
-  // col2: La Primitiva(2) + El Gordo(5)
-  // col3: Bonoloto(4)
-  // col4: Quiniela(25) + QuiniGol(26)  [narrow]
-  // bottom: Lotería Nacional(7) + LotoTurf(21)
+  // FIXED LAYOUT: populate from gamesMap so columns always appear
   const COL_MAP = {1:1, 3:1, 43:1, 2:2, 5:2, 4:3, 25:4, 26:4, 7:'b', 21:'b'};
-  const cols = {1:[], 2:[], 3:[], 4:[], b:[]};
-  Object.keys(byGame).forEach(id=>{
-    const c = COL_MAP[parseInt(id)];
-    if(c !== undefined) cols[c].push(parseInt(id));
-    else cols[1].push(parseInt(id)); // unknown → col1
+  const COL_ORDER = {'1':[1,3,43], '2':[2,5], '3':[4], '4':[25,26], 'b':[7,21]};
+  const cols = {'1':[], '2':[], '3':[], '4':[], 'b':[]};
+  Object.keys(COL_ORDER).forEach(col=>{
+    COL_ORDER[col].forEach(id=>{ if(gamesMap[id]) cols[col].push(id); });
+  });
+  // Unknown games from gamesMap go to col 1
+  Object.keys(gamesMap).forEach(id=>{
+    const iid=parseInt(id);
+    if(COL_MAP[iid]===undefined && !cols['1'].includes(iid)) cols['1'].push(iid);
   });
 
-  // Ball size — bigger now that layout is correct
-  const BSZ = 34;
-  const BFONT = '.88rem';
-
+  // Ball rendering — nowrap row, no wrapping to second line
+  const BSZ=28, BFONT='.72rem';
   function ball(n,bg,fg,shape){
     const br=shape==='sq'?'5px':'50%';
     return `<span style="display:inline-flex;align-items:center;justify-content:center;`+
-      `width:${BSZ}px;height:${BSZ}px;background:${bg};color:${fg};border-radius:${br};`+
-      `font-family:var(--font-ui);font-size:${BFONT};font-weight:700;flex-shrink:0;margin:1px">${n}</span>`;
+      `width:${BSZ}px;height:${BSZ}px;min-width:${BSZ}px;background:${bg};color:${fg};border-radius:${br};`+
+      `font-family:var(--font-ui);font-size:${BFONT};font-weight:700;flex-shrink:0;">${n}</span>`;
   }
   function balls(arr,bg,fg,shape){
     if(!arr) return '';
     const vals=Array.isArray(arr)?arr:Object.values(arr);
     return vals.map(n=>ball(n,bg,fg,shape)).join('');
   }
+  function ballSep(label){
+    return `<span style="font-family:var(--font-ui);font-size:.58rem;color:var(--muted);margin:0 2px;flex-shrink:0;line-height:1">${label}</span>`;
+  }
+  function ballRow(html){
+    return `<div style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;overflow:hidden;max-width:100%">${html}</div>`;
+  }
+
+  // Pending placeholder (ghost balls)
+  function pendingHtml(game){
+    const gt=getGameType(game);
+    if(gt==='match'){
+      const n=game.num_events||15;
+      let h='<div style="opacity:.22">';
+      for(let i=0;i<Math.min(n,15);i++)
+        h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:2px 0;border-bottom:1px solid var(--border)">
+          <div style="height:9px;background:var(--border);border-radius:3px;flex:1"></div>
+          <span style="background:var(--border);color:transparent;border-radius:3px;padding:1px 7px;font-size:.72rem">·</span></div>`;
+      return h+'</div>';
+    }
+    const nb=game.num_bet_per_game||6, ne=game.num_extra_per_bet||0;
+    let r='';
+    for(let i=0;i<nb;i++) r+=ball('·','var(--muted)','transparent','circle');
+    if(ne>0){ r+=ballSep('+'); for(let i=0;i<ne;i++) r+=ball('·','var(--muted)','transparent','sq'); }
+    return `<div style="font-family:var(--font-ui);font-size:.7rem;color:var(--muted);font-style:italic;margin-bottom:3px">Pendiente</div>`+
+      `<div style="opacity:.22">${ballRow(r)}</div>`;
+  }
 
   function buildBlockHTML(gameId, draws){
     const game=gamesMap[gameId]||{};
-    const gameType=getGameType(game);
+    const gt=getGameType(game);
     const barClr=game.bg_color||'var(--pv-primary)';
-    const numBg=game.number_bg_color||'#1a2535';
-    const numFg=game.number_fg_color||'#ffffff';
-    const extBg=game.extra_bg_color||'#c8a000';
-    const extFg=game.extra_fg_color||'#000000';
-    const compBg=game.num_complementary_bg_color||'#e08020';
-    const compFg=game.num_complementary_fg_color||'#fff';
-    const refBg=game.num_refund_bg_color||'#607080';
-    const refFg=game.num_refund_fg_color||'#fff';
+    const numBg=game.number_bg_color||'#1a2535', numFg=game.number_fg_color||'#fff';
+    const extBg=game.extra_bg_color||'#c8a000', extFg=game.extra_fg_color||'#000';
+    const compBg=game.num_complementary_bg_color||'#e08020', compFg=game.num_complementary_fg_color||'#fff';
+    const refBg=game.num_refund_bg_color||'#607080', refFg=game.num_refund_fg_color||'#fff';
     let logoSrc='';
     if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
     else if(game.logo) logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
 
     let bodyHtml='';
 
-    if(gameType==='loto'){
-      const hasExtra=game.num_extra_per_bet>0;
-      const hasComp=game.is_num_complementary===1;
-      const hasRefund=game.is_num_refund===1;
-      const hasCodeA=game.is_code_a===1;
+    if(!draws||!draws.length){
+      bodyHtml=pendingHtml(game);
+    } else if(gt==='loto'){
+      const hasE=game.num_extra_per_bet>0, hasC=game.is_num_complementary===1;
+      const hasR=game.is_num_refund===1, hasCA=game.is_code_a===1;
       draws.forEach((r,ri)=>{
         const d=new Date(r.date+'T12:00:00');
         const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-        const betB=balls(r.bet,numBg,numFg,'circle');
-        const extB=hasExtra?balls(r.extra,extBg,extFg,'sq'):'';
-        const cmpB=hasComp&&r.other?.complementary?.length?balls(r.other.complementary,compBg,compFg,'circle'):'';
-        const refB=hasRefund&&r.other?.refund!=null?ball(r.other.refund,refBg,refFg,'sq'):'';
-        const codeA=hasCodeA&&r.other?.code_a?.length
-          ?`<span style="font-family:var(--font-ui);font-size:.82rem;color:var(--success);font-weight:700;white-space:nowrap;margin-left:6px">${esc(r.other.code_a[0])}</span>`:'';
-        const sep=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:6px;padding-bottom:6px;':'';
-        bodyHtml+=`<div style="${sep}">
-          <div style="font-family:var(--font-ui);font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:5px">${esc(fd)}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">
-            ${betB}${extB?`<span style="width:5px"></span>${extB}`:''}
-            ${cmpB?`<span style="font-family:var(--font-ui);font-size:.68rem;color:var(--muted);margin:0 2px">C</span>${cmpB}`:''}
-            ${refB?`<span style="font-family:var(--font-ui);font-size:.68rem;color:var(--muted);margin:0 2px">R</span>${refB}`:''}
-            ${codeA}
-          </div>
-        </div>`;
+        let row=balls(r.bet,numBg,numFg,'circle');
+        if(hasE) row+=ballSep('+')+balls(r.extra,extBg,extFg,'sq');
+        if(hasC&&r.other?.complementary?.length) row+=ballSep('C')+balls(r.other.complementary,compBg,compFg,'circle');
+        if(hasR&&r.other?.refund!=null) row+=ballSep('R')+ball(r.other.refund,refBg,refFg,'sq');
+        if(hasCA&&r.other?.code_a?.length)
+          row+=`<span style="font-family:var(--font-ui);font-size:.72rem;color:var(--success);font-weight:700;white-space:nowrap;flex-shrink:0;margin-left:3px">${esc(r.other.code_a[0])}</span>`;
+        const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:5px;padding-bottom:5px;':'';
+        bodyHtml+=`<div style="${ds}"><div style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:3px">${esc(fd)}</div>${ballRow(row)}</div>`;
       });
-    }
-    else if(gameType==='match'){
+    } else if(gt==='match'){
       const r=draws[draws.length-1]||{};
       const betArr=Array.isArray(r.bet)?r.bet:[];
       const matches=r.other?.matches||[];
-      const d=new Date(r.date+'T12:00:00');
-      const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-      bodyHtml+=`<div style="font-family:var(--font-ui);font-size:.75rem;color:var(--muted);margin-bottom:5px">${esc(fd)}</div>`;
+      const fd=new Date(r.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+      bodyHtml+=`<div style="font-family:var(--font-ui);font-size:.7rem;color:var(--muted);margin-bottom:3px">${esc(fd)}</div>`;
       betArr.forEach((res,idx)=>{
         const m=matches.find(x=>parseInt(x.position)===idx+1)||{};
         const t1=m.team_1_name?esc(m.team_1_name):`Eq${idx*2+1}`;
         const t2=m.team_2_name?esc(m.team_2_name):`Eq${idx*2+2}`;
         const rc=res==='1'?'#1a4a9a':res==='2'?'#7a1a1a':res.startsWith('M')?'#1a5a2a':'#4a4020';
-        const sep=idx<betArr.length-1?'border-bottom:1px solid var(--border);':'';
-        bodyHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;padding:3px 0;${sep}">
-          <div style="font-family:var(--font-ui);font-size:.78rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">${t1} <span style="color:var(--muted)">-</span> ${t2}</div>
-          <span style="background:${rc};color:#fff;border-radius:3px;padding:2px 8px;font-family:var(--font-ui);font-size:.78rem;font-weight:700;flex-shrink:0">${esc(res)}</span>
-        </div>`;
+        const ds=idx<betArr.length-1?'border-bottom:1px solid var(--border);':'';
+        bodyHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:3px;padding:2px 0;${ds}">
+          <div style="font-family:var(--font-ui);font-size:.7rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">${t1} <span style="color:var(--muted)">-</span> ${t2}</div>
+          <span style="background:${rc};color:#fff;border-radius:3px;padding:1px 6px;font-family:var(--font-ui);font-size:.7rem;font-weight:700;flex-shrink:0">${esc(res)}</span></div>`;
       });
-    }
-    else if(gameType==='nacional'){
+    } else if(gt==='nacional'){
       draws.forEach((r,ri)=>{
         const d=new Date(r.date+'T12:00:00');
         const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
@@ -917,95 +924,82 @@ function _renderResults(data, grid, forceVertical){
         const serObj=r.other?.num_serie||{};
         const wins=r.winnings||{};
         const topW=Object.values(wins).sort((a,b)=>(a.order||99)-(b.order||99)).filter(w=>w.prize>0).slice(0,5);
-        const sep=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:8px;padding-bottom:8px;':'';
-        bodyHtml+=`<div style="${sep}">
-          <div style="font-family:var(--font-ui);font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:5px">${esc(fd)}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin-bottom:6px">`;
+        const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:6px;padding-bottom:6px;':'';
+        bodyHtml+=`<div style="${ds}"><div style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:3px">${esc(fd)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin-bottom:4px">`;
         Object.keys(betObj).forEach(key=>{
           const nums=Array.isArray(betObj[key])?betObj[key]:[betObj[key]];
           const sers=Array.isArray(serObj[key])?serObj[key]:[serObj[key]||''];
           nums.forEach((n,i)=>{
-            bodyHtml+=`<div style="text-align:center">
-              <div style="background:${numBg};color:${numFg};border-radius:5px;padding:4px 14px;font-family:var(--font-display);font-size:1.2rem;letter-spacing:2px">${esc(n)}</div>
-              ${sers[i]?`<div style="font-size:.65rem;color:var(--muted);text-align:center;margin-top:1px">S.${esc(sers[i])}</div>`:''}
-            </div>`;
+            bodyHtml+=`<div style="text-align:center"><div style="background:${numBg};color:${numFg};border-radius:5px;padding:3px 10px;font-family:var(--font-display);font-size:1rem;letter-spacing:2px">${esc(n)}</div>
+              ${sers[i]?`<div style="font-size:.6rem;color:var(--muted);text-align:center;margin-top:1px">S.${esc(sers[i])}</div>`:''}</div>`;
           });
         });
-        bodyHtml+=`</div><div style="display:flex;flex-wrap:wrap;gap:5px">`;
+        bodyHtml+=`</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
         topW.forEach(w=>{
           const p=w.prize>=1000?(w.prize/1000).toFixed(0)+'K\u20AC':w.prize+'\u20AC';
-          bodyHtml+=`<span style="background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:2px 10px;font-family:var(--font-ui);font-size:.75rem;color:var(--text2)">${esc(w.name)} <b style="color:var(--success)">${p}</b></span>`;
+          bodyHtml+=`<span style="background:var(--card2);border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-family:var(--font-ui);font-size:.65rem;color:var(--text2)">${esc(w.name)} <b style="color:var(--success)">${p}</b></span>`;
         });
         bodyHtml+=`</div></div>`;
       });
     }
-
     return {barClr, logoSrc, name:game.name||'Juego '+gameId, bodyHtml};
   }
 
   function makeBlock(gameId, draws){
-    const {barClr,logoSrc,name,bodyHtml} = buildBlockHTML(gameId, draws);
+    const {barClr,logoSrc,name,bodyHtml}=buildBlockHTML(gameId, draws||[]);
+    const hasPending=!draws||!draws.length;
     const block=document.createElement('div');
-    block.className='result-block';
+    block.className='result-block'+(hasPending?' result-pending':'');
     block.style.cssText='overflow:hidden;display:flex;flex-direction:column;border-radius:var(--radius);';
     block.innerHTML=`
       <div class="result-block-header" style="flex-shrink:0">
         <div class="result-block-bar" style="background:${barClr}"></div>
         ${logoSrc?`<img class="result-block-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
         <div class="result-block-name">${esc(name)}</div>
+        ${hasPending?`<span style="font-family:var(--font-ui);font-size:.58rem;letter-spacing:1px;color:var(--muted);margin-left:auto;opacity:.6">PENDIENTE</span>`:''}
       </div>
-      <div style="padding:8px 12px;overflow:hidden;flex:1">${bodyHtml}</div>`;
+      <div style="padding:6px 10px;overflow:hidden;flex:1">${bodyHtml}</div>`;
     return block;
   }
 
   if(isV){
-    grid.style.cssText='display:flex;flex-direction:column;gap:8px;overflow:hidden;height:100%';
-    [...cols[1],...cols[2],...cols[3],...cols[4],...cols.b].forEach(id=>{
-      const b=makeBlock(id,byGame[id]||[]);
-      grid.appendChild(b);
+    grid.style.cssText='display:flex;flex-direction:column;gap:6px;overflow:hidden;height:100%';
+    [...cols['1'],...cols['2'],...cols['3'],...cols['4'],...cols['b']].forEach(id=>{
+      const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; grid.appendChild(b);
     });
     return;
   }
 
-  // ── HORIZONTAL LAYOUT ────────────────────────────────────────────────
-  // Use explicit pixel-based grid to ensure TV WebView renders correctly
-  // Structure: outer grid = 3fr 3fr 3fr 2fr (4 cols)
-  //            each col has inner flex column
-  //            bottom row spans cols 1-3
+  // Horizontal layout: 4 cols, bottom strip for Nacional+LotoTurf
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 210px;grid-template-rows:1fr auto;gap:8px;height:100%;overflow:hidden;box-sizing:border-box;';
 
-  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 200px;grid-template-rows:1fr auto;gap:8px;height:100%;overflow:hidden;box-sizing:border-box;';
-
-  // Helper: create a column wrapper
   function colWrap(gcol, grow){
     const d=document.createElement('div');
     d.style.cssText=`display:flex;flex-direction:column;gap:8px;grid-column:${gcol};grid-row:${grow};overflow:hidden;min-height:0;`;
     return d;
   }
 
-  // Col 1: Euromillón + EuroDreams (top row)
   const c1=colWrap('1','1'); grid.appendChild(c1);
-  cols[1].forEach(id=>{ const b=makeBlock(id,byGame[id]||[]); b.style.flex='1'; b.style.minHeight='0'; c1.appendChild(b); });
+  cols['1'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c1.appendChild(b); });
 
-  // Col 2: La Primitiva + El Gordo (top row)
   const c2=colWrap('2','1'); grid.appendChild(c2);
-  cols[2].forEach(id=>{ const b=makeBlock(id,byGame[id]||[]); b.style.flex='1'; b.style.minHeight='0'; c2.appendChild(b); });
+  cols['2'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c2.appendChild(b); });
 
-  // Col 3: Bonoloto (top row)
   const c3=colWrap('3','1'); grid.appendChild(c3);
-  cols[3].forEach(id=>{ const b=makeBlock(id,byGame[id]||[]); b.style.flex='1'; b.style.minHeight='0'; c3.appendChild(b); });
+  cols['3'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c3.appendChild(b); });
 
-  // Col 4: Quiniela + QuiniGol (spans both rows)
   const c4=colWrap('4','1/3'); grid.appendChild(c4);
-  cols[4].forEach(id=>{ const b=makeBlock(id,byGame[id]||[]); b.style.flex='1'; b.style.minHeight='0'; c4.appendChild(b); });
+  cols['4'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c4.appendChild(b); });
 
-  // Bottom row cols 1-3: Lotería Nacional + LotoTurf side by side
-  if(cols.b.length){
+  if(cols['b'].length){
     const cb=document.createElement('div');
-    cb.style.cssText='display:flex;flex-direction:row;gap:8px;grid-column:1/4;grid-row:2;overflow:hidden;min-height:0;';
+    cb.style.cssText='display:flex;flex-direction:row;gap:8px;grid-column:1/4;grid-row:2;overflow:hidden;min-height:0;max-height:110px;';
     grid.appendChild(cb);
-    cols.b.forEach(id=>{ const b=makeBlock(id,byGame[id]||[]); b.style.flex='1'; b.style.minHeight='0'; cb.appendChild(b); });
+    cols['b'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; cb.appendChild(b); });
   }
 }
+
 
 // ── COUNTDOWN ────────────────────────
 function startCountdown(elId,dateStr,game){
