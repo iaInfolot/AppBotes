@@ -101,7 +101,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 
 /* one block per game */
 .result-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .35s ease both;}
-.result-block-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.result-block-header{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);}
 .result-block-bar{width:4px;height:32px;border-radius:2px;flex-shrink:0;}
 .result-block-logo{width:28px;height:28px;object-fit:contain;flex-shrink:0;}
 .result-block-name{font-family:var(--font-ui);font-size:1rem;font-weight:700;letter-spacing:1px;color:var(--text);flex:1;}
@@ -142,11 +142,11 @@ td.r-pending{color:var(--border);font-size:.85rem;text-align:center;}
 #empty-state p{font-family:var(--font-ui);font-size:.85rem;letter-spacing:4px;text-transform:uppercase;}
 
 /* STATUS BAR */
-#status-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 24px;border-top:1px solid var(--border);flex-shrink:0;background:var(--surface);gap:12px;}
-#status-msg{font-size:.68rem;color:var(--muted);font-family:var(--font-ui);letter-spacing:1px;}
-#status-msg.error{color:#e05c2a;}#status-msg.ok{color:var(--success);}
-.status-right{display:flex;align-items:center;gap:16px;}
-#last-update,#app-ver{font-size:.65rem;color:var(--muted);font-family:var(--font-ui);letter-spacing:1px;white-space:nowrap;}
+/* status bar moved to header */
+#status-bar{display:none;}
+#status-msg{display:none;}
+.status-right{display:none;}
+#last-update,#app-ver{display:none;}
 
 /* OVERLAY */
 #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;}
@@ -300,6 +300,11 @@ button:focus, select:focus, input:focus, [tabindex]:focus {
         <button class="view-tab" id="tab-results"  onclick="switchView('results')"></button>
         <button class="view-tab" id="tab-mixed"    onclick="switchView('mixed')"></button>
       </div>
+      <div id="header-meta" style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
+        <span id="last-update" style="font-family:var(--font-ui);font-size:.6rem;color:var(--muted);letter-spacing:1px;white-space:nowrap"></span>
+        <span id="app-ver" style="font-family:var(--font-ui);font-size:.58rem;color:var(--muted);opacity:.6;letter-spacing:1px;white-space:nowrap"></span>
+      </div>
+      <span id="status-msg" style="font-family:var(--font-ui);font-size:.65rem;color:var(--muted);letter-spacing:1px;white-space:nowrap"></span>
       <div id="clock">--:--</div>
       <button id="menu-btn" onclick="openMenu()">☰ Menú</button>
     </div>
@@ -605,16 +610,13 @@ function applyPvInfo(pv){
     if(logoPath){
       const logoUrl=logoPath.startsWith('http')?logoPath:LOGO_BASE+logoPath;
       logoEl.style.display='none'; // hide until loaded
-      logoEl.onload=()=>{
-        logoEl.style.display='';
-        // Hide text name once logo is confirmed visible
-        if(nameEl) nameEl.style.display='none';
+      // Try direct URL first; if blocked by CORS/mixed-content, fall back to name
+      const tryLogo=(url)=>{
+        logoEl.onload=()=>{ logoEl.style.display=''; if(nameEl) nameEl.style.display='none'; };
+        logoEl.onerror=()=>{ logoEl.style.display='none'; if(nameEl) nameEl.style.display=''; };
+        logoEl.src=url;
       };
-      logoEl.onerror=()=>{
-        logoEl.style.display='none';
-        if(nameEl) nameEl.style.display=''; // show name as fallback
-      };
-      logoEl.src=logoUrl;
+      tryLogo(logoUrl);
     } else {
       logoEl.style.display='none';
     }
@@ -952,8 +954,10 @@ function _renderResults(data, grid, forceVertical){
               <span style="color:var(--success);letter-spacing:1px">${esc(r.other.code_a[0])}</span>
             </span>`:'';
         const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:5px;padding-bottom:5px;':'';
-        bodyHtml+=`<div style="${ds}">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        // Header row: date left, code_a right — using absolute positioning
+        // so the ball row always occupies 100% width regardless of code_a presence
+        bodyHtml+=`<div style="${ds};position:relative">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;min-height:18px">
             <span style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2)">${esc(fd)}</span>
             ${codeAHtml}
           </div>
@@ -1023,7 +1027,7 @@ function _renderResults(data, grid, forceVertical){
         <div class="result-block-name">${esc(name)}</div>
         ${hasPending?`<span style="font-family:var(--font-ui);font-size:.58rem;letter-spacing:1px;color:var(--muted);margin-left:auto;opacity:.6">PENDIENTE</span>`:''}
       </div>
-      <div style="padding:6px 10px;overflow:hidden;flex:1">${bodyHtml}</div>`;
+      <div class="rb-body" style="padding:5px 8px;overflow:hidden;flex:1;min-height:0">${bodyHtml}</div>`;
     return block;
   }
 
@@ -1054,7 +1058,13 @@ function _renderResults(data, grid, forceVertical){
   cols['3'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c3.appendChild(b); });
 
   const c4=colWrap('4','1/3'); grid.appendChild(c4);
-  cols['4'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c4.appendChild(b); });
+  // Quiniela (25) gets more space, QuiniGol (26) less — flex ratio 3:1
+  cols['4'].forEach((id,idx)=>{
+    const b=makeBlock(id,byGame[id]);
+    b.style.flex=id===25?'3':'1';
+    b.style.minHeight='0';
+    c4.appendChild(b);
+  });
 
   if(cols['b'].length){
     const cb=document.createElement('div');
