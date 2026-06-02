@@ -1190,13 +1190,13 @@ function _renderResults(data, grid, forceVertical){
   const c2=colWrap('2','1'); grid.appendChild(c2);
   cols['2'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c2.appendChild(b); });
 
-  // Col 3: Bonoloto (top) + LotoTurf (bottom)
-  const c3=colWrap('3','1'); grid.appendChild(c3);
+  // Col 3: Bonoloto (top) + LotoTurf (bottom) — spans both rows like col4
+  const c3=colWrap('3','1/3'); grid.appendChild(c3);
   cols['3'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='3'; b.style.minHeight='0'; c3.appendChild(b); });
   const ltId=cols['b'].find(id=>id===21);
   if(ltId!=null){
     const bl=makeBlock(ltId,byGame[ltId]);
-    bl.style.flex='1'; bl.style.minHeight='0'; bl.style.maxHeight='none';
+    bl.style.flex='1'; bl.style.minHeight='0';
     c3.appendChild(bl);
   }
 
