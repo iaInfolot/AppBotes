@@ -539,18 +539,21 @@ function switchView(view){
   const tabEl=document.getElementById('tab-'+view);
   if(tabEl) tabEl.classList.add('active');
 
-  const sl={set textContent(v){ const el=document.getElementById('section-label-text'); if(el){el.textContent=v;} const wrap=document.getElementById('section-label-header'); if(wrap){wrap.style.display=v?'flex':'none';} }, get textContent(){ return document.getElementById('section-label-text')?.textContent||''; }};
+  function setLabel(txt){
+    const el=document.getElementById('section-label-text');
+    if(el) el.textContent=txt||'';
+    const wrap=document.getElementById('section-label-header');
+    if(wrap) wrap.style.display=txt?'flex':'none';
+  }
   if(view==='jackpots'){
-    sl.textContent='Próximos Sorteos';
-    sl.style.display='';
+    setLabel('Próximos Sorteos');
     if(lastJackpotsData.length) renderJackpots(lastJackpotsData);
   } else if(view==='results'){
-    sl.textContent=resultsWeekLabel();
-    sl.style.display='';
+    setLabel(resultsWeekLabel());
     if(lastResultsData.length) renderResults(lastResultsData);
     else fetchResults();
   } else if(view==='mixed'){
-    sl.style.display='none'; // mixed has own labels inside
+    setLabel('');
     if(lastJackpotsData.length) renderMixedJackpots(lastJackpotsData);
     if(lastResultsData.length) renderMixedResults(lastResultsData);
     else if(!lastResultsData.length) fetchResults();
@@ -704,7 +707,7 @@ async function fetchResults(){
     lastResultsData = flat;
     if(currentView==='mixed')   renderMixedResults(lastResultsData);
     if(currentView==='results'){
-      { const el=document.getElementById('section-label-text'); if(el) el.textContent=resultsWeekLabel(); const w=document.getElementById('section-label-header'); if(w) w.style.display='flex'; }
+      { const _t=resultsWeekLabel(); const el=document.getElementById('section-label-text'); if(el) el.textContent=_t; const w=document.getElementById('section-label-header'); if(w) w.style.display='flex'; }
       renderResults(lastResultsData);
     }
     setStatus('Datos actualizados','ok');
