@@ -995,6 +995,10 @@ function _renderResults(data, grid, forceVertical){
       const betArr=Array.isArray(r.bet)?r.bet:[];
       const matches=r.other?.matches||[];
       const fd=new Date(r.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+      // Pleno al 15: r.extra = [result, num_acertados]
+      const plenoArr=Array.isArray(r.extra)?r.extra:[];
+      const plenoRes=plenoArr[0]||null;   // 'M','1','2'
+      const plenoAc=plenoArr[1]||null;    // number of acertados
       bodyHtml+=`<div style="font-family:var(--font-ui);font-size:.7rem;color:var(--muted);margin-bottom:3px">${esc(fd)}</div>`;
       // Compute font size to fit all rows without overflow
       // 15 matches × ~18px row = 270px; if block is shorter, shrink
@@ -1006,11 +1010,22 @@ function _renderResults(data, grid, forceVertical){
         const t1=m.team_1_name?esc(m.team_1_name):`Eq${idx*2+1}`;
         const t2=m.team_2_name?esc(m.team_2_name):`Eq${idx*2+2}`;
         const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':res.startsWith('M')?'#16a34a':'#ca8a04';
-        const ds=idx<betArr.length-1?'border-bottom:1px solid var(--border);':'';
+        const ds=idx<betArr.length-1?'border-bottom:1px solid var(--border)':'';
         bodyHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:3px;padding:${rowPad};${ds}">
           <div style="font-family:var(--font-ui);font-size:${rowFs};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">${t1} <span style="color:var(--muted)">-</span> ${t2}</div>
           <span style="background:${rc};color:#fff;border-radius:3px;padding:1px 5px;font-family:var(--font-ui);font-size:${rowFs};font-weight:700;flex-shrink:0">${esc(res)}</span></div>`;
       });
+      // Pleno al 15
+      if(plenoRes!==null){
+        const prc=plenoRes==='1'?'#2563eb':plenoRes==='2'?'#dc2626':'#16a34a';
+        bodyHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
+          <span style="font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:.5px;color:var(--text2)">Pleno al 15</span>
+          <div style="display:flex;align-items:center;gap:4px">
+            ${plenoAc!==null?`<span style="font-family:var(--font-ui);font-size:.6rem;color:var(--muted)">${esc(plenoAc)} ac.</span>`:''}
+            <span style="background:${prc};color:#fff;border-radius:3px;padding:1px 6px;font-family:var(--font-ui);font-size:.62rem;font-weight:700">${esc(plenoRes)}</span>
+          </div>
+        </div>`;
+      }
     } else if(gt==='nacional'){
       // Helper: format prize amount
       function fmtPrize(v){
