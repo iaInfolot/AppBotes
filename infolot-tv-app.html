@@ -55,7 +55,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 .accent-line{height:2px;background:linear-gradient(90deg,var(--pv-primary) 0%,var(--pv-secondary) 40%,transparent 80%);flex-shrink:0;}
 
 /* MAIN CONTENT */
-#main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:12px 24px 0;min-height:0;}
+#main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:10px 24px 10px;min-height:0;}
 .section-label{font-family:var(--font-ui);font-size:.68rem;font-weight:600;letter-spacing:5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;flex-shrink:0;display:flex;align-items:center;gap:8px;}
 .section-label::before{content:'';display:inline-block;width:5px;height:5px;background:var(--pv-primary);border-radius:50%;}
 
@@ -346,13 +346,6 @@ button:focus, select:focus, input:focus, [tabindex]:focus {
     </div>
   </div>
 
-  <div id="status-bar">
-    <span id="status-msg">Listo</span>
-    <div class="status-right">
-      <span id="last-update"></span>
-      <span id="app-ver"></span>
-    </div>
-  </div>
 </div>
 
 <div id="overlay">
