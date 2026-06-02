@@ -799,7 +799,8 @@ function renderJackpots(data){
   grid.style.gridTemplateRows=`repeat(${rows},1fr)`;
   items.forEach((item,i)=>{
     const game=gamesMap[item.id_game]||{};
-    const barClr=game.bg_color||'var(--pv-primary)';
+    // fg_color is the brand color (bg_color is always white in API)
+    const barClr=game.fg_color||game.bg_color||'var(--pv-primary)';
     // Always use game jackpot color; fallback to pv-primary
     const rawAmtClr=game.jackpot_fg_color||'';
     const amtClr = (rawAmtClr&&rawAmtClr!=='#000000'&&rawAmtClr!=='#FFFFFF'&&rawAmtClr!=='#ffffff'&&rawAmtClr!=='#000')
@@ -958,18 +959,24 @@ function _renderResults(data, grid, forceVertical){
   function buildBlockHTML(gameId, draws){
     const game=gamesMap[gameId]||{};
     const gt=getGameType(game);
-    const barClr=game.bg_color||'var(--pv-primary)';
-    // Main balls: number_bg_color is the correct ball color from API
-    // bg_color is the header/brand color — only use as fallback if number_bg_color missing
-    const _bgc=game.bg_color||'';
-    const _bgcValid=_bgc&&_bgc.toLowerCase()!=='#ffffff'&&_bgc.toLowerCase()!=='#fff'&&_bgc!=='white';
-    const numBg=game.number_bg_color||(_bgcValid?_bgc:'#1a2535');
+    // fg_color is the brand color (bg_color is always white in API)
+    const barClr=game.fg_color||game.bg_color||'var(--pv-primary)';
+    // number_bg_color = correct ball color per API
+    // fg_color = brand color (used for barClr and accents)
+    // bg_color = always #FFFFFF in API — ignore
+    const numBg=game.number_bg_color||'#1a2535';
     const numFg=game.number_fg_color||'#fff';
-    const extBg=game.extra_bg_color||'#c8a000', extFg=game.extra_fg_color||'#000';
-    // Comp and ref must visually differ from main balls — use distinct defaults
-    const compBg=game.num_complementary_bg_color||(numBg==='#e08020'?'#2563eb':'#e08020');
+    // extra: if bg is very light (#E7D4EF etc), darken for dark mode readability
+    const _extBgRaw=game.extra_bg_color||'#c8a000';
+    const _extBgIsLight=_extBgRaw&&(/^#[ef][0-9a-f]/i.test(_extBgRaw)||_extBgRaw.toLowerCase()==='#ffffff'||_extBgRaw.toLowerCase()==='white');
+    const extBg=_extBgIsLight?(game.number_bg_color||'#c8a000'):_extBgRaw;
+    const extFg=_extBgIsLight?'#fff':(game.extra_fg_color||'#000');
+    const compBg=game.num_complementary_bg_color||'#e08020';
     const compFg=game.num_complementary_fg_color||'#fff';
-    const refBg=game.num_refund_bg_color||'#607080', refFg=game.num_refund_fg_color||'#fff';
+    const _refBgRaw=game.num_refund_bg_color||'#607080';
+    const _refBgIsLight=_refBgRaw&&(/^#[ef][0-9a-f]/i.test(_refBgRaw)||_refBgRaw.toLowerCase()==='#ececec'||_refBgRaw.toLowerCase()==='#ffffff');
+    const refBg=_refBgIsLight?'#607080':_refBgRaw;
+    const refFg=_refBgIsLight?'#fff':(game.num_refund_fg_color||'#fff');
     let logoSrc='';
     if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
     else if(game.logo) logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
@@ -1184,6 +1191,9 @@ function _renderResults(data, grid, forceVertical){
 function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
   const gameQui=gamesMap[25]||{};
   const gameQG=gamesMap[26]||{};
+  // fg_color is the brand color for each game
+  const _quiFg=gameQui.fg_color||'#CB1517';
+  const _qgFg=gameQG.fg_color||'#40BACE';
   let logoSrcQui='', logoSrcQG='';
   if(gameQui.logo_official) logoSrcQui=gameQui.logo_official.startsWith('http')?gameQui.logo_official:LOGO_BASE+gameQui.logo_official;
   else if(gameQui.logo) logoSrcQui=gameQui.logo.startsWith('http')?gameQui.logo:LOGO_BASE+gameQui.logo;
@@ -1387,7 +1397,8 @@ function renderMixedJackpots(data){
   const minDate=items.reduce((m,i)=>(!i.date?m:(!m||i.date<m?i.date:m)),null);
   items.forEach((item,i)=>{
     const game=gamesMap[item.id_game]||{};
-    const barClr=game.bg_color||'var(--pv-primary)';
+    // fg_color is the brand color (bg_color is always white in API)
+    const barClr=game.fg_color||game.bg_color||'var(--pv-primary)';
     // Always use game jackpot color; fallback to pv-primary
     const rawAmtClr=game.jackpot_fg_color||'';
     const amtClr = (rawAmtClr&&rawAmtClr!=='#000000'&&rawAmtClr!=='#FFFFFF'&&rawAmtClr!=='#ffffff'&&rawAmtClr!=='#000')
