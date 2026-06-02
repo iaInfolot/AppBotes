@@ -690,7 +690,7 @@ async function fetchResults(){
 
     console.log('[Results] ref:',toYMD(ref),'mon:',monStr,'sun:',sunStr,'today:',toYMD(new Date()));
     setLoadingStep('Cargando resultados semana...');
-    const calls = gameIds.map(id => wsCall('last-game-results',{id_game:parseInt(id),limit:7})
+    const calls = gameIds.map(id => wsCall('last-game-results',{id_game:parseInt(id),limit:14})
       .then(d => Array.isArray(d)?d:[])
       .catch(()=>[]));
     const results = await Promise.all(calls);
