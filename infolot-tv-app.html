@@ -958,8 +958,8 @@ function _renderResults(data, grid, forceVertical){
     const game=gamesMap[gameId]||{};
     const gt=getGameType(game);
     const barClr=game.bg_color||'var(--pv-primary)';
-    // Main balls ALWAYS use bg_color (brand color) — number_bg_color ignored
-    const numBg=game.bg_color||game.number_bg_color||'#1a2535';
+    // Main balls: bg_color is the game brand color, fallback to number_bg_color, then dark default
+    const numBg=(game.bg_color&&game.bg_color!=='#ffffff'&&game.bg_color!=='#FFFFFF')?game.bg_color:(game.number_bg_color||'#1a2535');
     const numFg=game.number_fg_color||'#fff';
     const extBg=game.extra_bg_color||'#c8a000', extFg=game.extra_fg_color||'#000';
     const compBg=game.num_complementary_bg_color||'#e08020', compFg=game.num_complementary_fg_color||'#fff';
