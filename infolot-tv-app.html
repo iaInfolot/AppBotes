@@ -836,7 +836,7 @@ function renderJackpots(data){
     card.innerHTML=`
       <div class="card-bar" style="background:${barClr}"></div>
       <div class="card-header">
-        ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
+        ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this)">` :''}
         <div class="card-name">${esc(item.name||game.name||'—')}</div>
       </div>
       <div class="card-amount-wrap">
@@ -1104,7 +1104,7 @@ function _renderResults(data, grid, forceVertical){
     block.innerHTML=`
       <div class="result-block-header" style="flex-shrink:0">
         <div class="result-block-bar" style="background:${barClr}"></div>
-        ${logoSrc?`<img class="result-block-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
+        ${logoSrc?`<img class="result-block-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this)">` :''}
         <div class="result-block-name">${esc(name)}</div>
         ${hasPending?`<span style="font-family:var(--font-ui);font-size:.58rem;letter-spacing:1px;color:var(--muted);margin-left:auto;opacity:.6">PENDIENTE</span>`:''}
       </div>
@@ -1242,7 +1242,7 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
     }
   }
 
-  function logoImg(src){ return src?'<img style="width:18px;height:18px;object-fit:contain;flex-shrink:0" src="'+esc(src)+'" alt="" onerror="this.style.display='none'">':''; }
+  function logoImg(src){ return src?'<img style="width:18px;height:18px;object-fit:contain;flex-shrink:0" src="'+esc(src)+'" alt="" onerror="hideImg(this)">':''; }
 
   var block=document.createElement('div');
   block.className='result-block';
@@ -1372,7 +1372,7 @@ function renderMixedJackpots(data){
     card.innerHTML=`
       <div class="card-bar" style="background:${barClr}"></div>
       <div class="card-header">
-        ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="this.style.display='none'">` :''}
+        ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this)">` :''}
         <div class="card-name">${esc(item.name||game.name||'—')}</div>
       </div>
       <div class="card-amount-wrap">
@@ -1454,6 +1454,7 @@ function showLoading(s){
 function setLoadingStep(m){document.getElementById('loading-step').textContent=m;}
 function setStatus(m,t){const el=document.getElementById('status-msg');el.textContent=m;el.className=t||'';}
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function hideImg(el){el.style.display='none';}
 
 // ── NAVIGATION ────────────────────────
 function openMenu(){
