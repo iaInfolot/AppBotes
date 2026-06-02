@@ -581,13 +581,14 @@ async function wsCall(endpoint,extra={}){
 
 // ── PV-INFO ──────────────────────────
 async function fetchPvInfo(){
-  setLoadingStep('Cargando datos del punto de venta...');
   try{
-    console.log('[WS] Calling pv-info via',loadConfig().url);
+    const cfg=loadConfig();
+    console.log('[WS] pv-info via',cfg.url,'appid:',cfg.appid.substring(0,8)+'...');
     pvData=await wsCall('pv-info')||{};
     applyPvInfo(pvData);
   }catch(e){
     console.error('[WS] pv-info FAILED:',e.message,e);
+    setLoadingStep('pv-info falló: '+e.message);
     document.getElementById('pv-name').textContent='Mi Lotería';
   }
 }
@@ -650,12 +651,16 @@ function applyPvUrl(pvurl){
 
 // ── GET-GAMES ─────────────────────────
 async function fetchGames(){
-  setLoadingStep('Cargando juegos...'); console.log('[WS] Calling get-games via',loadConfig().url);
   try{
+    console.log('[WS] get-games...');
     const data=await wsCall('get-games');
     gamesMap={};
     if(data&&typeof data==='object')Object.values(data).forEach(g=>{if(g.lae)gamesMap[g.id]=g;});
-  }catch(e){console.error('[WS] get-games FAILED:',e.message,e);}
+    console.log('[WS] gamesMap loaded:',Object.keys(gamesMap).length,'games');
+  }catch(e){
+    console.error('[WS] get-games FAILED:',e.message,e);
+    setLoadingStep('get-games falló: '+e.message);
+  }
 }
 
 // ── NEXT-JACKPOTS ─────────────────────
@@ -1414,15 +1419,20 @@ function renderMixedResults(data){
 async function loadAllData(){
   showLoading(true);
   try{
+    setLoadingStep('Conectando pv-info...');
     await fetchPvInfo();
+    setLoadingStep('Cargando juegos...');
     await fetchGames();
-    // Fetch data in parallel AFTER games are loaded
+    setLoadingStep('Cargando datos...');
     await Promise.all([fetchJackpots(), fetchResults()]);
+    setLoadingStep('Listo');
   }catch(e){
     console.error('[boot] loadAllData error:',e);
+    setLoadingStep('ERROR: '+e.message);
+    // Show error on screen for 5s then try to continue
+    await new Promise(r=>setTimeout(r,5000));
   }
   showLoading(false);
-  // NOW switch to default view so render functions have data
   switchView(currentView||'jackpots');
 }
 async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();}
