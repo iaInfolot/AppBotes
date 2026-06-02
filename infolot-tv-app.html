@@ -844,6 +844,8 @@ function _renderResults(data, grid, forceVertical){
 
   // Show full week structure from gamesMap (with or without results)
   function getGameType(game){
+    // LotoTurf (id=21) has is_link_match=1 in some configs but is a number game
+    if(game.id===21) return 'loto';
     if(game.is_link_match===1) return 'match';
     if(game.is_num_serie===1||game.is_num_fraction===1) return 'nacional';
     return 'loto';
@@ -942,11 +944,16 @@ function _renderResults(data, grid, forceVertical){
         if(hasE) row+=ballSep('+')+balls(r.extra,extBg,extFg,'sq');
         if(hasC&&r.other?.complementary?.length) row+=ballSep('C')+balls(r.other.complementary,compBg,compFg,'circle');
         if(hasR&&r.other?.refund!=null) row+=ballSep('R')+ball(r.other.refund,refBg,refFg,'sq');
+        // code_a label: use game.code_a_name if available, else generic
+        const codeALabel=game.code_a_name||'Código';
         const codeAHtml=hasCA&&r.other?.code_a?.length
-          ?`<span style="font-family:var(--font-ui);font-size:.68rem;color:var(--success);font-weight:700;letter-spacing:1px;margin-left:6px">${esc(r.other.code_a[0])}</span>`:'';
+          ?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:.6rem;font-weight:600;background:rgba(39,201,122,.12);border:1px solid rgba(39,201,122,.3);border-radius:4px;padding:1px 6px;white-space:nowrap">
+              <span style="color:var(--muted);letter-spacing:.5px;text-transform:uppercase">${esc(codeALabel)}</span>
+              <span style="color:var(--success);letter-spacing:1px">${esc(r.other.code_a[0])}</span>
+            </span>`:'';
         const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:5px;padding-bottom:5px;':'';
         bodyHtml+=`<div style="${ds}">
-          <div style="display:flex;align-items:center;margin-bottom:3px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <span style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2)">${esc(fd)}</span>
             ${codeAHtml}
           </div>
