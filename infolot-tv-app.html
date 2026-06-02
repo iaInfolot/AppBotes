@@ -1115,8 +1115,9 @@ function _renderResults(data, grid, forceVertical){
   }
 
   // Horizontal layout: 4 cols, bottom strip for Nacional+LotoTurf
-  // 4-col grid: cols 1-3 top games, col4 Quiniela/QuiniGol full height
-  // Row2: Nacional spans cols 1-3, LotoTurf is col4 row2
+  // Layout:
+  //  Col1: Euromillón+EuroDreams  Col2: Primitiva+ElGordo  Col3: Bonoloto+LotoTurf  Col4: Quiniela+QuiniGol (full height)
+  //  Row2: Nacional spans cols 1-2
   grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 210px;grid-template-rows:1fr auto;gap:8px;height:100%;overflow:hidden;box-sizing:border-box;';
 
   function colWrap(gcol, grow){
@@ -1131,42 +1132,36 @@ function _renderResults(data, grid, forceVertical){
   const c2=colWrap('2','1'); grid.appendChild(c2);
   cols['2'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c2.appendChild(b); });
 
+  // Col 3: Bonoloto (top) + LotoTurf (bottom)
   const c3=colWrap('3','1'); grid.appendChild(c3);
   cols['3'].forEach(id=>{ const b=makeBlock(id,byGame[id]); b.style.flex='1'; b.style.minHeight='0'; c3.appendChild(b); });
-
-  // Col 4: Quiniela+QuiniGol merged block spans full height (rows 1+2)
-  const c4=colWrap('4','1/3'); grid.appendChild(c4);
-  // Quiniela+QuiniGol: build merged block instead of separate ones
-  const quiBlock = makeQuinielaQuiniGolBlock(byGame[25]||[], byGame[26]||[]);
-  quiBlock.style.flex='1'; quiBlock.style.minHeight='0';
-  c4.appendChild(quiBlock);
-
-  // Row 2 Nacional: spans cols 1-3
-  const nacId=cols['b'].find(id=>id===7);
-  if(nacId!=null){
-    const bn=makeBlock(nacId,byGame[nacId]);
-    bn.style.cssText='grid-column:1/4;grid-row:2;overflow:hidden;min-height:0;max-height:120px;';
-    grid.appendChild(bn);
-  }
-
-  // Row 2 LotoTurf: col 4 row 2
   const ltId=cols['b'].find(id=>id===21);
   if(ltId!=null){
     const bl=makeBlock(ltId,byGame[ltId]);
-    bl.style.cssText='grid-column:4;grid-row:2;overflow:hidden;min-height:0;max-height:120px;';
-    grid.appendChild(bl);
+    bl.style.flex='1'; bl.style.minHeight='0';
+    c3.appendChild(bl);
+  }
+
+  // Col 4: Quiniela+QuiniGol merged block — full height rows 1+2
+  const c4=colWrap('4','1/3'); grid.appendChild(c4);
+  const quiBlock=makeQuinielaQuiniGolBlock(byGame[25]||[], byGame[26]||[]);
+  quiBlock.style.flex='1'; quiBlock.style.minHeight='0';
+  c4.appendChild(quiBlock);
+
+  // Row 2: Nacional spans cols 1-2 only
+  const nacId=cols['b'].find(id=>id===7);
+  if(nacId!=null){
+    const bn=makeBlock(nacId,byGame[nacId]);
+    bn.style.cssText='grid-column:1/3;grid-row:2;overflow:hidden;min-height:0;max-height:120px;';
+    grid.appendChild(bn);
   }
 }
 
 
 // ── QUINIELA + QUINIGOL MERGED BLOCK ─────────────────────────────────────
 function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
-  // Both games have same match order. Merge: show [QG result | Teams | Qui result]
-  // QG result only for matches present in QuiniGol (positions 1..N_QG)
   const gameQui=gamesMap[25]||{};
   const gameQG=gamesMap[26]||{};
-  const barClr=gameQui.bg_color||'var(--pv-primary)';
-  const barClrQG=gameQG.bg_color||'#c05000';
   let logoSrcQui='', logoSrcQG='';
   if(gameQui.logo_official) logoSrcQui=gameQui.logo_official.startsWith('http')?gameQui.logo_official:LOGO_BASE+gameQui.logo_official;
   else if(gameQui.logo) logoSrcQui=gameQui.logo.startsWith('http')?gameQui.logo:LOGO_BASE+gameQui.logo;
@@ -1185,73 +1180,79 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
   const fd=rQui.date?new Date(rQui.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
 
   const pending=!betQui.length&&!betQG.length;
-  const rowCount=Math.max(betQui.length,15);
-  const rowFs=rowCount>14?'.57rem':'.62rem';
-  const rowPad=rowCount>14?'1px 0':'2px 0';
+  const rowFs='.56rem';
+  const rowPad='1px 0';
 
-  function resBadge(res,small){
-    if(!res&&res!==0) return `<span style="width:${small?18:22}px"></span>`;
-    const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':res.startsWith('M')?'#16a34a':'#ca8a04';
-    return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:${small?18:22}px;height:${small?14:16}px;background:${rc};color:#fff;border-radius:3px;padding:0 3px;font-family:var(--font-ui);font-size:${small?'.52rem':'.56rem'};font-weight:700;flex-shrink:0">${esc(res)}</span>`;
+  function quiBadge(res){
+    if(res==null||res==='') return '<span style="width:20px;flex-shrink:0"></span>';
+    const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':'#ca8a04';
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:14px;background:'+rc+';color:#fff;border-radius:3px;font-family:var(--font-ui);font-size:.52rem;font-weight:700;flex-shrink:0">'+esc(res)+'</span>';
+  }
+  function qgBadge(res){
+    if(res==null||res==='') return '<span style="width:30px;flex-shrink:0"></span>';
+    const parts=String(res).split('-');
+    if(parts.length===2){
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;gap:1px;height:14px;background:#7c3aed;color:#fff;border-radius:3px;padding:0 2px;font-family:var(--font-ui);font-size:.52rem;font-weight:700;flex-shrink:0;min-width:30px">'
+        +'<span style="display:inline-flex;align-items:center;justify-content:center;width:10px">'+esc(parts[0])+'</span>'
+        +'<span style="opacity:.6">-</span>'
+        +'<span style="display:inline-flex;align-items:center;justify-content:center;width:10px">'+esc(parts[1])+'</span>'
+        +'</span>';
+    }
+    const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':res.startsWith('M')?'#16a34a':'#7c3aed';
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:14px;background:'+rc+';color:#fff;border-radius:3px;padding:0 3px;font-family:var(--font-ui);font-size:.52rem;font-weight:700;flex-shrink:0">'+esc(res)+'</span>';
   }
 
   let bodyHtml='';
   if(pending){
     bodyHtml='<div style="opacity:.25;font-family:var(--font-ui);font-size:.7rem;color:var(--muted);font-style:italic">Pendiente</div>';
   } else {
-    if(fd) bodyHtml+=`<div style="font-family:var(--font-ui);font-size:.62rem;color:var(--muted);margin-bottom:2px">${esc(fd)}</div>`;
-    // Column headers
-    bodyHtml+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;padding-bottom:2px;border-bottom:1px solid var(--border)">
-      <span style="width:22px;font-family:var(--font-ui);font-size:.5rem;color:var(--muted);text-align:center;flex-shrink:0">QG</span>
-      <span style="flex:1;font-family:var(--font-ui);font-size:.5rem;color:var(--muted);text-align:center"></span>
-      <span style="width:22px;font-family:var(--font-ui);font-size:.5rem;color:var(--muted);text-align:center;flex-shrink:0">Q</span>
-    </div>`;
-    betQui.forEach((resQui,idx)=>{
-      const resQG=betQG[idx]||null;
-      const hasQG=idx<betQG.length;
-      const mQui=matchesQui.find(x=>parseInt(x.position)===idx+1)||{};
-      const mQG=matchesQG.find(x=>parseInt(x.position)===idx+1)||{};
-      const t1=(mQui.team_1_name||mQG.team_1_name||`Eq${idx*2+1}`);
-      const t2=(mQui.team_2_name||mQG.team_2_name||`Eq${idx*2+2}`);
-      const ds=idx<betQui.length-1?'border-bottom:1px solid var(--border)':'';
-      bodyHtml+=`<div style="display:flex;align-items:center;gap:2px;padding:${rowPad};${ds}">
-        ${hasQG?resBadge(resQG,true):`<span style="width:18px;flex-shrink:0"></span>`}
-        <div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:${rowFs};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center">${esc(t1)}<span style="color:var(--muted)"> - </span>${esc(t2)}</div>
-        ${resBadge(resQui,true)}
-      </div>`;
+    if(fd) bodyHtml+='<div style="font-family:var(--font-ui);font-size:.6rem;color:var(--muted);margin-bottom:2px">'+esc(fd)+'</div>';
+    bodyHtml+='<div style="display:flex;align-items:center;gap:3px;padding-bottom:2px;margin-bottom:1px;border-bottom:1px solid var(--border)">'
+      +'<span style="width:30px;font-family:var(--font-ui);font-size:.48rem;color:var(--muted);text-align:center;flex-shrink:0">QG</span>'
+      +'<span style="flex:1"></span>'
+      +'<span style="width:20px;font-family:var(--font-ui);font-size:.48rem;color:var(--muted);text-align:center;flex-shrink:0">Q</span>'
+      +'</div>';
+    betQui.forEach(function(resQui,idx){
+      var resQG=idx<betQG.length?betQG[idx]:null;
+      var mQui=matchesQui.find(function(x){return parseInt(x.position)===idx+1;})||{};
+      var mQG=matchesQG.find(function(x){return parseInt(x.position)===idx+1;})||{};
+      var t1=esc(mQui.team_1_name||mQG.team_1_name||('Eq'+(idx*2+1)));
+      var t2=esc(mQui.team_2_name||mQG.team_2_name||('Eq'+(idx*2+2)));
+      var ds=idx<betQui.length-1?'border-bottom:1px solid var(--border)':'';
+      bodyHtml+='<div style="display:flex;align-items:center;gap:3px;padding:'+rowPad+';'+ds+'">'
+        +qgBadge(resQG)
+        +'<div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:'+rowFs+';color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+t1+'<span style="color:var(--muted)"> - </span>'+t2+'</div>'
+        +quiBadge(resQui)
+        +'</div>';
     });
     if(plenoRes!==null){
-      const prc=plenoRes==='1'?'#2563eb':plenoRes==='2'?'#dc2626':'#16a34a';
-      bodyHtml+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px;padding-top:3px;border-top:1px solid var(--border)">
-        <span style="font-family:var(--font-ui);font-size:.57rem;font-weight:600;color:var(--text2)">Pleno al 15</span>
-        <div style="display:flex;align-items:center;gap:3px">
-          ${plenoAc!==null?`<span style="font-family:var(--font-ui);font-size:.55rem;color:var(--muted)">${esc(plenoAc)} ac.</span>`:''}
-          <span style="background:${prc};color:#fff;border-radius:3px;padding:1px 5px;font-family:var(--font-ui);font-size:.57rem;font-weight:700">${esc(plenoRes)}</span>
-        </div>
-      </div>`;
+      var prc=plenoRes==='1'?'#2563eb':plenoRes==='2'?'#dc2626':'#16a34a';
+      bodyHtml+='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px;padding-top:3px;border-top:1px solid var(--border);flex-shrink:0">'
+        +'<span style="font-family:var(--font-ui);font-size:.55rem;font-weight:600;color:var(--text2)">Pleno al 15</span>'
+        +'<div style="display:flex;align-items:center;gap:3px">'
+        +(plenoAc!==null?'<span style="font-family:var(--font-ui);font-size:.52rem;color:var(--muted)">'+esc(plenoAc)+' ac.</span>':'')
+        +'<span style="background:'+prc+';color:#fff;border-radius:3px;padding:1px 5px;font-family:var(--font-ui);font-size:.55rem;font-weight:700">'+esc(plenoRes)+'</span>'
+        +'</div></div>';
     }
   }
 
-  const block=document.createElement('div');
+  function logoImg(src){ return src?'<img style="width:18px;height:18px;object-fit:contain;flex-shrink:0" src="'+esc(src)+'" alt="" onerror="this.style.display='none'">':''; }
+
+  var block=document.createElement('div');
   block.className='result-block';
   block.style.cssText='overflow:hidden;display:flex;flex-direction:column;border-radius:var(--radius);';
-  // Dual-logo header
-  block.innerHTML=`
-    <div class="result-block-header" style="flex-shrink:0">
-      <div style="display:flex;gap:3px;flex-shrink:0">
-        ${logoSrcQG?`<img style="width:18px;height:18px;object-fit:contain" src="${esc(logoSrcQG)}" alt="" onerror="this.style.display='none'">`:''}
-        ${logoSrcQui?`<img style="width:18px;height:18px;object-fit:contain" src="${esc(logoSrcQui)}" alt="" onerror="this.style.display='none'">`:''}
-      </div>
-      <div style="display:flex;flex-direction:column;flex:1;min-width:0">
-        <div style="display:flex;align-items:baseline;gap:4px">
-          <span style="font-family:var(--font-ui);font-size:.72rem;font-weight:700;color:var(--text)">${esc(gameQG.name||'QuiniGol')}</span>
-          <span style="font-family:var(--font-ui);font-size:.6rem;color:var(--muted)">·</span>
-          <span style="font-family:var(--font-ui);font-size:.72rem;font-weight:700;color:var(--text)">${esc(gameQui.name||'La Quiniela')}</span>
-        </div>
-      </div>
-      ${pending?`<span style="font-family:var(--font-ui);font-size:.58rem;letter-spacing:1px;color:var(--muted);opacity:.6">PENDIENTE</span>`:''}
-    </div>
-    <div class="rb-body" style="padding:5px 8px;overflow:hidden;flex:1;min-height:0">${bodyHtml}</div>`;
+  block.innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-bottom:1px solid var(--border);flex-shrink:0;gap:4px">'
+      +'<div style="display:flex;align-items:center;gap:4px">'
+        +logoImg(logoSrcQG)
+        +'<span style="font-family:var(--font-ui);font-size:.78rem;font-weight:700;color:var(--text);white-space:nowrap">'+esc(gameQG.name||'QuiniGol')+'</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:4px">'
+        +'<span style="font-family:var(--font-ui);font-size:.78rem;font-weight:700;color:var(--text);white-space:nowrap">'+esc(gameQui.name||'La Quiniela')+'</span>'
+        +logoImg(logoSrcQui)
+      +'</div>'
+    +'</div>'
+    +'<div style="padding:4px 8px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column">'+bodyHtml+'</div>';
   return block;
 }
 
