@@ -551,12 +551,12 @@ function switchView(view){
   } else if(view==='results'){
     setLabel(resultsWeekLabel());
     if(lastResultsData.length) renderResults(lastResultsData);
-    else fetchResults();
+    else if(Object.keys(gamesMap).length) fetchResults(); // only if games loaded
   } else if(view==='mixed'){
     setLabel('');
     if(lastJackpotsData.length) renderMixedJackpots(lastJackpotsData);
     if(lastResultsData.length) renderMixedResults(lastResultsData);
-    else if(!lastResultsData.length) fetchResults();
+    else if(!lastResultsData.length&&Object.keys(gamesMap).length) fetchResults();
   }
 }
 
@@ -1412,11 +1412,17 @@ function renderMixedResults(data){
 // ── LOAD ALL ──────────────────────────
 async function loadAllData(){
   showLoading(true);
-  await fetchPvInfo();
-  await fetchGames();
-  // Fetch jackpots and results in parallel AFTER games are loaded
-  await Promise.all([fetchJackpots(), fetchResults()]);
+  try{
+    await fetchPvInfo();
+    await fetchGames();
+    // Fetch data in parallel AFTER games are loaded
+    await Promise.all([fetchJackpots(), fetchResults()]);
+  }catch(e){
+    console.error('[boot] loadAllData error:',e);
+  }
   showLoading(false);
+  // NOW switch to default view so render functions have data
+  switchView(currentView||'jackpots');
 }
 async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();}
 
@@ -1563,8 +1569,13 @@ async function diagRun(endpoint){
   document.getElementById('app-ver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
   updateClock();setInterval(updateClock,30000);
   setupTimers(cfg);
-  // Apply default view before loading data
-  if(cfg.defaultView&&cfg.defaultView!=='jackpots') switchView(cfg.defaultView);
+  // Set default view visually only — no data fetch here, loadAllData handles it
+  if(cfg.defaultView&&cfg.defaultView!=='jackpots'){
+    currentView=cfg.defaultView;
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    const vEl=document.getElementById('view-'+cfg.defaultView);
+    if(vEl) vEl.classList.add('active');
+  }
   loadAllData();
 })();
 </script>
