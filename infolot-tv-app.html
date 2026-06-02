@@ -914,10 +914,10 @@ function _renderResults(data, grid, forceVertical){
 
   function makeBall(n, bg, fg, shape, sz){
     const br = shape==='sq'?'4px':'50%';
-    const fs = sz >= 34 ? '.82rem' : sz >= 28 ? '.72rem' : sz >= 24 ? '.64rem' : '.56rem';
+    // Unified font size: always .72rem regardless of ball size
     return `<span style="display:inline-flex;align-items:center;justify-content:center;`+
       `width:${sz}px;height:${sz}px;background:${bg};color:${fg};border-radius:${br};`+
-      `font-family:var(--font-ui);font-size:${fs};font-weight:700;flex-shrink:0;">${n}</span>`;
+      `font-family:var(--font-ui);font-size:.72rem;font-weight:700;flex-shrink:0;">${n}</span>`;
   }
   // Legacy ball() uses default size 26 (for pending placeholders etc.)
   function ball(n,bg,fg,shape){ return makeBall(n,bg,fg,shape,26); }
@@ -988,21 +988,43 @@ function _renderResults(data, grid, forceVertical){
     } else if(gt==='loto'){
       const hasE=game.num_extra_per_bet>0, hasC=game.is_num_complementary===1;
       const hasR=game.is_num_refund===1, hasCA=game.is_code_a===1;
-      // Compute fixed ball size for this game (same for ALL draws)
-      // Use actual draw data to count balls accurately (API metadata can be wrong)
       const firstDraw=draws[0]||{};
       const nMain=Array.isArray(firstDraw.bet)?firstDraw.bet.length:(game.num_bet_per_game||6);
       const nExtra=hasE?(Array.isArray(firstDraw.extra)?firstDraw.extra.length:(game.num_extra_per_bet||0)):0;
       const nComp=hasC&&firstDraw.other?.complementary?.length?1:0;
       const nRef=hasR&&firstDraw.other?.refund!=null?1:0;
       const bsz=calcBSZ(nMain, nExtra, nComp, nRef);
+
+      // Column header: show C and R labels aligned over their columns (only once)
+      if(hasC||hasR||hasE){
+        // Build header row aligned with ball row using same widths
+        const mainW=nMain*bsz+(nMain-1)*2; // width of main balls
+        const extW=hasE?(nExtra*bsz+(nExtra-1)*2+12):0; // +sep width
+        const colHeaders=[];
+        // Spacer for main balls
+        colHeaders.push(`<span style="flex:0 0 ${mainW}px"></span>`);
+        if(hasE){
+          const extLabel=game.extra_name||'+';
+          colHeaders.push(`<span style="flex:0 0 ${extW}px;text-align:center;font-family:var(--font-ui);font-size:.5rem;color:var(--text2);font-weight:700;letter-spacing:.5px">${esc(extLabel)}</span>`);
+        }
+        if(hasC){
+          const compW=bsz+2+10; // ball + gap + sep
+          colHeaders.push(`<span style="flex:0 0 ${compW}px;text-align:center;font-family:var(--font-ui);font-size:.5rem;color:var(--text2);font-weight:700">C</span>`);
+        }
+        if(hasR){
+          const refW=bsz+2+10;
+          colHeaders.push(`<span style="flex:0 0 ${refW}px;text-align:center;font-family:var(--font-ui);font-size:.5rem;color:var(--text2);font-weight:700">R</span>`);
+        }
+        bodyHtml+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;padding-bottom:1px;border-bottom:1px solid var(--border)">${colHeaders.join('')}</div>`;
+      }
+
       draws.forEach((r,ri)=>{
         const d=new Date(r.date+'T12:00:00');
         const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
         let row=ballsWithSize(r.bet,numBg,numFg,'circle',bsz);
-        if(hasE) row+=ballSep('+')+ballsWithSize(r.extra,extBg,extFg,'sq',bsz);
-        if(hasC&&r.other?.complementary?.length) row+=ballSep('C')+ballsWithSize(r.other.complementary,compBg,compFg,'circle',bsz);
-        if(hasR&&r.other?.refund!=null) row+=ballSep('R')+makeBall(r.other.refund,refBg,refFg,'sq',bsz);
+        if(hasE) row+=ballSep('')+ballsWithSize(r.extra,extBg,extFg,'sq',bsz);
+        if(hasC&&r.other?.complementary?.length) row+=ballSep('')+ballsWithSize(r.other.complementary,compBg,compFg,'circle',bsz);
+        if(hasR&&r.other?.refund!=null) row+=ballSep('')+makeBall(r.other.refund,refBg,refFg,'sq',bsz);
         // code_a label: use game.code_a_name if available, else generic
         const codeALabel=game.code_a_name||'Código';
         const codeAHtml=hasCA&&r.other?.code_a?.length
