@@ -91,9 +91,12 @@ class MainActivity : Activity() {
         webView.webChromeClient = WebChromeClient()
 
         // Restore state or load fresh
-        // Always load fresh URL — restoreState re-executes the boot script
-        // causing duplicate WS calls with stale credentials
-        webView.loadUrl(APP_URL)
+        // Clear cache to ensure latest HTML from GitHub Pages is always loaded
+        webView.clearCache(true)
+        webView.clearHistory()
+        // Add timestamp to bust CDN/proxy cache
+        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis()
+        webView.loadUrl(bustUrl)
     }
 
     private fun hideSystemUI() {
