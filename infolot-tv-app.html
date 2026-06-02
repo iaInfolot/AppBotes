@@ -585,9 +585,13 @@ function updateClock(){
 // ── WS CALL ──────────────────────────
 async function wsCall(endpoint,extra={}){
   const cfg=loadConfig();
+  // Guard: never send a call without valid credentials
+  if(!cfg.token||!cfg.appid||!cfg.pass){
+    throw new Error('Missing credentials — aborting '+endpoint);
+  }
   const url=`${cfg.url}/ws/${endpoint}`;
   const body={token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
-  console.log('[wsCall]',endpoint,'appid:',cfg.appid?.substring(0,8),'token:',cfg.token?.substring(0,8));
+  console.log('[wsCall]',endpoint,'appid:',cfg.appid.substring(0,8));
   const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
   const json=await resp.json();
@@ -1317,9 +1321,9 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
       // Single row: team names left, score right
       bodyHtml+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">';
       // Teams
-      bodyHtml+='<div style="font-family:var(--font-ui);font-size:.62rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">'
+      bodyHtml+='<div style="font-family:var(--font-ui);font-size:.62rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;text-align:center">'
         +(pt1?esc(pt1):'Equipo 1')
-        +'<span style="color:var(--muted);margin:0 3px">-</span>'
+        +'<span style="color:var(--muted);margin:0 4px">-</span>'
         +(pt2?esc(pt2):'Equipo 2')
         +'</div>';
       // Score badges right-aligned
@@ -1514,7 +1518,7 @@ async function loadAllData(){
   _bootCount++;
   const myCount=_bootCount;
   // Small delay to let any duplicate calls arrive, then only the last one runs
-  await new Promise(r=>setTimeout(r,200));
+  await new Promise(r=>setTimeout(r,800));
   if(myCount!==_bootCount){ console.log('[boot] duplicate loadAllData suppressed'); return; }
   if(_loadingInProgress){ console.log('[boot] loadAllData already running, skipping'); return; }
   _loadingInProgress=true;

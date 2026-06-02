@@ -91,11 +91,9 @@ class MainActivity : Activity() {
         webView.webChromeClient = WebChromeClient()
 
         // Restore state or load fresh
-        if (savedInstanceState != null) {
-            webView.restoreState(savedInstanceState)
-        } else {
-            webView.loadUrl(APP_URL)
-        }
+        // Always load fresh URL — restoreState re-executes the boot script
+        // causing duplicate WS calls with stale credentials
+        webView.loadUrl(APP_URL)
     }
 
     private fun hideSystemUI() {
