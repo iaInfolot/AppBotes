@@ -450,7 +450,7 @@ const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
 
 const DEFAULTS = {
-  url:'https://webservice.infolot.es', proxy:'https://app.gesloto.es/proxy.php',
+  url:'https://webservice.infolot.es',
   appid:'a5de640e-7149-4b31-b296-7b1e9cc191f4', token:'8f1a97f8-1ae8-4fb4-9ea8-6bbaf05a0cd2',
   pass:'t/o47X[%i%V&i14%', pvurl:'https://www.webpremium.eu', tagline:'Juega con nosotros en',
   color1:'#f0b429', color2:'#e05c2a', theme:'dark', orient:null,
@@ -569,12 +569,9 @@ function updateClock(){
 // ── WS CALL ──────────────────────────
 async function wsCall(endpoint,extra={}){
   const cfg=loadConfig();
-  // proxy.php expects _endpoint in the POST body alongside credentials
-  const useProxy=!!cfg.proxy;
-  const url=useProxy?cfg.proxy:`${cfg.url}/ws/${endpoint}`;
+  const url=`${cfg.url}/ws/${endpoint}`;
   const body={token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
-  if(useProxy) body._endpoint=endpoint;
-  console.log('[wsCall]',endpoint,'via',useProxy?'proxy':'direct');
+  console.log('[wsCall]',endpoint,'->',url);
   const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
   const json=await resp.json();
