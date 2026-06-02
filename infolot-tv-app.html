@@ -897,7 +897,10 @@ function _renderResults(data, grid, forceVertical){
   // Ball rendering — size computed per-game so all rows within same block are equal
   // colBodyW: approximate inner width of a result block body (px)
   // We compute it once from screen width; fallback 280px
-  const colBodyW = Math.max(200, Math.round((window.innerWidth - 280) / 3) - 20);
+  // col body width: (screenW - col4_fixed - gaps) / 3 - block_padding
+  // col4=210px, 4 gaps of 8px between cols + 2*8px outer = 56px total gaps
+  // block padding = 2*8px = 16px
+  const colBodyW = Math.max(200, Math.round((window.innerWidth - 210 - 56) / 3) - 16);
 
   function calcBSZ(numMain, numExtra, numComp, numRefund){
     const totalBalls = numMain + numExtra + numComp + numRefund;
@@ -924,7 +927,7 @@ function _renderResults(data, grid, forceVertical){
   }
   function balls(arr,bg,fg,shape){ return ballsWithSize(arr,bg,fg,shape,26); }
   function ballSep(label){
-    return `<span style="font-family:var(--font-ui);font-size:.54rem;color:var(--muted);margin:0 1px;flex-shrink:0;line-height:1">${label}</span>`;
+    return `<span style="font-family:var(--font-ui);font-size:.54rem;color:var(--text2);margin:0 2px;flex-shrink:0;line-height:1;font-weight:600;opacity:.8">${label}</span>`;
   }
   function ballRow(html){
     return `<div class="ball-row" style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;width:100%">${html}</div>`;
@@ -955,8 +958,8 @@ function _renderResults(data, grid, forceVertical){
     const game=gamesMap[gameId]||{};
     const gt=getGameType(game);
     const barClr=game.bg_color||'var(--pv-primary)';
-    // Main balls: use game's bg_color (brand color) if number_bg_color not set
-    const numBg=game.number_bg_color||(game.bg_color||'#1a2535');
+    // Main balls ALWAYS use bg_color (brand color) — number_bg_color ignored
+    const numBg=game.bg_color||game.number_bg_color||'#1a2535';
     const numFg=game.number_fg_color||'#fff';
     const extBg=game.extra_bg_color||'#c8a000', extFg=game.extra_fg_color||'#000';
     const compBg=game.num_complementary_bg_color||'#e08020', compFg=game.num_complementary_fg_color||'#fff';
@@ -1075,7 +1078,7 @@ function _renderResults(data, grid, forceVertical){
         });
         numEntries.forEach(({ord,n},idx)=>{
           bodyHtml+=`<div style="text-align:center;flex-shrink:0">
-            <div style="font-family:var(--font-ui);font-size:.5rem;color:var(--muted);text-align:center;margin-bottom:1px">${ord} Premio</div>
+            <div style="font-family:var(--font-ui);font-size:.5rem;color:var(--text2);text-align:center;margin-bottom:1px;font-weight:600">${ord} Premio</div>
             <div style="background:${numBg};color:${numFg};border-radius:5px;padding:2px 7px;font-family:var(--font-display);font-size:.88rem;letter-spacing:2px;white-space:nowrap">${esc(n)}</div>
           </div>`;
           if(idx<numEntries.length-1&&refunds.length)
@@ -1084,7 +1087,7 @@ function _renderResults(data, grid, forceVertical){
         // Reintegros
         if(refunds.length){
           bodyHtml+=`<div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-            <div style="font-family:var(--font-ui);font-size:.5rem;color:var(--muted);margin-bottom:2px">Reint.</div>
+            <div style="font-family:var(--font-ui);font-size:.5rem;color:var(--text2);margin-bottom:2px;font-weight:600">Reint.</div>
             <div style="display:flex;gap:2px">`;
           refunds.forEach(rv=>{
             bodyHtml+=`<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;background:${refBg};color:${refFg};border-radius:3px;font-family:var(--font-ui);font-size:.6rem;font-weight:700">${esc(rv)}</span>`;
@@ -1186,15 +1189,16 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
   const matchesQui=rQui.other?.matches||[];
   const matchesQG=rQG.other?.matches||[];
 
-  // Pleno al 15: extra = [result_eq1_goals, result_eq2_goals, team1_name?, team2_name?]
-  // or extra = ["M","2"] meaning M goals home, 2 goals away
+  // Pleno al 15: extra = [goals_team1, goals_team2] e.g. ["1","1"]
   const plenoArr=Array.isArray(rQui.extra)?rQui.extra:[];
-  const plenoG1=plenoArr.length>0?plenoArr[0]:null;  // goals team1: 0,1,2,M
-  const plenoG2=plenoArr.length>1?plenoArr[1]:null;  // goals team2: 0,1,2,M
-  // Pleno al 15 match details from other
-  const plenoMatch=rQui.other?.pleno_match||rQui.other?.extra_match||null;
-  const plenoT1=plenoMatch?.team_1_name||rQui.other?.extra_team_1||'';
-  const plenoT2=plenoMatch?.team_2_name||rQui.other?.extra_team_2||'';
+  const plenoG1=plenoArr.length>0?String(plenoArr[0]):null;
+  const plenoG2=plenoArr.length>1?String(plenoArr[1]):null;
+  // Pleno al 15 teams: match at position 15 in matchesQui (labeled "P-15" on web)
+  const plenoMatch15=matchesQui.find(function(x){
+    return parseInt(x.position)===15 || String(x.position)==='P-15' || String(x.position).toLowerCase().includes('15');
+  })||null;
+  const plenoT1=plenoMatch15?.team_1_name||'';
+  const plenoT2=plenoMatch15?.team_2_name||'';
 
   const fd=rQui.date?new Date(rQui.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
   const pending=!betQui.length&&!betQG.length;
@@ -1258,18 +1262,14 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
       bodyHtml+='<div style="margin-top:3px;padding-top:3px;border-top:2px solid var(--border);flex-shrink:0">';
       // Label row
       bodyHtml+='<div style="font-family:var(--font-ui);font-size:.58rem;font-weight:700;color:var(--pv-primary);letter-spacing:.5px;margin-bottom:2px">Pleno al 15</div>';
-      // Team row with goal badges
+      // Team row: G1 | Team1 - Team2 | G2
+      var pt1=plenoT1||plenoMatch15?.team_1_name||'';
+      var pt2=plenoT2||plenoMatch15?.team_2_name||'';
       bodyHtml+='<div style="display:flex;align-items:center;gap:3px">';
-      // G1 badge
-      bodyHtml+=goalBadge(String(plenoG1));
-      // Team names
-      if(plenoT1||plenoT2){
-        bodyHtml+='<div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:.6rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(plenoT1||'Eq1')+'<span style="color:var(--muted)"> - </span>'+esc(plenoT2||'Eq2')+'</div>';
-      } else {
-        bodyHtml+='<div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:.6rem;color:var(--muted);font-style:italic">Partido pleno</div>';
-      }
-      // G2 badge
-      bodyHtml+=goalBadge(String(plenoG2));
+      bodyHtml+=goalBadge(plenoG1);
+      bodyHtml+='<div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:.6rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+        +(pt1?esc(pt1):'Eq1')+'<span style="color:var(--muted)"> - </span>'+(pt2?esc(pt2):'Eq2')+'</div>';
+      bodyHtml+=goalBadge(plenoG2);
       bodyHtml+='</div>';
       bodyHtml+='</div>';
     }
