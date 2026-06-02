@@ -934,10 +934,10 @@ function _renderResults(data, grid, forceVertical){
 
   function makeBall(n, bg, fg, shape, sz){
     const br = shape==='sq'?'4px':'50%';
-    // Unified font size: always .82rem regardless of ball size (+2pt from .72rem)
+    // Unified font size: always .9rem regardless of ball size
     return `<span style="display:inline-flex;align-items:center;justify-content:center;`+
       `width:${sz}px;height:${sz}px;background:${bg};color:${fg};border-radius:${br};`+
-      `font-family:var(--font-ui);font-size:.82rem;font-weight:700;flex-shrink:0;">${n}</span>`;
+      `font-family:var(--font-ui);font-size:.9rem;font-weight:700;flex-shrink:0;">${n}</span>`;
   }
   // Legacy ball() uses default size 26 (for pending placeholders etc.)
   function ball(n,bg,fg,shape){ return makeBall(n,bg,fg,shape,26); }
