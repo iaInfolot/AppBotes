@@ -690,7 +690,7 @@ async function fetchResults(){
 
     console.log('[Results] ref:',toYMD(ref),'mon:',monStr,'sun:',sunStr,'today:',toYMD(new Date()));
     setLoadingStep('Cargando resultados semana...');
-    const calls = gameIds.map(id => wsCall('last-game-results',{id_game:parseInt(id),limit:14})
+    const calls = gameIds.map(id => wsCall('last-game-results',{id_game:parseInt(id),limit:20})
       .then(d => Array.isArray(d)?d:[])
       .catch(()=>[]));
     const results = await Promise.all(calls);
@@ -914,10 +914,10 @@ function _renderResults(data, grid, forceVertical){
 
   function makeBall(n, bg, fg, shape, sz){
     const br = shape==='sq'?'4px':'50%';
-    // Unified font size: always .72rem regardless of ball size
+    // Unified font size: always .82rem regardless of ball size (+2pt from .72rem)
     return `<span style="display:inline-flex;align-items:center;justify-content:center;`+
       `width:${sz}px;height:${sz}px;background:${bg};color:${fg};border-radius:${br};`+
-      `font-family:var(--font-ui);font-size:.72rem;font-weight:700;flex-shrink:0;">${n}</span>`;
+      `font-family:var(--font-ui);font-size:.82rem;font-weight:700;flex-shrink:0;">${n}</span>`;
   }
   // Legacy ball() uses default size 26 (for pending placeholders etc.)
   function ball(n,bg,fg,shape){ return makeBall(n,bg,fg,shape,26); }
@@ -995,32 +995,16 @@ function _renderResults(data, grid, forceVertical){
       const nRef=hasR&&firstDraw.other?.refund!=null?1:0;
       const bsz=calcBSZ(nMain, nExtra, nComp, nRef);
 
-      // Column header: show C and R labels aligned over their columns (only once)
-      if(hasC||hasR||hasE){
-        // Build header row aligned with ball row using same widths
-        const mainW=nMain*bsz+(nMain-1)*2; // width of main balls
-        const extW=hasE?(nExtra*bsz+(nExtra-1)*2+12):0; // +sep width
-        const colHeaders=[];
-        // Spacer for main balls
-        colHeaders.push(`<span style="flex:0 0 ${mainW}px"></span>`);
-        if(hasE){
-          const extLabel=game.extra_name||'+';
-          colHeaders.push(`<span style="flex:0 0 ${extW}px;text-align:center;font-family:var(--font-ui);font-size:.5rem;color:var(--text2);font-weight:700;letter-spacing:.5px">${esc(extLabel)}</span>`);
-        }
-        if(hasC){
-          const compW=bsz+2+10; // ball + gap + sep
-          colHeaders.push(`<span style="flex:0 0 ${compW}px;text-align:center;font-family:var(--font-ui);font-size:.5rem;color:var(--text2);font-weight:700">C</span>`);
-        }
-        if(hasR){
-          const refW=bsz+2+10;
-          colHeaders.push(`<span style="flex:0 0 ${refW}px;text-align:center;font-family:var(--font-ui);font-size:.5rem;color:var(--text2);font-weight:700">R</span>`);
-        }
-        bodyHtml+=`<div style="display:flex;align-items:center;gap:2px;margin-bottom:2px;padding-bottom:1px;border-bottom:1px solid var(--border)">${colHeaders.join('')}</div>`;
-      }
-
       draws.forEach((r,ri)=>{
         const d=new Date(r.date+'T12:00:00');
         const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+        // Build inline labels for C/R/extra — shown next to date only if no code_a
+        const inlineTags=[];
+        if(!hasCA){
+          if(hasE&&game.extra_name) inlineTags.push(`<span style="font-family:var(--font-ui);font-size:.52rem;color:var(--text2);background:var(--border);border-radius:3px;padding:1px 4px;font-weight:700">${esc(game.extra_name)}</span>`);
+          if(hasC) inlineTags.push(`<span style="font-family:var(--font-ui);font-size:.52rem;color:var(--text2);background:var(--border);border-radius:3px;padding:1px 4px;font-weight:700">C</span>`);
+          if(hasR) inlineTags.push(`<span style="font-family:var(--font-ui);font-size:.52rem;color:var(--text2);background:var(--border);border-radius:3px;padding:1px 4px;font-weight:700">R</span>`);
+        }
         let row=ballsWithSize(r.bet,numBg,numFg,'circle',bsz);
         if(hasE) row+=ballSep('')+ballsWithSize(r.extra,extBg,extFg,'sq',bsz);
         if(hasC&&r.other?.complementary?.length) row+=ballSep('')+ballsWithSize(r.other.complementary,compBg,compFg,'circle',bsz);
@@ -1032,12 +1016,13 @@ function _renderResults(data, grid, forceVertical){
               <span style="color:var(--text2);letter-spacing:.5px;text-transform:uppercase;font-weight:600">${esc(codeALabel)}</span>
               <span style="color:var(--success);letter-spacing:1px">${esc(r.other.code_a[0])}</span>
             </span>`:'';
-        const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:5px;padding-bottom:5px;':'';
-        // Header row: date left, code_a right — using absolute positioning
-        // so the ball row always occupies 100% width regardless of code_a presence
-        bodyHtml+=`<div style="${ds};position:relative">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;min-height:18px">
-            <span style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2)">${esc(fd)}</span>
+        const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:4px;padding-bottom:4px;':'';
+        bodyHtml+=`<div style="${ds}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;gap:4px">
+            <div style="display:flex;align-items:center;gap:4px;min-width:0">
+              <span style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2);white-space:nowrap">${esc(fd)}</span>
+              ${inlineTags.join('')}
+            </div>
             ${codeAHtml}
           </div>
           ${ballRow(row)}</div>`;
@@ -1229,21 +1214,27 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
   const matchesQui=rQui.other?.matches||[];
   const matchesQG=rQG.other?.matches||[];
 
-  // Pleno al 15: extra = [goals_team1, goals_team2] e.g. ["1","1"]
-  const plenoArr=Array.isArray(rQui.extra)?rQui.extra:[];
-  const plenoG1=plenoArr.length>0?String(plenoArr[0]):null;
-  const plenoG2=plenoArr.length>1?String(plenoArr[1]):null;
+  // plenoG1/plenoG2 now defined in pleno lookup block above
   // Pleno al 15 teams: match at position 15 in matchesQui (labeled "P-15" on web)
-  // Pleno al 15: the extra match is typically the last one in matchesQui (position 15)
-  // Try multiple lookup strategies
+  // Pleno al 15:
+  // - rQui.extra = [goals_team1, goals_team2] e.g. ["1","1"] or ["M","2"]
+  // - The match (teams) is the 15th entry in matchesQui (position 15 or index 14)
+  // - matchesQui may have 14 regular + 1 pleno = 15 total, or just 14 regular
+  // Strategy: last match in array if >14 entries, or position===15
+  const _allMatches=matchesQui.slice(); // copy
   const plenoMatch15=
-    matchesQui.find(function(x){ return parseInt(x.position)===15; }) ||
-    matchesQui.find(function(x){ return String(x.position).includes('15') || String(x.position).toLowerCase().includes('p'); }) ||
-    (matchesQui.length>14 ? matchesQui[14] : null) ||  // index 14 = position 15
-    (matchesQui.length===15 ? matchesQui[14] : null) || // last of 15
+    _allMatches.find(function(x){ return parseInt(x.position)===15; }) ||
+    _allMatches.find(function(x){ var p=String(x.position||''); return p.includes('15')||p.match(/p/i); }) ||
+    (_allMatches.length>=15 ? _allMatches[14] : null) ||
+    (_allMatches.length>0 && betQui.length===15 ? _allMatches[_allMatches.length-1] : null) ||
     null;
-  const plenoT1=plenoMatch15?plenoMatch15.team_1_name||'':'';
-  const plenoT2=plenoMatch15?plenoMatch15.team_2_name||'':'';
+  const plenoT1=plenoMatch15?String(plenoMatch15.team_1_name||''):'';
+  const plenoT2=plenoMatch15?String(plenoMatch15.team_2_name||''):'';
+  // Goals come from rQui.extra array — Quiniela extra_name is "Pleno al 15"
+  // extra[0]=goals team1, extra[1]=goals team2
+  const _plenoRaw=Array.isArray(rQui.extra)?rQui.extra:(rQui.extra!=null?[rQui.extra]:[]);
+  const plenoG1=_plenoRaw.length>0?String(_plenoRaw[0]):null;
+  const plenoG2=_plenoRaw.length>1?String(_plenoRaw[1]):null;
   const fd=rQui.date?new Date(rQui.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
   const pending=!betQui.length&&!betQG.length;
 
