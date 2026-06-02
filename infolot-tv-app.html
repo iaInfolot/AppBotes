@@ -101,10 +101,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 
 /* one block per game */
 .result-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:fadeUp .35s ease both;}
-.result-block-header{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);}
-.result-block-bar{width:4px;height:32px;border-radius:2px;flex-shrink:0;}
-.result-block-logo{width:28px;height:28px;object-fit:contain;flex-shrink:0;}
-.result-block-name{font-family:var(--font-ui);font-size:1rem;font-weight:700;letter-spacing:1px;color:var(--text);flex:1;}
+.result-block-header{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--border);}
+.result-block-bar{width:3px;height:24px;border-radius:2px;flex-shrink:0;}
+.result-block-logo{width:22px;height:22px;object-fit:contain;flex-shrink:0;}
+.result-block-name{font-family:var(--font-ui);font-size:.82rem;font-weight:700;letter-spacing:.5px;color:var(--text);flex:1;}
 .result-week-label{font-family:var(--font-ui);font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
 
 /* table of draws */
@@ -611,12 +611,18 @@ function applyPvInfo(pv){
       const logoUrl=logoPath.startsWith('http')?logoPath:LOGO_BASE+logoPath;
       logoEl.style.display='none'; // hide until loaded
       // Try direct URL first; if blocked by CORS/mixed-content, fall back to name
-      const tryLogo=(url)=>{
-        logoEl.onload=()=>{ logoEl.style.display=''; if(nameEl) nameEl.style.display='none'; };
-        logoEl.onerror=()=>{ logoEl.style.display='none'; if(nameEl) nameEl.style.display=''; };
-        logoEl.src=url;
+      console.log('[Logo] Attempting to load:', logoUrl);
+      logoEl.onload=()=>{
+        console.log('[Logo] Loaded OK:', logoUrl);
+        logoEl.style.display='';
+        if(nameEl) nameEl.style.display='none';
       };
-      tryLogo(logoUrl);
+      logoEl.onerror=()=>{
+        console.warn('[Logo] Failed to load:', logoUrl);
+        logoEl.style.display='none';
+        if(nameEl) nameEl.style.display='';
+      };
+      logoEl.src=logoUrl;
     } else {
       logoEl.style.display='none';
     }
@@ -840,7 +846,7 @@ function renderJackpots(data){
 
 // ── RENDER RESULTS ────────────────────
 function renderResultsInto(data, grid, forceVertical){ return _renderResults(data, grid, forceVertical); }
-function renderResults(data){ _renderResults(data, document.getElementById('results-grid'), false); requestAnimationFrame(scaleBallRows); }
+function renderResults(data){ _renderResults(data, document.getElementById('results-grid'), false); }
 function _renderResults(data, grid, forceVertical){
   grid.innerHTML='';
 
@@ -877,24 +883,39 @@ function _renderResults(data, grid, forceVertical){
     if(COL_MAP[iid]===undefined && !cols['1'].includes(iid)) cols['1'].push(iid);
   });
 
-  // Ball rendering — nowrap row, no wrapping to second line
-  // Ball size: 26px; scaleBallRows() will uniformly shrink if needed (stays round)
-  const BSZ=26, BFONT='.68rem';
-  function ball(n,bg,fg,shape){
-    const br=shape==='sq'?'4px':'50%';
-    return `<span style="display:inline-flex;align-items:center;justify-content:center;`+
-      `width:${BSZ}px;height:${BSZ}px;background:${bg};color:${fg};border-radius:${br};`+
-      `font-family:var(--font-ui);font-size:${BFONT};font-weight:700;flex-shrink:0;">${n}</span>`;
+  // Ball rendering — size computed per-game so all rows within same block are equal
+  // colBodyW: approximate inner width of a result block body (px)
+  // We compute it once from screen width; fallback 280px
+  const colBodyW = Math.max(200, Math.round((window.innerWidth - 280) / 3) - 20);
+
+  function calcBSZ(numMain, numExtra, numComp, numRefund){
+    // Total slots = main + extra + comp + refund + separators(3 max)
+    const totalBalls = numMain + numExtra + numComp + numRefund;
+    const seps = (numExtra>0?1:0) + (numComp>0?1:0) + (numRefund>0?1:0);
+    const sepW = seps * 10; // ~10px per separator span
+    const available = colBodyW - sepW - (totalBalls-1)*2; // gap:2px
+    const sz = Math.floor(available / Math.max(totalBalls,1));
+    return Math.min(30, Math.max(18, sz));
   }
-  function balls(arr,bg,fg,shape){
+
+  function makeBall(n, bg, fg, shape, sz){
+    const br = shape==='sq'?'4px':'50%';
+    const fs = sz >= 26 ? '.68rem' : sz >= 22 ? '.62rem' : '.56rem';
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;`+
+      `width:${sz}px;height:${sz}px;background:${bg};color:${fg};border-radius:${br};`+
+      `font-family:var(--font-ui);font-size:${fs};font-weight:700;flex-shrink:0;">${n}</span>`;
+  }
+  // Legacy ball() uses default size 26 (for pending placeholders etc.)
+  function ball(n,bg,fg,shape){ return makeBall(n,bg,fg,shape,26); }
+  function ballsWithSize(arr, bg, fg, shape, sz){
     if(!arr) return '';
     const vals=Array.isArray(arr)?arr:Object.values(arr);
-    return vals.map(n=>ball(n,bg,fg,shape)).join('');
+    return vals.map(n=>makeBall(n,bg,fg,shape,sz)).join('');
   }
+  function balls(arr,bg,fg,shape){ return ballsWithSize(arr,bg,fg,shape,26); }
   function ballSep(label){
-    return `<span style="font-family:var(--font-ui);font-size:.56rem;color:var(--muted);margin:0 1px;flex-shrink:0;line-height:1">${label}</span>`;
+    return `<span style="font-family:var(--font-ui);font-size:.54rem;color:var(--muted);margin:0 1px;flex-shrink:0;line-height:1">${label}</span>`;
   }
-  // ballRow: nowrap, visible overflow — clipping is handled by column width, not hidden overflow
   function ballRow(html){
     return `<div class="ball-row" style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;width:100%">${html}</div>`;
   }
@@ -939,13 +960,19 @@ function _renderResults(data, grid, forceVertical){
     } else if(gt==='loto'){
       const hasE=game.num_extra_per_bet>0, hasC=game.is_num_complementary===1;
       const hasR=game.is_num_refund===1, hasCA=game.is_code_a===1;
+      // Compute fixed ball size for this game (same for ALL draws)
+      const nMain=game.num_bet_per_game||6;
+      const nExtra=hasE?(game.num_extra_per_bet||0):0;
+      const nComp=hasC?1:0;
+      const nRef=hasR?1:0;
+      const bsz=calcBSZ(nMain, nExtra, nComp, nRef);
       draws.forEach((r,ri)=>{
         const d=new Date(r.date+'T12:00:00');
         const fd=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-        let row=balls(r.bet,numBg,numFg,'circle');
-        if(hasE) row+=ballSep('+')+balls(r.extra,extBg,extFg,'sq');
-        if(hasC&&r.other?.complementary?.length) row+=ballSep('C')+balls(r.other.complementary,compBg,compFg,'circle');
-        if(hasR&&r.other?.refund!=null) row+=ballSep('R')+ball(r.other.refund,refBg,refFg,'sq');
+        let row=ballsWithSize(r.bet,numBg,numFg,'circle',bsz);
+        if(hasE) row+=ballSep('+')+ballsWithSize(r.extra,extBg,extFg,'sq',bsz);
+        if(hasC&&r.other?.complementary?.length) row+=ballSep('C')+ballsWithSize(r.other.complementary,compBg,compFg,'circle',bsz);
+        if(hasR&&r.other?.refund!=null) row+=ballSep('R')+makeBall(r.other.refund,refBg,refFg,'sq',bsz);
         // code_a label: use game.code_a_name if available, else generic
         const codeALabel=game.code_a_name||'Código';
         const codeAHtml=hasCA&&r.other?.code_a?.length
@@ -991,7 +1018,8 @@ function _renderResults(data, grid, forceVertical){
         const betObj=r.bet&&!Array.isArray(r.bet)?r.bet:{P1:r.bet};
         const serObj=r.other?.num_serie||{};
         const wins=r.winnings||{};
-        const topW=Object.values(wins).sort((a,b)=>(a.order||99)-(b.order||99)).filter(w=>w.prize>0).slice(0,5);
+        // Show only top 3 prizes (P1, P2, P3) — key names vary, use order
+        const topW=Object.values(wins).sort((a,b)=>(a.order||99)-(b.order||99)).filter(w=>w.prize>0).slice(0,3);
         const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:6px;padding-bottom:6px;':'';
         bodyHtml+=`<div style="${ds}"><div style="font-family:var(--font-ui);font-size:.72rem;font-weight:600;color:var(--text2);margin-bottom:3px">${esc(fd)}</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin-bottom:4px">`;
