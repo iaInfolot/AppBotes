@@ -1234,12 +1234,16 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
   const plenoG1=plenoArr.length>0?String(plenoArr[0]):null;
   const plenoG2=plenoArr.length>1?String(plenoArr[1]):null;
   // Pleno al 15 teams: match at position 15 in matchesQui (labeled "P-15" on web)
-  const plenoMatch15=matchesQui.find(function(x){
-    return parseInt(x.position)===15 || String(x.position)==='P-15' || String(x.position).toLowerCase().includes('15');
-  })||null;
-  const plenoT1=plenoMatch15?.team_1_name||'';
-  const plenoT2=plenoMatch15?.team_2_name||'';
-
+  // Pleno al 15: the extra match is typically the last one in matchesQui (position 15)
+  // Try multiple lookup strategies
+  const plenoMatch15=
+    matchesQui.find(function(x){ return parseInt(x.position)===15; }) ||
+    matchesQui.find(function(x){ return String(x.position).includes('15') || String(x.position).toLowerCase().includes('p'); }) ||
+    (matchesQui.length>14 ? matchesQui[14] : null) ||  // index 14 = position 15
+    (matchesQui.length===15 ? matchesQui[14] : null) || // last of 15
+    null;
+  const plenoT1=plenoMatch15?plenoMatch15.team_1_name||'':'';
+  const plenoT2=plenoMatch15?plenoMatch15.team_2_name||'':'';
   const fd=rQui.date?new Date(rQui.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
   const pending=!betQui.length&&!betQG.length;
 
@@ -1297,19 +1301,26 @@ function makeQuinielaQuiniGolBlock(quiDraws, qgDraws){
         +'</div>';
     });
 
-    // Pleno al 15 — with team names and goal badges
+    // Pleno al 15 — format: "PSG - Arsenal    1 - 1"
     if(plenoG1!==null||plenoG2!==null){
-      bodyHtml+='<div style="margin-top:3px;padding-top:3px;border-top:2px solid var(--border);flex-shrink:0">';
-      // Label row
-      bodyHtml+='<div style="font-family:var(--font-ui);font-size:.58rem;font-weight:700;color:var(--pv-primary);letter-spacing:.5px;margin-bottom:2px">Pleno al 15</div>';
-      // Team row: G1 | Team1 - Team2 | G2
-      var pt1=plenoT1||plenoMatch15?.team_1_name||'';
-      var pt2=plenoT2||plenoMatch15?.team_2_name||'';
-      bodyHtml+='<div style="display:flex;align-items:center;gap:3px">';
+      var pt1=plenoT1||'';
+      var pt2=plenoT2||'';
+      bodyHtml+='<div style="margin-top:4px;padding-top:4px;border-top:2px solid var(--border);flex-shrink:0">';
+      bodyHtml+='<div style="font-family:var(--font-ui);font-size:.55rem;font-weight:700;color:var(--pv-primary);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">Pleno al 15</div>';
+      // Single row: team names left, score right
+      bodyHtml+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">';
+      // Teams
+      bodyHtml+='<div style="font-family:var(--font-ui);font-size:.62rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">'
+        +(pt1?esc(pt1):'Equipo 1')
+        +'<span style="color:var(--muted);margin:0 3px">-</span>'
+        +(pt2?esc(pt2):'Equipo 2')
+        +'</div>';
+      // Score badges right-aligned
+      bodyHtml+='<div style="display:flex;align-items:center;gap:3px;flex-shrink:0">';
       bodyHtml+=goalBadge(plenoG1);
-      bodyHtml+='<div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:.6rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
-        +(pt1?esc(pt1):'Eq1')+'<span style="color:var(--muted)"> - </span>'+(pt2?esc(pt2):'Eq2')+'</div>';
+      bodyHtml+='<span style="font-family:var(--font-ui);font-size:.55rem;color:var(--muted)">-</span>';
       bodyHtml+=goalBadge(plenoG2);
+      bodyHtml+='</div>';
       bodyHtml+='</div>';
       bodyHtml+='</div>';
     }
