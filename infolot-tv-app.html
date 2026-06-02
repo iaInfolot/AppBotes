@@ -927,7 +927,8 @@ function _renderResults(data, grid, forceVertical){
   }
   function balls(arr,bg,fg,shape){ return ballsWithSize(arr,bg,fg,shape,26); }
   function ballSep(label){
-    return `<span style="font-family:var(--font-ui);font-size:.54rem;color:var(--text2);margin:0 2px;flex-shrink:0;line-height:1;font-weight:600;opacity:.8">${label}</span>`;
+    // Visible separator label with subtle background
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:.5rem;color:var(--text);background:var(--border);border-radius:3px;padding:1px 3px;margin:0 1px;flex-shrink:0;line-height:1;font-weight:700;opacity:.9">${label}</span>`;
   }
   function ballRow(html){
     return `<div class="ball-row" style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;width:100%">${html}</div>`;
@@ -958,11 +959,16 @@ function _renderResults(data, grid, forceVertical){
     const game=gamesMap[gameId]||{};
     const gt=getGameType(game);
     const barClr=game.bg_color||'var(--pv-primary)';
-    // Main balls: bg_color is the game brand color, fallback to number_bg_color, then dark default
-    const numBg=(game.bg_color&&game.bg_color!=='#ffffff'&&game.bg_color!=='#FFFFFF')?game.bg_color:(game.number_bg_color||'#1a2535');
+    // Main balls: number_bg_color is the correct ball color from API
+    // bg_color is the header/brand color — only use as fallback if number_bg_color missing
+    const _bgc=game.bg_color||'';
+    const _bgcValid=_bgc&&_bgc.toLowerCase()!=='#ffffff'&&_bgc.toLowerCase()!=='#fff'&&_bgc!=='white';
+    const numBg=game.number_bg_color||(_bgcValid?_bgc:'#1a2535');
     const numFg=game.number_fg_color||'#fff';
     const extBg=game.extra_bg_color||'#c8a000', extFg=game.extra_fg_color||'#000';
-    const compBg=game.num_complementary_bg_color||'#e08020', compFg=game.num_complementary_fg_color||'#fff';
+    // Comp and ref must visually differ from main balls — use distinct defaults
+    const compBg=game.num_complementary_bg_color||(numBg==='#e08020'?'#2563eb':'#e08020');
+    const compFg=game.num_complementary_fg_color||'#fff';
     const refBg=game.num_refund_bg_color||'#607080', refFg=game.num_refund_fg_color||'#fff';
     let logoSrc='';
     if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
@@ -976,10 +982,12 @@ function _renderResults(data, grid, forceVertical){
       const hasE=game.num_extra_per_bet>0, hasC=game.is_num_complementary===1;
       const hasR=game.is_num_refund===1, hasCA=game.is_code_a===1;
       // Compute fixed ball size for this game (same for ALL draws)
-      const nMain=game.num_bet_per_game||6;
-      const nExtra=hasE?(game.num_extra_per_bet||0):0;
-      const nComp=hasC?1:0;
-      const nRef=hasR?1:0;
+      // Use actual draw data to count balls accurately (API metadata can be wrong)
+      const firstDraw=draws[0]||{};
+      const nMain=Array.isArray(firstDraw.bet)?firstDraw.bet.length:(game.num_bet_per_game||6);
+      const nExtra=hasE?(Array.isArray(firstDraw.extra)?firstDraw.extra.length:(game.num_extra_per_bet||0)):0;
+      const nComp=hasC&&firstDraw.other?.complementary?.length?1:0;
+      const nRef=hasR&&firstDraw.other?.refund!=null?1:0;
       const bsz=calcBSZ(nMain, nExtra, nComp, nRef);
       draws.forEach((r,ri)=>{
         const d=new Date(r.date+'T12:00:00');
@@ -992,7 +1000,7 @@ function _renderResults(data, grid, forceVertical){
         const codeALabel=game.code_a_name||'Código';
         const codeAHtml=hasCA&&r.other?.code_a?.length
           ?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:.6rem;font-weight:600;background:rgba(39,201,122,.12);border:1px solid rgba(39,201,122,.3);border-radius:4px;padding:1px 6px;white-space:nowrap">
-              <span style="color:var(--muted);letter-spacing:.5px;text-transform:uppercase">${esc(codeALabel)}</span>
+              <span style="color:var(--text2);letter-spacing:.5px;text-transform:uppercase;font-weight:600">${esc(codeALabel)}</span>
               <span style="color:var(--success);letter-spacing:1px">${esc(r.other.code_a[0])}</span>
             </span>`:'';
         const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:5px;padding-bottom:5px;':'';
