@@ -444,7 +444,7 @@ button:focus, select:focus, input:focus, [tabindex]:focus {
 // ════════════════════════════════════
 const APP_VERSION  = '1.4';
 const APP_REVISION = '20260601-036';
-const STORAGE_KEY  = 'infolot_cfg_v21';
+const STORAGE_KEY  = 'infolot_cfg_v22'; // bump version to clear old credentials
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DAY_NAMES    = {1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb',7:'Dom'};
@@ -463,7 +463,23 @@ let lastJackpotsData=[], lastResultsData=[], currentView='jackpots';
 
 
 // ── CONFIG ──────────────────────────
-function loadConfig(){try{const s=localStorage.getItem(STORAGE_KEY);return s?{...DEFAULTS,...JSON.parse(s)}:{...DEFAULTS};}catch{return{...DEFAULTS};}}
+function loadConfig(){
+  try{
+    const s=localStorage.getItem(STORAGE_KEY);
+    if(!s) return {...DEFAULTS};
+    const saved=JSON.parse(s);
+    // Always use DEFAULTS for credentials — never override with saved values
+    // Only preserve UI preferences (theme, orient, defaultView, refreshJackpots)
+    return {
+      ...DEFAULTS,
+      theme:saved.theme||DEFAULTS.theme,
+      orient:saved.orient!==undefined?saved.orient:DEFAULTS.orient,
+      defaultView:saved.defaultView||DEFAULTS.defaultView,
+      refreshJackpots:saved.refreshJackpots||DEFAULTS.refreshJackpots,
+      refreshPvInfo:saved.refreshPvInfo||DEFAULTS.refreshPvInfo,
+    };
+  }catch{return{...DEFAULTS};}
+}
 function persistConfig(cfg){localStorage.setItem(STORAGE_KEY,JSON.stringify(cfg));}
 
 function saveConfig(){
@@ -571,7 +587,7 @@ async function wsCall(endpoint,extra={}){
   const cfg=loadConfig();
   const url=`${cfg.url}/ws/${endpoint}`;
   const body={token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
-  console.log('[wsCall]',endpoint,'->',url);
+  console.log('[wsCall]',endpoint,'appid:',cfg.appid?.substring(0,8),'token:',cfg.token?.substring(0,8));
   const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
   const json=await resp.json();
@@ -1493,7 +1509,13 @@ function renderMixedResults(data){
 
 // ── LOAD ALL ──────────────────────────
 let _loadingInProgress=false;
+let _bootCount=0;
 async function loadAllData(){
+  _bootCount++;
+  const myCount=_bootCount;
+  // Small delay to let any duplicate calls arrive, then only the last one runs
+  await new Promise(r=>setTimeout(r,200));
+  if(myCount!==_bootCount){ console.log('[boot] duplicate loadAllData suppressed'); return; }
   if(_loadingInProgress){ console.log('[boot] loadAllData already running, skipping'); return; }
   _loadingInProgress=true;
   showLoading(true);
