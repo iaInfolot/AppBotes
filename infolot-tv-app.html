@@ -36,23 +36,21 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #app.visible{display:flex;}
 
 /* HEADER */
-header{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);gap:20px;min-height:64px;}
-.header-left{display:flex;align-items:center;gap:14px;min-width:0;flex:1;}
-#pv-logo{height:40px;width:auto;max-width:130px;object-fit:contain;display:none;flex-shrink:0;}
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);gap:16px;min-height:58px;max-height:58px;}
+.header-left{display:flex;align-items:center;gap:12px;min-width:0;flex:1;}
+#pv-logo{height:38px;width:auto;max-width:140px;object-fit:contain;display:none;flex-shrink:0;}
 .title-block{min-width:0;}
-#pv-name{font-family:var(--font-display);font-size:1.8rem;letter-spacing:3px;color:var(--pv-primary);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#pv-tagline{font-family:var(--font-ui);font-size:.72rem;color:var(--text2);letter-spacing:2px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pv-name{font-family:var(--font-display);font-size:1.7rem;letter-spacing:3px;color:var(--pv-primary);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pv-tagline{font-family:var(--font-ui);font-size:.68rem;color:var(--text2);letter-spacing:2px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #pv-tagline span{color:var(--pv-primary);}
-.header-right{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.header-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 
-/* VIEW SWITCHER in header */
-.view-tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:3px;}
-.view-tab{font-family:var(--font-ui);font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:none;border-radius:7px;padding:6px 14px;cursor:pointer;color:var(--text2);background:transparent;transition:all .2s;white-space:nowrap;}
-.view-tab.active{background:var(--pv-primary);color:#000;}
-.view-tab:not(.active):hover{color:var(--text);}
+/* VIEW SWITCHER — hidden in header, navigation via menu only */
+.view-tabs{display:none;}
+.view-tab{display:none;}
 
-#clock{font-family:var(--font-ui);font-size:1.55rem;font-weight:300;color:var(--text2);letter-spacing:3px;}
-#menu-btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-family:var(--font-ui);font-size:.82rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s;white-space:nowrap;}
+#clock{display:none;}
+#menu-btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:7px 16px;border-radius:8px;font-family:var(--font-ui);font-size:.82rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s;white-space:nowrap;}
 #menu-btn:hover{border-color:var(--pv-primary);color:var(--pv-primary);}
 .accent-line{height:2px;background:linear-gradient(90deg,var(--pv-primary) 0%,var(--pv-secondary) 40%,transparent 80%);flex-shrink:0;}
 
@@ -292,15 +290,15 @@ button:focus, select:focus, input:focus, [tabindex]:focus {
       <img id="pv-logo" src="" alt="">
       <div class="title-block">
         <div id="pv-name">—</div>
-        <div id="pv-tagline">Juega con nosotros en <span id="pv-url">webpremium.eu</span></div>
+        <div id="pv-tagline"><span id="pv-url"></span></div>
       </div>
     </div>
     <div class="header-right">
-      <!-- View switcher -->
+      <!-- View tabs kept in DOM (hidden) for JS compatibility -->
       <div class="view-tabs">
-        <button class="view-tab active" id="tab-jackpots" onclick="switchView('jackpots')">🏆 Botes</button>
-        <button class="view-tab" id="tab-results"  onclick="switchView('results')">📋 Resultados</button>
-        <button class="view-tab" id="tab-mixed"    onclick="switchView('mixed')">⊞ Mixta</button>
+        <button class="view-tab active" id="tab-jackpots" onclick="switchView('jackpots')"></button>
+        <button class="view-tab" id="tab-results"  onclick="switchView('results')"></button>
+        <button class="view-tab" id="tab-mixed"    onclick="switchView('mixed')"></button>
       </div>
       <div id="clock">--:--</div>
       <button id="menu-btn" onclick="openMenu()">☰ Menú</button>
@@ -479,7 +477,7 @@ function saveConfig(){
     defaultView:document.getElementById('cfg-default-view').value||'jackpots'
   };
   persistConfig(cfg);
-  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyTagline(cfg.tagline,cfg.pvurl);
+  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyPvUrl(cfg.pvurl);
   closeOverlay();setupTimers(cfg);loadAllData();
 }
 
@@ -521,11 +519,8 @@ function applyTheme(t){document.body.classList.toggle('light',t==='light');}
 function applyOrientation(o){document.body.classList.remove('orient-h','orient-v');document.body.classList.add('orient-'+(o||'h'));}
 function applyBrandColors(c1,c2){const r=document.documentElement.style;r.setProperty('--pv-primary',c1||DEFAULTS.color1);r.setProperty('--pv-secondary',c2||DEFAULTS.color2);}
 function applyTagline(tagline,pvurl){
-  const el=document.getElementById('pv-tagline'),link=document.getElementById('pv-url');
-  if(!el||!link)return;
-  const display=pvurl?pvurl.replace(/^https?:\/\//,''):'';
-  el.childNodes[0].textContent=(tagline||'Juega con nosotros en')+' ';
-  link.textContent=display;
+  // Legacy wrapper — tagline param ignored (URL only shown in simplified header)
+  applyPvUrl(pvurl);
 }
 
 // ── VIEW SWITCHER ────────────────────
@@ -579,13 +574,54 @@ async function fetchPvInfo(){
   try{
     console.log('[WS] Calling pv-info via',loadConfig().url);
     pvData=await wsCall('pv-info')||{};
-    const name=pvData?.company?.name_comercial||pvData?.company?.name_social||'Mi Lotería';
-    document.getElementById('pv-name').textContent=name;
-    document.getElementById('loading-logo').textContent=name;
-    document.title=name+' · Botes';
-    const cfg=loadConfig();
-    applyTagline(cfg.tagline,pvData?.url?.main||cfg.pvurl);
-  }catch(e){console.error('[WS] pv-info FAILED:',e.message,e);document.getElementById('pv-name').textContent='Mi Lotería';}
+    applyPvInfo(pvData);
+  }catch(e){
+    console.error('[WS] pv-info FAILED:',e.message,e);
+    document.getElementById('pv-name').textContent='Mi Lotería';
+  }
+}
+
+function applyPvInfo(pv){
+  const cfg=loadConfig();
+  // Name
+  const name=(pv?.company?.name_comercial||pv?.company?.name_social||'').trim()||'Mi Lotería';
+  document.getElementById('pv-name').textContent=name;
+  document.getElementById('loading-logo').textContent=name;
+  document.title=name+' · Botes';
+
+  // Colors: pv-info css takes priority over saved config
+  const css=pv?.css||{};
+  const c1=css.color_tema||cfg.color1||DEFAULTS.color1;
+  const c2=css.secondary_color_tema||cfg.color2||DEFAULTS.color2;
+  applyBrandColors(c1,c2);
+
+  // Logo from pv-info media
+  const media=pv?.media||{};
+  const logoPath=media.logo||media.logo_oficial||'';
+  const logoEl=document.getElementById('pv-logo');
+  if(logoEl){
+    if(logoPath){
+      const logoUrl=logoPath.startsWith('http')?logoPath:LOGO_BASE+logoPath;
+      logoEl.src=logoUrl;
+      logoEl.style.display='';
+      logoEl.onerror=()=>{ logoEl.style.display='none'; };
+    } else {
+      logoEl.style.display='none';
+    }
+  }
+
+  // Web URL
+  const pvurl=(pv?.url?.main||pv?.url?.web||cfg.pvurl||'').trim();
+  applyPvUrl(pvurl);
+}
+
+function applyPvUrl(pvurl){
+  const tagline=document.getElementById('pv-tagline');
+  const urlEl=document.getElementById('pv-url');
+  if(!tagline||!urlEl) return;
+  const display=pvurl?pvurl.replace(/^https?:\/\//,''):'';
+  urlEl.textContent=display;
+  tagline.style.display=display?'':'none';
 }
 
 // ── GET-GAMES ─────────────────────────
@@ -794,7 +830,7 @@ function renderJackpots(data){
 
 // ── RENDER RESULTS ────────────────────
 function renderResultsInto(data, grid, forceVertical){ return _renderResults(data, grid, forceVertical); }
-function renderResults(data){ _renderResults(data, document.getElementById('results-grid'), false); }
+function renderResults(data){ _renderResults(data, document.getElementById('results-grid'), false); requestAnimationFrame(scaleBallRows); }
 function _renderResults(data, grid, forceVertical){
   grid.innerHTML='';
 
@@ -830,11 +866,12 @@ function _renderResults(data, grid, forceVertical){
   });
 
   // Ball rendering — nowrap row, no wrapping to second line
-  const BSZ=28, BFONT='.72rem';
+  // Ball size: 24px fits up to 9 balls + 2 extras in ~280px column safely
+  const BSZ=24, BFONT='.65rem';
   function ball(n,bg,fg,shape){
-    const br=shape==='sq'?'5px':'50%';
+    const br=shape==='sq'?'4px':'50%';
     return `<span style="display:inline-flex;align-items:center;justify-content:center;`+
-      `width:${BSZ}px;height:${BSZ}px;min-width:${BSZ}px;background:${bg};color:${fg};border-radius:${br};`+
+      `width:${BSZ}px;height:${BSZ}px;background:${bg};color:${fg};border-radius:${br};`+
       `font-family:var(--font-ui);font-size:${BFONT};font-weight:700;flex-shrink:0;">${n}</span>`;
   }
   function balls(arr,bg,fg,shape){
@@ -843,10 +880,11 @@ function _renderResults(data, grid, forceVertical){
     return vals.map(n=>ball(n,bg,fg,shape)).join('');
   }
   function ballSep(label){
-    return `<span style="font-family:var(--font-ui);font-size:.58rem;color:var(--muted);margin:0 2px;flex-shrink:0;line-height:1">${label}</span>`;
+    return `<span style="font-family:var(--font-ui);font-size:.56rem;color:var(--muted);margin:0 1px;flex-shrink:0;line-height:1">${label}</span>`;
   }
+  // ballRow: nowrap, visible overflow — clipping is handled by column width, not hidden overflow
   function ballRow(html){
-    return `<div style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;overflow:hidden;max-width:100%">${html}</div>`;
+    return `<div class="ball-row" style="display:flex;flex-wrap:nowrap;align-items:center;gap:2px;width:100%">${html}</div>`;
   }
 
   // Pending placeholder (ghost balls)
@@ -1000,6 +1038,23 @@ function _renderResults(data, grid, forceVertical){
   }
 }
 
+
+// ── SCALE BALL ROWS ───────────────────
+// After render, shrink any ball row that overflows its container
+function scaleBallRows(){
+  document.querySelectorAll('.result-block .ball-row, .result-block [style*="flex-wrap:nowrap"]').forEach(row=>{
+    row.style.transform='';
+    const parent=row.parentElement;
+    if(!parent) return;
+    const available=parent.clientWidth - 20; // 10px padding each side
+    const actual=row.scrollWidth;
+    if(actual>available && available>0){
+      const scale=available/actual;
+      row.style.transform=`scaleX(${scale.toFixed(3)})`;
+      row.style.transformOrigin='left center';
+    }
+  });
+}
 
 // ── COUNTDOWN ────────────────────────
 function startCountdown(elId,dateStr,game){
@@ -1281,7 +1336,7 @@ async function diagRun(endpoint){
 (function boot(){
   const cfg=loadConfig();
   if(cfg.orient===null){cfg.orient=detectOrientation();persistConfig(cfg);}
-  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyTagline(cfg.tagline,cfg.pvurl);
+  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyPvUrl(cfg.pvurl);
   document.getElementById('app-ver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
   updateClock();setInterval(updateClock,30000);
   setupTimers(cfg);
