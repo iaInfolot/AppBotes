@@ -8,8 +8,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Botes</title>
 <style>
+/* ════════════════════════════════════════════════════════════
+   ÍNDICE
+   1. Variables de tema y reset base
+   2. Loading / App shell
+   3. Header
+   4. Main content / Views
+   5. Jackpots (vista Botes)
+   6. Results (vista Resultados)
+   7. Overlay & Modals (menú, config, diagnóstico)
+   8. Vista mixta
+   9. Auto-rotate bar
+  10. Orientación vertical
+  11. Foco D-Pad
+  12. Animaciones
+   ════════════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@300;400;600;700&display=swap');
 
+/* ── 1. VARIABLES DE TEMA Y RESET ── */
 :root {
   --pv-primary:#f0b429; --pv-secondary:#e05c2a;
   --bg:#07090e; --surface:#0f1319; --card:#131820; --card2:#171e28;
@@ -148,12 +164,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 /* ══ MIXED VIEW ══ */
 #view-mixed{display:none;flex-direction:row;overflow:hidden;gap:clamp(6px,.8vw,12px);}
 #view-mixed.active{display:flex;}
-#mixed-jackpots,#mixed-results{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;min-width:0;}
+#mixed-jackpots,#mixed-results{display:flex;flex-direction:column;overflow:hidden;min-height:0;min-width:0;}
+#mixed-jackpots{flex:0.8;}
+#mixed-results{flex:1.2;}
 .mixed-label{font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:clamp(5px,.6vh,9px);flex-shrink:0;display:flex;align-items:center;gap:6px;}
 .mixed-label::before{content:'';display:inline-block;width:4px;height:4px;background:var(--pv-primary);border-radius:50%;}
 #mixed-jackpots-grid{flex:1;display:grid;gap:clamp(5px,.6vw,9px);overflow:hidden;min-height:0;}
 #mixed-results-scroll{flex:1;overflow:hidden;min-height:0;}
-#mixed-results-grid{display:grid;gap:clamp(5px,.6vw,9px);height:100%;overflow:hidden;}
+#mixed-results-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,.6vw,9px);align-items:start;overflow:hidden;}
 
 /* ══ AUTO-ROTATE BAR ══ */
 #rotate-bar{position:fixed;bottom:0;left:0;height:3px;background:var(--pv-secondary);width:100%;display:none;z-index:50;transform-origin:left;}
@@ -348,6 +366,25 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
 
 <script>
 // ════════════════════════════════════════════════════════════
+// ÍNDICE
+//  1. Constantes y estado global
+//  2. Helpers de UI genéricos (loading, status, escape...)
+//  3. Configuración (localStorage, formulario de ajustes)
+//  4. Apariencia / tema (colores, orientación, claro-oscuro)
+//  5. Reloj de cabecera
+//  6. Helpers de semana / fecha (para la vista Resultados)
+//  7. Llamadas al WebService (wsCall + fetch de cada endpoint)
+//  8. Render — Botes (jackpots, cuenta atrás, ajuste de fuente)
+//  9. Render — Resultados (bloques por juego, bloque Quiniela+QuiniGol)
+// 10. Render — Vista mixta (botes + resultados combinados)
+// 11. Cambio de vista y navegación (menú, modales)
+// 12. Auto-rotación de vistas y temporizadores de refresco
+// 13. Orquestación de carga inicial (boot de datos)
+// 14. Diagnóstico (panel de pruebas de llamadas al WS)
+// 15. Arranque (boot)
+// ════════════════════════════════════════════════════════════
+
+// ── 1. CONSTANTES Y ESTADO GLOBAL ────────────────────────────
 const APP_VERSION  = '2.0';
 const APP_REVISION = '20260625-001';
 const STORAGE_KEY  = 'infolot_cfg_v23';
@@ -378,7 +415,18 @@ let lastJackpotsData=[], lastResultsData=[], currentView='jackpots';
 let _loadingInProgress=false, _booted=false;
 let autoRotateTimer=null;
 
-// ── CONFIG ──────────────────────────────────────────────────
+// ── 2. UI HELPERS GENÉRICOS ──────────────────────────────────
+function showLoading(s){
+  document.getElementById('loading').style.display=s?'flex':'none';
+  document.getElementById('app').classList.toggle('visible',!s);
+  if(!s) setTimeout(()=>fitAmountFonts(),200);
+}
+function setLoadingStep(m){document.getElementById('loading-step').textContent=m;}
+function setStatus(m,t){const el=document.getElementById('status-msg');if(el){el.textContent=m;el.className=t||'';}}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function hideImg(el){el.style.display='none';}
+
+// ── 3. CONFIG ─────────────────────────────────────────────────
 function loadConfig(){
   try{
     const s=localStorage.getItem(STORAGE_KEY);
@@ -469,7 +517,7 @@ function syncColor(tid,sid,fromText){
 
 function fv(id){return document.getElementById(id).value.trim();}
 
-// ── APPEARANCE ──────────────────────────────────────────────
+// ── 4. APARIENCIA / TEMA ──────────────────────────────────────
 function detectOrientation(){
   try{const t=screen.orientation?screen.orientation.type:'';if(t.includes('portrait'))return'v';if(t.includes('landscape'))return'h';return window.innerHeight>window.innerWidth?'v':'h';}catch{return'h';}
 }
@@ -489,41 +537,46 @@ function updateDemoBadge(cfg){
   if(b) b.style.display=cfg.demoMode?'':'none';
 }
 
-// ── VIEW SWITCHER ────────────────────────────────────────────
-function switchView(view){
-  currentView=view;
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('view-'+view).classList.add('active');
-  const tabEl=document.getElementById('tab-'+view);
-  if(tabEl) tabEl.classList.add('active');
-  const labelEl=document.getElementById('section-label-text');
-  const wrapEl=document.getElementById('section-label-header');
-  function setLabel(txt){if(labelEl)labelEl.textContent=txt||'';if(wrapEl)wrapEl.style.display=txt?'flex':'none';}
-  if(view==='jackpots'){
-    setLabel('Próximos Sorteos');
-    if(lastJackpotsData.length) renderJackpots(lastJackpotsData);
-  } else if(view==='results'){
-    setLabel(resultsWeekLabel());
-    if(lastResultsData.length) renderResults(lastResultsData);
-    else if(Object.keys(gamesMap).length) fetchResults();
-  } else if(view==='mixed'){
-    setLabel('');
-    if(lastJackpotsData.length) renderMixedJackpots(lastJackpotsData);
-    if(lastResultsData.length) renderMixedResults(lastResultsData);
-    else if(Object.keys(gamesMap).length) fetchResults();
-  }
-  const cfg=loadConfig();
-  if(cfg.autoRotate && view!=='mixed') resetRotateBar(cfg);
-}
-
-// ── CLOCK ───────────────────────────────────────────────────
+// ── 5. RELOJ ──────────────────────────────────────────────────
 function updateClock(){
   const n=new Date(),el=document.getElementById('clock');
   if(el) el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
 }
 
-// ── WS CALL (preserved exactly) ─────────────────────────────
+// ── 6. HELPERS DE SEMANA / FECHA ──────────────────────────────
+function getWeekBounds(refDate){
+  const d=new Date(refDate),day=d.getDay(),diffToMon=day===0?-6:1-day;
+  const mon=new Date(d);mon.setDate(d.getDate()+diffToMon);mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  return{mon,sun};
+}
+function toYMD(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function isCurrentWeekResults(){
+  const now=new Date();
+  return !(now.getDay()===1&&now.getHours()<14);
+}
+function getResultsWeekRef(){
+  const cfg=loadConfig(),now=new Date();
+  if(cfg.demoMode||!isCurrentWeekResults()){
+    const prev=new Date(now);prev.setDate(now.getDate()-7);return prev;
+  }
+  return now;
+}
+function resultsWeekLabel(){
+  const ref=getResultsWeekRef(),{mon,sun}=getWeekBounds(ref);
+  const fmt=d=>d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+  return `Resultados Semana ${getISOWeek(ref)} · ${fmt(mon)} – ${fmt(sun)}`;
+}
+function getISOWeek(d){
+  const date=new Date(d);date.setHours(0,0,0,0);
+  date.setDate(date.getDate()+3-(date.getDay()+6)%7);
+  const week1=new Date(date.getFullYear(),0,4);
+  return 1+Math.round(((date-week1)/86400000-3+(week1.getDay()+6)%7)/7);
+}
+
+// ── 7. LLAMADAS AL WEBSERVICE ─────────────────────────────────
 async function wsCall(endpoint,extra={}){
   const cfg=loadConfig();
   if(!cfg.token||!cfg.appid||!cfg.pass){
@@ -650,40 +703,7 @@ async function fetchResults(){
   }catch(e){console.error('[Results]',e);setStatus('Error resultados: '+e.message,'error');}
 }
 
-// ── WEEK HELPERS ─────────────────────────────────────────────
-function getWeekBounds(refDate){
-  const d=new Date(refDate),day=d.getDay(),diffToMon=day===0?-6:1-day;
-  const mon=new Date(d);mon.setDate(d.getDate()+diffToMon);mon.setHours(0,0,0,0);
-  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
-  return{mon,sun};
-}
-function toYMD(d){
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function isCurrentWeekResults(){
-  const now=new Date();
-  return !(now.getDay()===1&&now.getHours()<14);
-}
-function getResultsWeekRef(){
-  const cfg=loadConfig(),now=new Date();
-  if(cfg.demoMode||!isCurrentWeekResults()){
-    const prev=new Date(now);prev.setDate(now.getDate()-7);return prev;
-  }
-  return now;
-}
-function resultsWeekLabel(){
-  const ref=getResultsWeekRef(),{mon,sun}=getWeekBounds(ref);
-  const fmt=d=>d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
-  return `Resultados Semana ${getISOWeek(ref)} · ${fmt(mon)} – ${fmt(sun)}`;
-}
-function getISOWeek(d){
-  const date=new Date(d);date.setHours(0,0,0,0);
-  date.setDate(date.getDate()+3-(date.getDay()+6)%7);
-  const week1=new Date(date.getFullYear(),0,4);
-  return 1+Math.round(((date-week1)/86400000-3+(week1.getDay()+6)%7)/7);
-}
-
-// ── RENDER JACKPOTS ──────────────────────────────────────────
+// ── 8. RENDER — BOTES (JACKPOTS) ──────────────────────────────
 function renderJackpots(data){
   countdownTimers.forEach(clearInterval);countdownTimers=[];
   const grid=document.getElementById('jackpots-grid'),empty=document.getElementById('empty-state');
@@ -759,65 +779,84 @@ function renderJackpots(data){
 
 const jackpotsObserver=new ResizeObserver(()=>fitAmountFonts());
 
-// ── RENDER RESULTS ───────────────────────────────────────────
+function startCountdown(elId,dateStr,game){
+  let drawHour='20:00';
+  try{const h=JSON.parse(game.draw_hours||'{}');const v=Object.values(h);if(v.length)drawHour=v[0];}catch{}
+  const target=new Date(dateStr+'T'+drawHour+':00');
+  function update(){
+    const el=document.getElementById(elId);if(!el)return;
+    const diff=target-new Date();
+    if(diff<=0){el.textContent='Hoy';el.className='card-countdown urgent';return;}
+    const days=Math.floor(diff/86400000),hours=Math.floor((diff%86400000)/3600000),mins=Math.floor((diff%3600000)/60000);
+    let txt='',cls='card-countdown';
+    if(days>1){txt=`${days}d ${hours}h`;}
+    else if(days===1){txt=`${hours}h ${mins}m`;cls+=' soon';}
+    else if(hours>0){txt=`${hours}h ${mins}m`;cls+=' soon';}
+    else{txt=`${mins}m`;cls+=' urgent';}
+    el.textContent=txt;el.className=cls;
+  }
+  update();
+  const t=setInterval(update,30000);countdownTimers.push(t);
+}
+
+function fitAmountFonts(){
+  document.querySelectorAll('.jackpot-card').forEach(card=>{
+    const wrap=card.querySelector('.card-amount-wrap'),amt=card.querySelector('.card-amount');
+    if(!wrap||!amt) return;
+    let size=Math.min(wrap.clientHeight*.72,80);
+    amt.style.fontSize=size+'px';
+    while(amt.scrollWidth>wrap.clientWidth*.95&&size>18){size-=2;amt.style.fontSize=size+'px';}
+  });
+  const sizes=[];
+  document.querySelectorAll('.jackpot-card .card-amount').forEach(amt=>sizes.push(parseFloat(amt.style.fontSize)||80));
+  if(!sizes.length) return;
+  const minSize=Math.min(...sizes);
+  document.querySelectorAll('.jackpot-card .card-amount').forEach(amt=>amt.style.fontSize=minSize+'px');
+}
+
+// ── 9. RENDER — RESULTADOS ────────────────────────────────────
 function renderResultsInto(data,grid,forceVertical){return _renderResults(data,grid,forceVertical);}
 function renderResults(data){_renderResults(data,document.getElementById('results-grid'),false);}
 
-function _renderResults(data,grid,forceVertical){
-  grid.innerHTML='';
+function getGameType(game){
+  if(game.id===21) return 'loto';
+  if(game.is_link_match===1) return 'match';
+  if(game.is_num_serie===1||game.is_num_fraction===1) return 'nacional';
+  return 'loto';
+}
 
-  function getGameType(game){
-    if(game.id===21) return 'loto';
-    if(game.is_link_match===1) return 'match';
-    if(game.is_num_serie===1||game.is_num_fraction===1) return 'nacional';
-    return 'loto';
-  }
-  const isV=forceVertical||document.body.classList.contains('orient-v');
-  const byGame={};
-  (data||[]).forEach(r=>{
-    if(!gamesMap[r.id_game]) return;
-    if(!byGame[r.id_game]) byGame[r.id_game]=[];
-    byGame[r.id_game].push(r);
-  });
-  Object.values(byGame).forEach(arr=>arr.sort((a,b)=>a.date>b.date?1:-1));
-  const COL_ORDER={'1':[1,3,43],'2':[2,5],'3':[4],'4':[25,26],'b':[7,21]};
-  const cols={'1':[],'2':[],'3':[],'4':[],'b':[]};
-  Object.keys(COL_ORDER).forEach(col=>COL_ORDER[col].forEach(id=>{if(gamesMap[id])cols[col].push(id);}));
-  const knownIds=[1,3,43,2,5,4,25,26,7,21];
-  Object.keys(gamesMap).forEach(id=>{const iid=parseInt(id);if(!knownIds.includes(iid)&&!cols['1'].includes(iid))cols['1'].push(iid);});
+function calcBSZ(nMain,nExtra,nComp,nRef,availW){
+  const total=nMain+nExtra+nComp+nRef;
+  const seps=(nExtra>0?1:0)+(nComp>0?1:0)+(nRef>0?1:0);
+  const available=availW-seps*12-(total-1)*2;
+  return Math.min(30,Math.max(18,Math.floor(available/Math.max(total,1))));
+}
+function mkBall(n,bg,fg,shape,sz){
+  const br=shape==='sq'?'4px':'50%';
+  return `<span class="ball-sized" style="width:${sz}px;height:${sz}px;background:${bg};color:${fg};border-radius:${br};font-size:${Math.max(9,Math.round(sz*.55))}px;">${n}</span>`;
+}
+function ballsArr(arr,bg,fg,shape,sz){
+  if(!arr) return '';
+  return (Array.isArray(arr)?arr:Object.values(arr)).map(n=>mkBall(n,bg,fg,shape,sz)).join('');
+}
+function bsep(label){return `<span class="ball-sep">${label}</span>`;}
+function brow(html,nm,ne,nc,nr){return `<div class="ball-row" data-main="${nm}" data-extra="${ne}" data-comp="${nc}" data-ref="${nr}">${html}</div>`;}
 
-  function calcBSZ(nMain,nExtra,nComp,nRef,availW){
-    const total=nMain+nExtra+nComp+nRef;
-    const seps=(nExtra>0?1:0)+(nComp>0?1:0)+(nRef>0?1:0);
-    const available=availW-seps*12-(total-1)*2;
-    return Math.min(40,Math.max(18,Math.floor(available/Math.max(total,1))));
+function pendingHtml(game){
+  const gt=getGameType(game);
+  if(gt==='match'){
+    const n=game.num_events||15;let h='<div style="opacity:.22">';
+    for(let i=0;i<Math.min(n,15);i++)
+      h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:3px;padding:1px 0;border-bottom:1px solid var(--border)"><div style="height:7px;background:var(--border);border-radius:3px;flex:1"></div><span style="background:var(--border);color:transparent;border-radius:3px;padding:1px 5px;font-size:var(--fs-xs)">·</span></div>`;
+    return h+'</div>';
   }
-  function mkBall(n,bg,fg,shape,sz){
-    const br=shape==='sq'?'4px':'50%';
-    return `<span class="ball-sized" style="width:${sz}px;height:${sz}px;background:${bg};color:${fg};border-radius:${br};font-size:${Math.max(9,Math.round(sz*.55))}px;">${n}</span>`;
-  }
-  function ballsArr(arr,bg,fg,shape,sz){
-    if(!arr) return '';
-    return (Array.isArray(arr)?arr:Object.values(arr)).map(n=>mkBall(n,bg,fg,shape,sz)).join('');
-  }
-  function bsep(label){return `<span class="ball-sep">${label}</span>`;}
-  function brow(html,nm,ne,nc,nr){return `<div class="ball-row" data-main="${nm}" data-extra="${ne}" data-comp="${nc}" data-ref="${nr}">${html}</div>`;}
+  const nb=game.num_bet_per_game||6,ne=game.num_extra_per_bet||0;
+  let r='';for(let i=0;i<nb;i++)r+=mkBall('·','var(--muted)','transparent','circle',22);
+  if(ne>0){r+=bsep('+');for(let i=0;i<ne;i++)r+=mkBall('·','var(--muted)','transparent','sq',22);}
+  return `<div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);font-style:italic;margin-bottom:3px">Pendiente</div><div style="opacity:.22">${brow(r,nb,ne,0,0)}</div>`;
+}
 
-  function pendingHtml(game){
-    const gt=getGameType(game);
-    if(gt==='match'){
-      const n=game.num_events||15;let h='<div style="opacity:.22">';
-      for(let i=0;i<Math.min(n,15);i++)
-        h+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:3px;padding:1px 0;border-bottom:1px solid var(--border)"><div style="height:7px;background:var(--border);border-radius:3px;flex:1"></div><span style="background:var(--border);color:transparent;border-radius:3px;padding:1px 5px;font-size:var(--fs-xs)">·</span></div>`;
-      return h+'</div>';
-    }
-    const nb=game.num_bet_per_game||6,ne=game.num_extra_per_bet||0;
-    let r='';for(let i=0;i<nb;i++)r+=mkBall('·','var(--muted)','transparent','circle',22);
-    if(ne>0){r+=bsep('+');for(let i=0;i<ne;i++)r+=mkBall('·','var(--muted)','transparent','sq',22);}
-    return `<div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);font-style:italic;margin-bottom:3px">Pendiente</div><div style="opacity:.22">${brow(r,nb,ne,0,0)}</div>`;
-  }
-
-  function buildBlockHTML(gameId,draws,availW){
+function buildBlockHTML(gameId,draws,availW){
     const game=gamesMap[gameId]||{},gt=getGameType(game);
     const barClr=game.fg_color||game.bg_color||'var(--pv-primary)';
     const numBg=game.number_bg_color||'#1a2535',numFg=game.number_fg_color||'#fff';
@@ -837,6 +876,9 @@ function _renderResults(data,grid,forceVertical){
     if(!draws||!draws.length){
       bodyHtml=pendingHtml(game);
     } else if(gt==='loto'){
+      const COMPACT_SPACING_IDS=[4]; // Bonoloto: muchos sorteos apilados, necesita ir más ajustado. LotoTurf ya tiene hueco de sobra.
+      const isCompact=COMPACT_SPACING_IDS.includes(gameId);
+      const headerMB=isCompact?'2px':'6px', drawMB=isCompact?'3px':'8px', drawPB=isCompact?'3px':'6px';
       const hasE=game.num_extra_per_bet>0,hasC=game.is_num_complementary===1,hasR=game.is_num_refund===1,hasCA=game.is_code_a===1;
       const fd=draws[0]||{};
       const nMain=Array.isArray(fd.bet)?fd.bet.length:(game.num_bet_per_game||6);
@@ -848,13 +890,15 @@ function _renderResults(data,grid,forceVertical){
         const d=new Date(r.date+'T12:00:00');
         const fdStr=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
         let row=ballsArr(r.bet,numBg,numFg,'circle',bsz);
-        if(hasE) row+=bsep(game.extra_name||'+')+ballsArr(r.extra,extBg,extFg,'sq',bsz);
+        if(hasE) row+=bsep('+')+ballsArr(r.extra,extBg,extFg,'sq',bsz);
         if(hasC&&r.other?.complementary?.length) row+=bsep('C')+ballsArr(r.other.complementary,compBg,compFg,'circle',bsz);
         if(hasR&&r.other?.refund!=null) row+=bsep('R')+mkBall(r.other.refund,refBg,refFg,'sq',bsz);
+        const extraLabelHtml=hasE&&game.extra_name
+          ?`<span style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text2);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;flex-shrink:0">${esc(game.extra_name)}</span>`:'';
         const codeAHtml=hasCA&&r.other?.code_a?.length
           ?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;background:rgba(39,201,122,.12);border:1px solid rgba(39,201,122,.3);border-radius:4px;padding:1px 6px;white-space:nowrap"><span style="color:var(--text2)">${esc(game.code_a_name||'Código')}</span><span style="color:var(--success)">${esc(r.other.code_a[0])}</span></span>`:'';
-        const ds=ri<draws.length-1?'border-bottom:1px solid var(--border);margin-bottom:4px;padding-bottom:4px;':'';
-        bodyHtml+=`<div style="${ds}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;gap:4px"><span style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span>${codeAHtml}</div>${brow(row,nMain,nExtra,nComp,nRef)}</div>`;
+        const ds=ri<draws.length-1?`border-bottom:1px solid var(--border);margin-bottom:${drawMB};padding-bottom:${drawPB};`:'';
+        bodyHtml+=`<div style="${ds}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${headerMB};gap:4px"><span style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span>${codeAHtml}${extraLabelHtml}</div>${brow(row,nMain,nExtra,nComp,nRef)}</div>`;
       });
     } else if(gt==='match'){
       const r=draws[draws.length-1]||{};
@@ -877,22 +921,26 @@ function _renderResults(data,grid,forceVertical){
         const fd=new Date(r.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
         const betObj=r.bet&&!Array.isArray(r.bet)?r.bet:{P1:r.bet};
         const refunds=Array.isArray(r.other?.num_refund)?r.other.num_refund:(r.other?.num_refund!=null?[r.other.num_refund]:[]);
-        const ds=ri<draws.length-1?'border-right:1px solid var(--border);padding-right:8px;':'';
-        bodyHtml+=`<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;${ds}">`;
-        bodyHtml+=`<div style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;color:var(--text2)">${esc(fd)}</div>`;
-        bodyHtml+=`<div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap">`;
+        const ds=ri<draws.length-1?'border-right:1px solid var(--border);padding-right:0.1px;':'';
         const numEntries=[];
         Object.keys(betObj).forEach((key,ki)=>{
           const nums=Array.isArray(betObj[key])?betObj[key]:[betObj[key]];
           nums.forEach((n,ni)=>numEntries.push({ord:ki===0&&ni===0?'1º':ki===0&&ni===1?'2º':ki===1?'2º':'',n}));
         });
+        const crowded=numEntries.length+(refunds.length?1:0)>3;
+        // CANTIDAD DE ESPACIO QUE OCUPA UN DÍA FRENTE AL OTRO EN EL BLOQUE. (0.9/1.1)
+        bodyHtml+=`<div style="flex:${ri===0?0.95:1.05};min-width:0;display:flex;flex-direction:column;gap:4px;${ds}">`;
+        bodyHtml+=`<div style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;color:var(--text2)">${esc(fd)}</div>`;
+        // MARGENES Y TAMAÑO DEL CONTENIDO DEL BLOQUE
+        const rowGap=crowded?'3px':'5px', numPad=crowded?'2px 4px':'2px 7px', numFs=crowded?'var(--fs-lg)':'var(--fs-lg)', dividerH=crowded?'20px':'28px', refBallSz=crowded?18:20;
+        bodyHtml+=`<div style="display:flex;align-items:center;gap:${rowGap};flex-wrap:nowrap">`;
         numEntries.forEach(({ord,n},idx)=>{
-          bodyHtml+=`<div style="text-align:center;flex-shrink:0"><div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text2);margin-bottom:1px;font-weight:600">${ord} Premio</div><div style="background:${numBg};color:${numFg};border-radius:5px;padding:2px 7px;font-family:var(--font-display);font-size:var(--fs-lg);letter-spacing:2px;white-space:nowrap">${esc(n)}</div></div>`;
-          if(idx<numEntries.length-1&&refunds.length) bodyHtml+=`<div style="width:1px;height:28px;background:var(--border);flex-shrink:0;margin:0 2px"></div>`;
+          bodyHtml+=`<div style="text-align:center;flex-shrink:0"><div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text2);margin-bottom:1px;font-weight:600">${ord} Premio</div><div style="background:${numBg};color:${numFg};border-radius:5px;padding:${numPad};font-family:var(--font-display);font-size:${numFs};letter-spacing:2px;white-space:nowrap">${esc(n)}</div></div>`;
+          if(idx<numEntries.length-1&&refunds.length) bodyHtml+=`<div style="width:1px;height:${dividerH};background:var(--border);flex-shrink:0;margin:0 2px"></div>`;
         });
         if(refunds.length){
           bodyHtml+=`<div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0"><div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text2);margin-bottom:2px;font-weight:600">Reint.</div><div style="display:flex;gap:2px">`;
-          refunds.forEach(rv=>bodyHtml+=mkBall(rv,refBg,refFg,'sq',20));
+          refunds.forEach(rv=>bodyHtml+=mkBall(rv,refBg,refFg,'sq',refBallSz));
           bodyHtml+=`</div></div>`;
         }
         bodyHtml+=`</div></div>`;
@@ -919,6 +967,60 @@ function _renderResults(data,grid,forceVertical){
     return block;
   }
 
+function colWrap(gcol,grow){
+  const d=document.createElement('div');
+  d.style.cssText=`display:flex;flex-direction:column;gap:clamp(6px,.8vw,10px);grid-column:${gcol};grid-row:${grow};overflow:hidden;min-height:0;`;
+  return d;
+}
+
+// Columnas 1+2 (Euromillón/EuroDreams/Gordo, La Primitiva+QuiniGol, Lotería Nacional
+// abajo abarcando ambas) — usado tanto por la vista de Resultados como por el
+// "Grupo 1" de la vista Mixta. Mantener los pesos en sync entre ambos usos.
+function paintResultsCols12(grid,byGame,cols){
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr auto;gap:clamp(6px,.8vw,10px);height:100%;overflow:hidden;box-sizing:border-box;';
+  const c1=colWrap('1','1');grid.appendChild(c1);
+  const FLEX_COL1={1:1.02,3:1,5:0.6}; // AJUSTAR BLOQUE Euromillon (1), EuroDreams (3) y el Gordo de la Primitiva (5).
+  cols['1'].forEach(id=>{const b=makeBlock(id,byGame[id]);b.style.flex=String(FLEX_COL1[id]||1);b.style.minHeight='0';c1.appendChild(b);});
+  const c2=colWrap('2','1');grid.appendChild(c2);
+  cols['2'].forEach(id=>{const b=makeBlock(id,byGame[id]);b.style.flex='1';b.style.minHeight='0';c2.appendChild(b);});
+  const qgBlock=makeQuiniGolBlock(byGame[26]||[]);
+  qgBlock.style.flex='1';qgBlock.style.minHeight='0';c2.appendChild(qgBlock);
+  const nacId=cols['b'].find(id=>id===7);
+  if(nacId!=null){
+    const bn=makeBlock(nacId,byGame[nacId]);
+    bn.style.cssText='grid-column:1/3;grid-row:2;overflow:hidden;min-height:0;max-height:120px;';
+    grid.appendChild(bn);
+  }
+}
+
+// Columnas 3+4 (Bonoloto+LotoTurf, La Quiniela) — vista de Resultados y "Grupo 2" de la Mixta.
+function paintResultsCols34(grid,byGame,cols){
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:clamp(6px,.8vw,10px);height:100%;overflow:hidden;box-sizing:border-box;';
+  const c3=colWrap('1','1');grid.appendChild(c3);
+  cols['3'].forEach(id=>{const b=makeBlock(id,byGame[id]);b.style.flex='2.7';b.style.minHeight='0';c3.appendChild(b);});
+  const ltId=cols['b'].find(id=>id===21);
+  if(ltId!=null){const bl=makeBlock(ltId,byGame[ltId]);bl.style.flex='1.1';bl.style.minHeight='0';c3.appendChild(bl);}
+  const c4=colWrap('2','1');grid.appendChild(c4);
+  const quiBlock=makeQuinielaBlock(byGame[25]||[]);
+  quiBlock.style.flex='1';quiBlock.style.minHeight='0';c4.appendChild(quiBlock);
+}
+
+function _renderResults(data,grid,forceVertical){
+  grid.innerHTML='';
+  const isV=forceVertical||document.body.classList.contains('orient-v');
+  const byGame={};
+  (data||[]).forEach(r=>{
+    if(!gamesMap[r.id_game]) return;
+    if(!byGame[r.id_game]) byGame[r.id_game]=[];
+    byGame[r.id_game].push(r);
+  });
+  Object.values(byGame).forEach(arr=>arr.sort((a,b)=>a.date>b.date?1:-1));
+  const COL_ORDER={'1':[1,3,43,5],'2':[2],'3':[4],'4':[25,26],'b':[7,21]};
+  const cols={'1':[],'2':[],'3':[],'4':[],'b':[]};
+  Object.keys(COL_ORDER).forEach(col=>COL_ORDER[col].forEach(id=>{if(gamesMap[id])cols[col].push(id);}));
+  const knownIds=[1,3,43,2,5,4,25,26,7,21];
+  Object.keys(gamesMap).forEach(id=>{const iid=parseInt(id);if(!knownIds.includes(iid)&&!cols['1'].includes(iid))cols['1'].push(iid);});
+
   if(isV){
     grid.style.cssText='display:flex;flex-direction:column;gap:clamp(5px,.6vw,8px);overflow:hidden;height:100%';
     [...cols['1'],...cols['2'],...cols['3'],...cols['4'],...cols['b']].forEach(id=>{
@@ -936,15 +1038,18 @@ function _renderResults(data,grid,forceVertical){
     return d;
   }
   const c1=colWrap('1','1');grid.appendChild(c1);
-  cols['1'].forEach(id=>{const b=makeBlock(id,byGame[id]);b.style.flex='1';b.style.minHeight='0';c1.appendChild(b);});
+  const FLEX_COL1={1:1.02,3:1,5:0.6}; // AJUSTAR BLOQUE Euromillon (1), EuroDreams (3) y el Gordo de la Primitiva (5).
+  cols['1'].forEach(id=>{const b=makeBlock(id,byGame[id]);b.style.flex=String(FLEX_COL1[id]||1);b.style.minHeight='0';c1.appendChild(b);});
   const c2=colWrap('2','1');grid.appendChild(c2);
   cols['2'].forEach(id=>{const b=makeBlock(id,byGame[id]);b.style.flex='1';b.style.minHeight='0';c2.appendChild(b);});
+  const qgBlock=makeQuiniGolBlock(byGame[26]||[]);
+  qgBlock.style.flex='1';qgBlock.style.minHeight='0';c2.appendChild(qgBlock);
   const c3=colWrap('3','1/3');grid.appendChild(c3);
-  cols['3'].forEach(id=>{const b=makeBlock(id,byGame[id]);b.style.flex='3';b.style.minHeight='0';c3.appendChild(b);});
+  cols['3'].forEach(id=>{const b=makeBlock(id,byGame[id]);b.style.flex='2.7';b.style.minHeight='0';c3.appendChild(b);});
   const ltId=cols['b'].find(id=>id===21);
-  if(ltId!=null){const bl=makeBlock(ltId,byGame[ltId]);bl.style.flex='1';bl.style.minHeight='0';c3.appendChild(bl);}
+  if(ltId!=null){const bl=makeBlock(ltId,byGame[ltId]);bl.style.flex='1.1';bl.style.minHeight='0';c3.appendChild(bl);}
   const c4=colWrap('4','1/3');grid.appendChild(c4);
-  const quiBlock=makeQuinielaQuiniGolBlock(byGame[25]||[],byGame[26]||[]);
+  const quiBlock=makeQuinielaBlock(byGame[25]||[]);
   quiBlock.style.flex='1';quiBlock.style.minHeight='0';c4.appendChild(quiBlock);
   const nacId=cols['b'].find(id=>id===7);
   if(nacId!=null){
@@ -970,24 +1075,22 @@ function recalcBallsInBlock(block){
     const nComp=parseInt(row.dataset.comp||0),nRef=parseInt(row.dataset.ref||0);
     const total=nMain+nExtra+nComp+nRef;if(!total) return;
     const seps=(nExtra>0?1:0)+(nComp>0?1:0)+(nRef>0?1:0);
-    const sz=Math.min(40,Math.max(18,Math.floor((availW-seps*12-(total-1)*2)/total)));
+    const sz=Math.min(30,Math.max(18,Math.floor((availW-seps*12-(total-1)*2)/total)));
     const fs=Math.max(9,Math.round(sz*.55))+'px';
     row.querySelectorAll('.ball-sized').forEach(b=>{b.style.width=sz+'px';b.style.height=sz+'px';b.style.fontSize=fs;});
   });
 }
 
-// ── QUINIELA + QUINIGOL MERGED BLOCK ─────────────────────────
-function makeQuinielaQuiniGolBlock(quiDraws,qgDraws){
-  const gameQui=gamesMap[25]||{},gameQG=gamesMap[26]||{};
-  let logoSrcQui='',logoSrcQG='';
+// ── LA QUINIELA (bloque independiente, incluye Pleno al 15) ──
+function makeQuinielaBlock(quiDraws){
+  const gameQui=gamesMap[25]||{};
+  let logoSrcQui='';
   if(gameQui.logo_official) logoSrcQui=gameQui.logo_official.startsWith('http')?gameQui.logo_official:LOGO_BASE+gameQui.logo_official;
   else if(gameQui.logo) logoSrcQui=gameQui.logo.startsWith('http')?gameQui.logo:LOGO_BASE+gameQui.logo;
-  if(gameQG.logo_official) logoSrcQG=gameQG.logo_official.startsWith('http')?gameQG.logo_official:LOGO_BASE+gameQG.logo_official;
-  else if(gameQG.logo) logoSrcQG=gameQG.logo.startsWith('http')?gameQG.logo:LOGO_BASE+gameQG.logo;
 
-  const rQui=quiDraws[quiDraws.length-1]||{},rQG=qgDraws[qgDraws.length-1]||{};
-  const betQui=Array.isArray(rQui.bet)?rQui.bet:[],betQG=Array.isArray(rQG.bet)?rQG.bet:[];
-  const matchesQui=rQui.other?.matches||[],matchesQG=rQG.other?.matches||[];
+  const rQui=quiDraws[quiDraws.length-1]||{};
+  const betQui=Array.isArray(rQui.bet)?rQui.bet:[];
+  const matchesQui=rQui.other?.matches||[];
 
   // Simplified Pleno al 15: position===15 directly
   const plenoMatch15=matchesQui.find(x=>parseInt(x.position)===15)||null;
@@ -998,17 +1101,7 @@ function makeQuinielaQuiniGolBlock(quiDraws,qgDraws){
   const plenoG1=plenoRaw.length>0?String(plenoRaw[0]):null;
   const plenoG2=plenoRaw.length>1?String(plenoRaw[1]):null;
   const fd=rQui.date?new Date(rQui.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
-  const pending=!betQui.length&&!betQG.length;
-
-  // QuiniGol alignment: build lookup by normalized team pair
-  function nt(s){return String(s||'').trim().toLowerCase();}
-  const qgLookup=new Map();
-  matchesQG.forEach((mQG,i)=>{
-    if(i>=betQG.length) return;
-    const key=nt(mQG.team_1_name)+'§'+nt(mQG.team_2_name);
-    if(key!=='§') qgLookup.set(key,{result:betQG[i],match:mQG});
-  });
-  const unmatchedQG=new Map(qgLookup);
+  const pending=!betQui.length;
 
   const rowPad='2px 0';
   function goalBadge(g){
@@ -1021,39 +1114,19 @@ function makeQuinielaQuiniGolBlock(quiDraws,qgDraws){
     const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':'#ca8a04';
     return `<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:22px;background:${rc};color:#fff;border-radius:4px;font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:700;flex-shrink:0">${esc(res)}</span>`;
   }
-  function qgBadge(res){
-    if(res==null||res==='') return '<span style="width:40px;flex-shrink:0"></span>';
-    const parts=String(res).split('-');
-    if(parts.length===2){
-      return `<span style="display:inline-flex;align-items:center;justify-content:center;height:22px;background:#7c3aed;color:#fff;border-radius:4px;padding:0 3px;font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:700;flex-shrink:0;min-width:40px"><span style="min-width:14px;text-align:center">${esc(parts[0])}</span><span style="opacity:.5;font-size:var(--fs-xs)">-</span><span style="min-width:14px;text-align:center">${esc(parts[1])}</span></span>`;
-    }
-    const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':res.startsWith('M')?'#16a34a':'#7c3aed';
-    return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:22px;background:${rc};color:#fff;border-radius:4px;padding:0 3px;font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:700;flex-shrink:0">${esc(res)}</span>`;
-  }
 
   let bodyHtml='';
   if(pending){
     bodyHtml='<div style="opacity:.25;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);font-style:italic">Pendiente</div>';
   } else {
     if(fd) bodyHtml+=`<div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);margin-bottom:3px">${esc(fd)}</div>`;
-    bodyHtml+=`<div style="display:flex;align-items:center;gap:3px;padding-bottom:2px;margin-bottom:1px;border-bottom:1px solid var(--border)"><span style="width:40px;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);text-align:center;flex-shrink:0">QG</span><span style="flex:1"></span><span style="width:26px;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);text-align:center;flex-shrink:0">Q</span></div>`;
     betQui.forEach((resQui,idx)=>{
       const mQui=matchesQui.find(x=>parseInt(x.position)===idx+1)||{};
-      const key=nt(mQui.team_1_name)+'§'+nt(mQui.team_2_name);
-      const qgEntry=(key!=='§')?qgLookup.get(key):null;
-      if(qgEntry) unmatchedQG.delete(key);
       const t1=esc(mQui.team_1_name||('Eq'+(idx*2+1)));
       const t2=esc(mQui.team_2_name||('Eq'+(idx*2+2)));
       const ds=idx<betQui.length-1?'border-bottom:1px solid var(--border)':'';
-      bodyHtml+=`<div style="display:flex;align-items:center;gap:3px;padding:${rowPad};${ds}">${qgBadge(qgEntry?qgEntry.result:null)}<div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t1}<span style="color:var(--muted)"> - </span>${t2}</div>${quiBadge(resQui)}</div>`;
+      bodyHtml+=`<div style="display:flex;align-items:center;gap:3px;padding:${rowPad};${ds}"><div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t1}<span style="color:var(--muted)"> - </span>${t2}</div>${quiBadge(resQui)}</div>`;
     });
-    if(unmatchedQG.size>0){
-      bodyHtml+=`<div style="margin-top:4px;padding-top:3px;border-top:1px solid var(--border)"><div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);margin-bottom:2px">QuiniGol adicional</div>`;
-      unmatchedQG.forEach(({result,match})=>{
-        bodyHtml+=`<div style="display:flex;align-items:center;gap:3px;padding:${rowPad}">${qgBadge(result)}<div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(match.team_1_name||'')}<span style="color:var(--muted)"> - </span>${esc(match.team_2_name||'')}</div><span style="width:26px;flex-shrink:0"></span></div>`;
-      });
-      bodyHtml+=`</div>`;
-    }
     if(plenoG1!==null||plenoG2!==null){
       bodyHtml+=`<div style="margin-top:4px;padding-top:4px;border-top:2px solid var(--border);flex-shrink:0"><div style="font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:700;color:var(--pv-primary);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">Pleno al 15</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;text-align:center">${plenoT1?esc(plenoT1):'Equipo 1'}<span style="color:var(--muted);margin:0 4px">-</span>${plenoT2?esc(plenoT2):'Equipo 2'}</div><div style="display:flex;align-items:center;gap:3px;flex-shrink:0">${goalBadge(plenoG1)}<span style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted)">-</span>${goalBadge(plenoG2)}</div></div></div>`;
     }
@@ -1063,48 +1136,57 @@ function makeQuinielaQuiniGolBlock(quiDraws,qgDraws){
   const block=document.createElement('div');
   block.className='result-block';
   block.style.cssText='overflow:hidden;display:flex;flex-direction:column;border-radius:var(--radius);';
-  block.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-bottom:1px solid var(--border);flex-shrink:0;gap:4px"><div style="display:flex;align-items:center;gap:5px">${logoImg(logoSrcQG)}<span style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:700;color:var(--text);white-space:nowrap">${esc(gameQG.name||'QuiniGol')}</span></div><div style="display:flex;align-items:center;gap:5px"><span style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:700;color:var(--text);white-space:nowrap">${esc(gameQui.name||'La Quiniela')}</span>${logoImg(logoSrcQui)}</div></div><div class="rb-body" style="padding:4px 8px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column">${bodyHtml}</div>`;
+  block.innerHTML=`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--border);flex-shrink:0">${logoImg(logoSrcQui)}<span style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:700;color:var(--text);white-space:nowrap">${esc(gameQui.name||'La Quiniela')}</span></div><div class="rb-body" style="padding:4px 8px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column">${bodyHtml}</div>`;
   return block;
 }
 
-// ── COUNTDOWN ────────────────────────────────────────────────
-function startCountdown(elId,dateStr,game){
-  let drawHour='20:00';
-  try{const h=JSON.parse(game.draw_hours||'{}');const v=Object.values(h);if(v.length)drawHour=v[0];}catch{}
-  const target=new Date(dateStr+'T'+drawHour+':00');
-  function update(){
-    const el=document.getElementById(elId);if(!el)return;
-    const diff=target-new Date();
-    if(diff<=0){el.textContent='Hoy';el.className='card-countdown urgent';return;}
-    const days=Math.floor(diff/86400000),hours=Math.floor((diff%86400000)/3600000),mins=Math.floor((diff%3600000)/60000);
-    let txt='',cls='card-countdown';
-    if(days>1){txt=`${days}d ${hours}h`;}
-    else if(days===1){txt=`${hours}h ${mins}m`;cls+=' soon';}
-    else if(hours>0){txt=`${hours}h ${mins}m`;cls+=' soon';}
-    else{txt=`${mins}m`;cls+=' urgent';}
-    el.textContent=txt;el.className=cls;
+// ── QUINIGOL (bloque independiente) ──────────────────────────
+function makeQuiniGolBlock(qgDraws){
+  const gameQG=gamesMap[26]||{};
+  let logoSrcQG='';
+  if(gameQG.logo_official) logoSrcQG=gameQG.logo_official.startsWith('http')?gameQG.logo_official:LOGO_BASE+gameQG.logo_official;
+  else if(gameQG.logo) logoSrcQG=gameQG.logo.startsWith('http')?gameQG.logo:LOGO_BASE+gameQG.logo;
+
+  const rQG=qgDraws[qgDraws.length-1]||{};
+  const betQG=Array.isArray(rQG.bet)?rQG.bet:[];
+  const matchesQG=rQG.other?.matches||[];
+  const fd=rQG.date?new Date(rQG.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
+  const pending=!betQG.length;
+
+  const rowPad='2px 0'; // MARGEN ENTRE FILAS
+  function qgBadge(res){
+    if(res==null||res==='') return '<span style="width:34px;flex-shrink:0"></span>';
+    const parts=String(res).split('-');
+    if(parts.length===2){
+      return `<span style="display:inline-flex;align-items:center;justify-content:center;height:18px;background:#7c3aed;color:#fff;border-radius:4px;padding:0 2px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:700;flex-shrink:0;min-width:34px"><span style="min-width:12px;text-align:center">${esc(parts[0])}</span><span style="opacity:.5;font-size:var(--fs-xs)">-</span><span style="min-width:12px;text-align:center">${esc(parts[1])}</span></span>`;
+    }
+    const rc=res==='1'?'#2563eb':res==='2'?'#dc2626':res.startsWith('M')?'#16a34a':'#7c3aed';
+    return `<span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:18px;background:${rc};color:#fff;border-radius:4px;padding:0 2px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:700;flex-shrink:0">${esc(res)}</span>`;
   }
-  update();
-  const t=setInterval(update,30000);countdownTimers.push(t);
+
+  let bodyHtml='';
+  if(pending){
+    bodyHtml='<div style="opacity:.25;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);font-style:italic">Pendiente</div>';
+  } else {
+    if(fd) bodyHtml+=`<div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);margin-bottom:2px">${esc(fd)}</div>`;
+    betQG.forEach((res,idx)=>{
+      const mQG=matchesQG.find(x=>parseInt(x.position)===idx+1)||{};
+      const t1=esc(mQG.team_1_name||('Eq'+(idx*2+1)));
+      const t2=esc(mQG.team_2_name||('Eq'+(idx*2+2)));
+      const ds=idx<betQG.length-1?'border-bottom:1px solid var(--border)':'';
+      bodyHtml+=`<div style="display:flex;align-items:center;gap:2px;padding:${rowPad};${ds}">${qgBadge(res)}<div style="flex:1;min-width:0;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t1}<span style="color:var(--muted)"> - </span>${t2}</div></div>`;
+    });
+  }
+
+  function logoImg(src){return src?`<img style="width:20px;height:20px;object-fit:contain;flex-shrink:0" src="${esc(src)}" alt="" onerror="hideImg(this)">`:''}
+  const block=document.createElement('div');
+  block.className='result-block';
+  block.style.cssText='overflow:hidden;display:flex;flex-direction:column;border-radius:var(--radius);';
+  block.innerHTML=`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--border);flex-shrink:0">${logoImg(logoSrcQG)}<span style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:700;color:var(--text);white-space:nowrap">${esc(gameQG.name||'QuiniGol')}</span></div><div class="rb-body" style="padding:4px 8px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column">${bodyHtml}</div>`;
+  return block;
 }
 
-// ── FIT AMOUNT FONTS ─────────────────────────────────────────
-function fitAmountFonts(){
-  document.querySelectorAll('.jackpot-card').forEach(card=>{
-    const wrap=card.querySelector('.card-amount-wrap'),amt=card.querySelector('.card-amount');
-    if(!wrap||!amt) return;
-    let size=Math.min(wrap.clientHeight*.72,80);
-    amt.style.fontSize=size+'px';
-    while(amt.scrollWidth>wrap.clientWidth*.95&&size>18){size-=2;amt.style.fontSize=size+'px';}
-  });
-  const sizes=[];
-  document.querySelectorAll('.jackpot-card .card-amount').forEach(amt=>sizes.push(parseFloat(amt.style.fontSize)||80));
-  if(!sizes.length) return;
-  const minSize=Math.min(...sizes);
-  document.querySelectorAll('.jackpot-card .card-amount').forEach(amt=>amt.style.fontSize=minSize+'px');
-}
-
-// ── MIXED VIEW ───────────────────────────────────────────────
+// ── 10. RENDER — VISTA MIXTA ──────────────────────────────────
 function renderMixedJackpots(data){
   const grid=document.getElementById('mixed-jackpots-grid');
   if(!grid) return;
@@ -1150,86 +1232,84 @@ function renderMixedJackpots(data){
   });
 }
 
-// Clean render — no body class manipulation
+// Vista mixta — el panel de Resultados es la MITAD de ancho de la vista de
+// Resultados normal, así que no caben las 4 columnas a la vez. En vez de
+// inventar un layout nuevo, se muestran las mismas columnas de siempre pero
+// partidas en dos mitades que se turnan cada 2,5s:
+//  Grupo 1 = columnas 1+2 (Euromillón/EuroDreams/Gordo/Nacional + Primitiva/QuiniGol)
+//  Grupo 2 = columnas 3+4 (Bonoloto/LotoTurf + La Quiniela)
+// Reutiliza paintResultsCols12()/paintResultsCols34(), las mismas que pinta la
+// vista de Resultados — mismos pesos, mismos colores, semana completa.
+let mixedResultsRotateTimer=null;
+let mixedResultsGroupIdx=0;
+const MIXED_RESULTS_ROTATE_MS=2500;
+
+function stopMixedResultsRotate(){
+  if(mixedResultsRotateTimer){clearInterval(mixedResultsRotateTimer);mixedResultsRotateTimer=null;}
+}
+
 function renderMixedResults(data){
   const grid=document.getElementById('mixed-results-grid');
   if(!grid) return;
-  renderResultsInto(data,grid,true);
-}
+  stopMixedResultsRotate();
 
-// ── AUTO-ROTATION ────────────────────────────────────────────
-function startAutoRotate(cfg){
-  stopAutoRotate();
-  if(!cfg.autoRotate||currentView==='mixed') return;
-  const ms=Math.max(10,Math.min(300,cfg.autoRotateInterval||30))*1000;
-  resetRotateBar(cfg);
-  autoRotateTimer=setInterval(()=>{
-    if(document.getElementById('overlay').classList.contains('visible')) return;
-    switchView(currentView==='jackpots'?'results':'jackpots');
-  },ms);
-}
-function stopAutoRotate(){
-  if(autoRotateTimer){clearInterval(autoRotateTimer);autoRotateTimer=null;}
-  const bar=document.getElementById('rotate-bar');
-  if(bar){bar.style.transition='none';bar.style.width='100%';bar.style.display='none';}
-}
-function resetRotateBar(cfg){
-  const bar=document.getElementById('rotate-bar');
-  if(!bar||!cfg.autoRotate) return;
-  const secs=Math.max(10,Math.min(300,cfg.autoRotateInterval||30));
-  bar.style.display='';bar.style.transition='none';bar.style.width='100%';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    bar.style.transition=`width ${secs}s linear`;bar.style.width='0%';
-  }));
-}
+  const byGame={};
+  (data||[]).forEach(r=>{
+    if(!gamesMap[r.id_game]) return;
+    if(!byGame[r.id_game]) byGame[r.id_game]=[];
+    byGame[r.id_game].push(r);
+  });
+  Object.values(byGame).forEach(arr=>arr.sort((a,b)=>a.date>b.date?1:-1));
+  const COL_ORDER={'1':[1,3,43,5],'2':[2],'3':[4],'4':[25,26],'b':[7,21]};
+  const cols={'1':[],'2':[],'3':[],'4':[],'b':[]};
+  Object.keys(COL_ORDER).forEach(col=>COL_ORDER[col].forEach(id=>{if(gamesMap[id])cols[col].push(id);}));
 
-// ── LOAD ALL ─────────────────────────────────────────────────
-async function loadAllData(){
-  if(_booted){console.log('[boot] already booted');return;}
-  if(_loadingInProgress){console.log('[boot] already running');return;}
-  _booted=true;_loadingInProgress=true;
-  showLoading(true);
-  const cfg=loadConfig();
-  try{
-    setLoadingStep('Conectando pv-info...');
-    await fetchPvInfo();
-    setLoadingStep('Cargando juegos...');
-    await fetchGames();
-    setLoadingStep(cfg.demoMode?'Cargando resultados (DEMO)...':'Cargando datos...');
-    await Promise.all([fetchJackpots(),fetchResults()]);
-    setLoadingStep('Listo');
-  }catch(e){
-    console.error('[boot] loadAllData error:',e);
-    setLoadingStep('ERROR: '+e.message);
-    await new Promise(r=>setTimeout(r,5000));
+  function paintGroup(idx){
+    grid.innerHTML='';
+    if(idx===0) paintResultsCols12(grid,byGame,cols);
+    else paintResultsCols34(grid,byGame,cols);
+    requestAnimationFrame(()=>grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock));
+    resultsObserver.disconnect();
+    resultsObserver.observe(grid);
   }
-  showLoading(false);
-  _loadingInProgress=false;
-  switchView(currentView||'jackpots');
-  startAutoRotate(cfg);
-}
-async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();}
 
-// ── TIMERS ───────────────────────────────────────────────────
-function setupTimers(cfg){
-  Object.values(timers).forEach(clearInterval);timers={};
-  if(cfg.refreshJackpots>0) timers.j=setInterval(()=>{fetchJackpots();fetchResults();},cfg.refreshJackpots*60000);
-  if(cfg.refreshPvInfo>0) timers.p=setInterval(refreshPvAndGames,cfg.refreshPvInfo*3600000);
-  startAutoRotate(cfg);
+  mixedResultsGroupIdx=0;
+  paintGroup(0);
+  mixedResultsRotateTimer=setInterval(()=>{
+    mixedResultsGroupIdx=1-mixedResultsGroupIdx;
+    paintGroup(mixedResultsGroupIdx);
+  },MIXED_RESULTS_ROTATE_MS);
 }
 
-// ── UI HELPERS ───────────────────────────────────────────────
-function showLoading(s){
-  document.getElementById('loading').style.display=s?'flex':'none';
-  document.getElementById('app').classList.toggle('visible',!s);
-  if(!s) setTimeout(()=>fitAmountFonts(),200);
+// ── 11. CAMBIO DE VISTA Y NAVEGACIÓN ──────────────────────────
+function switchView(view){
+  stopMixedResultsRotate();
+  currentView=view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  const tabEl=document.getElementById('tab-'+view);
+  if(tabEl) tabEl.classList.add('active');
+  const labelEl=document.getElementById('section-label-text');
+  const wrapEl=document.getElementById('section-label-header');
+  function setLabel(txt){if(labelEl)labelEl.textContent=txt||'';if(wrapEl)wrapEl.style.display=txt?'flex':'none';}
+  if(view==='jackpots'){
+    setLabel('Próximos Sorteos');
+    if(lastJackpotsData.length) renderJackpots(lastJackpotsData);
+  } else if(view==='results'){
+    setLabel(resultsWeekLabel());
+    if(lastResultsData.length) renderResults(lastResultsData);
+    else if(Object.keys(gamesMap).length) fetchResults();
+  } else if(view==='mixed'){
+    setLabel('');
+    if(lastJackpotsData.length) renderMixedJackpots(lastJackpotsData);
+    if(lastResultsData.length) renderMixedResults(lastResultsData);
+    else if(Object.keys(gamesMap).length) fetchResults();
+  }
+  const cfg=loadConfig();
+  if(cfg.autoRotate && view!=='mixed') resetRotateBar(cfg);
 }
-function setLoadingStep(m){document.getElementById('loading-step').textContent=m;}
-function setStatus(m,t){const el=document.getElementById('status-msg');if(el){el.textContent=m;el.className=t||'';}}
-function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
-function hideImg(el){el.style.display='none';}
 
-// ── NAVIGATION ───────────────────────────────────────────────
 function openMenu(){
   stopAutoRotate();
   showMenu();
@@ -1267,7 +1347,66 @@ function manualRefresh(){closeOverlay();_booted=false;_loadingInProgress=false;l
 document.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Back')closeOverlay();});
 window.addEventListener('resize',()=>{if(document.querySelectorAll('.jackpot-card').length)fitAmountFonts();});
 
-// ── DIAGNOSTIC ───────────────────────────────────────────────
+// ── 12. AUTO-ROTACIÓN Y TEMPORIZADORES ────────────────────────
+function startAutoRotate(cfg){
+  stopAutoRotate();
+  if(!cfg.autoRotate||currentView==='mixed') return;
+  const ms=Math.max(10,Math.min(300,cfg.autoRotateInterval||30))*1000;
+  resetRotateBar(cfg);
+  autoRotateTimer=setInterval(()=>{
+    if(document.getElementById('overlay').classList.contains('visible')) return;
+    switchView(currentView==='jackpots'?'results':'jackpots');
+  },ms);
+}
+function stopAutoRotate(){
+  if(autoRotateTimer){clearInterval(autoRotateTimer);autoRotateTimer=null;}
+  const bar=document.getElementById('rotate-bar');
+  if(bar){bar.style.transition='none';bar.style.width='100%';bar.style.display='none';}
+}
+function resetRotateBar(cfg){
+  const bar=document.getElementById('rotate-bar');
+  if(!bar||!cfg.autoRotate) return;
+  const secs=Math.max(10,Math.min(300,cfg.autoRotateInterval||30));
+  bar.style.display='';bar.style.transition='none';bar.style.width='100%';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    bar.style.transition=`width ${secs}s linear`;bar.style.width='0%';
+  }));
+}
+function setupTimers(cfg){
+  Object.values(timers).forEach(clearInterval);timers={};
+  if(cfg.refreshJackpots>0) timers.j=setInterval(()=>{fetchJackpots();fetchResults();},cfg.refreshJackpots*60000);
+  if(cfg.refreshPvInfo>0) timers.p=setInterval(refreshPvAndGames,cfg.refreshPvInfo*3600000);
+  startAutoRotate(cfg);
+}
+
+// ── 13. ORQUESTACIÓN DE CARGA INICIAL ──────────────────────────
+async function loadAllData(){
+  if(_booted){console.log('[boot] already booted');return;}
+  if(_loadingInProgress){console.log('[boot] already running');return;}
+  _booted=true;_loadingInProgress=true;
+  showLoading(true);
+  const cfg=loadConfig();
+  try{
+    setLoadingStep('Conectando pv-info...');
+    await fetchPvInfo();
+    setLoadingStep('Cargando juegos...');
+    await fetchGames();
+    setLoadingStep(cfg.demoMode?'Cargando resultados (DEMO)...':'Cargando datos...');
+    await Promise.all([fetchJackpots(),fetchResults()]);
+    setLoadingStep('Listo');
+  }catch(e){
+    console.error('[boot] loadAllData error:',e);
+    setLoadingStep('ERROR: '+e.message);
+    await new Promise(r=>setTimeout(r,5000));
+  }
+  showLoading(false);
+  _loadingInProgress=false;
+  switchView(currentView||'jackpots');
+  startAutoRotate(cfg);
+}
+async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();}
+
+// ── 14. DIAGNÓSTICO ───────────────────────────────────────────
 async function diagRunGameResults(){
   diagClear();const cfg=loadConfig();const gameIds=Object.keys(gamesMap);
   if(!gameIds.length){diagLog('ERROR: gamesMap vacío — ejecuta get-games primero','#e05c2a');return;}
@@ -1321,7 +1460,7 @@ async function diagRun(endpoint){
   }catch(e){diagLog(`✗ Error: ${e.message}`,'#e05c2a');}
 }
 
-// ── BOOT ─────────────────────────────────────────────────────
+// ── 15. ARRANQUE (BOOT) ───────────────────────────────────────
 (function purgeOldKeys(){
   try{Object.keys(localStorage).forEach(function(k){if(k.startsWith('infolot_cfg_')&&k!==STORAGE_KEY){localStorage.removeItem(k);console.log('[boot] purged old key:',k);}});}catch(e){}
 })();
