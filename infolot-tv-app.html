@@ -414,6 +414,7 @@ let gamesMap={}, pvData={}, timers={}, countdownTimers=[];
 let lastJackpotsData=[], lastResultsData=[], currentView='jackpots';
 let _loadingInProgress=false, _booted=false;
 let autoRotateTimer=null;
+let resolvedResultsWeekRef=null; // semana realmente usada la última vez que se pintaron resultados (ver fetchResults)
 
 // ── 2. UI HELPERS GENÉRICOS ──────────────────────────────────
 function showLoading(s){
@@ -565,9 +566,29 @@ function getResultsWeekRef(){
   return now;
 }
 function resultsWeekLabel(){
-  const ref=getResultsWeekRef(),{mon,sun}=getWeekBounds(ref);
+  const ref=resolvedResultsWeekRef||getResultsWeekRef(),{mon,sun}=getWeekBounds(ref);
   const fmt=d=>d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
   return `Resultados Semana ${getISOWeek(ref)} · ${fmt(mon)} – ${fmt(sun)}`;
+}
+// Modo demo: busca, empezando por startRef y retrocediendo semana a semana, la
+// semana más reciente en la que TODOS los juegos con calendario conocido
+// (EXPECTED_DOW) tengan ya todos sus sorteos. Usa los resultados que ya se han
+// traído (hasta 20 por juego) — sin llamadas de red extra. Si no encuentra
+// ninguna semana completa en el rango, se queda con la semana de partida.
+function findCompleteDemoWeek(byGameId,startRef){
+  let ref=new Date(startRef);
+  for(let attempt=0;attempt<8;attempt++){
+    let complete=true;
+    for(const gid of Object.keys(EXPECTED_DOW)){
+      const expected=expectedDatesForGame(parseInt(gid),ref);
+      if(!expected) continue;
+      const have=new Set((byGameId[gid]||[]).map(r=>r.date));
+      if(expected.some(d=>!have.has(d))){complete=false;break;}
+    }
+    if(complete) return ref;
+    ref=new Date(ref);ref.setDate(ref.getDate()-7);
+  }
+  return startRef;
 }
 function getISOWeek(d){
   const date=new Date(d);date.setHours(0,0,0,0);
@@ -679,16 +700,21 @@ async function fetchResults(){
   setStatus('Actualizando resultados...','');
   try{
     const cfg=loadConfig();
-    const ref=getResultsWeekRef();
-    const {mon,sun}=getWeekBounds(ref);
-    const monStr=toYMD(mon),sunStr=toYMD(sun);
     const gameIds=Object.keys(gamesMap);
     if(!gameIds.length){setStatus('Sin juegos','error');return;}
-    console.log('[Results] ref:',toYMD(ref),'mon:',monStr,'sun:',sunStr);
     setLoadingStep(cfg.demoMode?'Cargando resultados (DEMO)...':'Cargando resultados semana...');
     const calls=gameIds.map(id=>wsCall('last-game-results',{id_game:parseInt(id),limit:20})
       .then(d=>Array.isArray(d)?d:[]).catch(()=>[]));
     const results=await Promise.all(calls);
+    const byGameId={};
+    results.forEach((gameResults,idx)=>{byGameId[gameIds[idx]]=gameResults;});
+
+    let ref=getResultsWeekRef();
+    if(cfg.demoMode) ref=findCompleteDemoWeek(byGameId,ref);
+    resolvedResultsWeekRef=ref;
+    const {mon,sun}=getWeekBounds(ref);
+    const monStr=toYMD(mon),sunStr=toYMD(sun);
+    console.log('[Results] ref:',toYMD(ref),'mon:',monStr,'sun:',sunStr);
     const todayStr=toYMD(new Date());
     const flat=[];
     results.forEach((gameResults,idx)=>{
@@ -1425,11 +1451,35 @@ function showMenu(){
   document.getElementById('modal-diag').style.display='none';
   setTimeout(()=>{const first=document.querySelector('#modal-menu button');if(first)first.focus();},50);
 }
+// El mando (D-Pad) navega por los campos moviendo el foco, y WebView abre el
+// teclado en pantalla en cuanto un input de texto recibe foco — aunque sea
+// solo de paso, sin querer escribir. Se dejan en "readonly" (no abren
+// teclado al enfocar) y solo se habilitan para escribir cuando el usuario
+// pulsa Intro/OK sobre ellos; al salir del campo, vuelven a bloquearse.
+function setupDpadTextInputs(){
+  const sel='#modal-config input[type="text"],#modal-config input[type="password"],#modal-config input[type="number"]';
+  document.querySelectorAll(sel).forEach(el=>{
+    if(el.dataset.dpadReady) return;
+    el.dataset.dpadReady='1';
+    el.readOnly=true;
+    function enterEdit(){
+      if(!el.readOnly) return;
+      el.readOnly=false;
+      el._reentering=true; // el blur() de abajo es interno, no una salida real del campo
+      el.blur();
+      setTimeout(()=>{el._reentering=false;el.focus();},0);
+    }
+    el.addEventListener('click',enterEdit);
+    el.addEventListener('keydown',e=>{if(e.keyCode===13||e.keyCode===23) enterEdit();});
+    el.addEventListener('blur',()=>{if(!el._reentering) el.readOnly=true;});
+  });
+}
 function showConfig(){
   fillConfigForm(loadConfig());
   document.getElementById('modal-menu').style.display='none';
   document.getElementById('modal-config').style.display='flex';
   document.getElementById('modal-diag').style.display='none';
+  setupDpadTextInputs();
   setTimeout(()=>{
     document.querySelectorAll('#modal-config input,#modal-config select,#modal-config button').forEach((el,i)=>el.setAttribute('tabindex',String(i+1)));
     const first=document.querySelector('#modal-config input,#modal-config select');
