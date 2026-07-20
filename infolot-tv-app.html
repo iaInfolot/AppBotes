@@ -433,17 +433,7 @@ function loadConfig(){
     const s=localStorage.getItem(STORAGE_KEY);
     if(!s) return {...DEFAULTS};
     const saved=JSON.parse(s);
-    return {
-      ...DEFAULTS,
-      theme:saved.theme||DEFAULTS.theme,
-      orient:saved.orient!==undefined?saved.orient:DEFAULTS.orient,
-      defaultView:saved.defaultView||DEFAULTS.defaultView,
-      refreshJackpots:saved.refreshJackpots||DEFAULTS.refreshJackpots,
-      refreshPvInfo:saved.refreshPvInfo||DEFAULTS.refreshPvInfo,
-      autoRotate:typeof saved.autoRotate==='boolean'?saved.autoRotate:DEFAULTS.autoRotate,
-      autoRotateInterval:saved.autoRotateInterval||DEFAULTS.autoRotateInterval,
-      demoMode:typeof saved.demoMode==='boolean'?saved.demoMode:DEFAULTS.demoMode,
-    };
+    return {...DEFAULTS,...saved};
   }catch{return{...DEFAULTS};}
 }
 
