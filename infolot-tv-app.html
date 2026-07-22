@@ -1276,23 +1276,28 @@ function _renderResults(data,grid,forceVertical){
       leftCol.appendChild(b);
     });
 
-    requestAnimationFrame(()=>{
-      grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
-      // Segundo rAF: con el anidamiento grid>columnsRow>leftCol/rightCol el
-      // layout a veces necesita más de un frame para asentar su alto real
-      // — calcular el tamaño de bola demasiado pronto podía cortar la
-      // última fila de bloques con muchas filas (p.ej. Bonoloto).
-      requestAnimationFrame(()=>{
-        grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
-        // Los bloques de la columna izquierda deben verse todos con el mismo
-        // tamaño de bola, no cada uno el suyo — se recalculan independientes
-        // arriba y aquí se igualan Bonoloto+Primitiva entre sí (los dos con
-        // más filas, tamaño natural muy parecido). Euromillón y EuroDreams
-        // se dejan con su propio tamaño natural — no hace falta igualarlos
-        // porque el usuario acepta que sean un poco más grandes.
-        syncBallSizesForGroup([4,2]);
-      });
-    });
+    // Dos pasadas SÍNCRONAS (sin requestAnimationFrame) — con el anidamiento
+    // grid>columnsRow>leftCol/rightCol, el layout a veces necesita más de
+    // una pasada para asentar su alto real, y calcular el tamaño de bola
+    // demasiado pronto podía cortar la última fila de bloques con muchas
+    // filas (p.ej. Bonoloto). Antes esto se hacía en un doble
+    // requestAnimationFrame, pero eso deja el contenido visible (tras
+    // showLoading(false)) con el tamaño SIN corregir durante uno o dos
+    // frames reales de pantalla — un "flash" muy breve que no se veía en
+    // capturas tomadas segundos después, pero sí en el uso real. Al leer
+    // clientHeight/clientWidth (dentro de recalcBallsInBlock) el navegador
+    // ya fuerza el layout de forma síncrona, así que dos pasadas seguidas
+    // sin esperar a ningún frame consiguen el mismo ajuste sin dejar nunca
+    // visible el tamaño intermedio.
+    grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
+    grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
+    // Los bloques de la columna izquierda deben verse todos con el mismo
+    // tamaño de bola, no cada uno el suyo — se recalculan independientes
+    // arriba y aquí se igualan Bonoloto+Primitiva entre sí (los dos con
+    // más filas, tamaño natural muy parecido). Euromillón y EuroDreams
+    // se dejan con su propio tamaño natural — no hace falta igualarlos
+    // porque el usuario acepta que sean un poco más grandes.
+    syncBallSizesForGroup([4,2]);
     return;
   }
 
@@ -1338,7 +1343,11 @@ function _renderResults(data,grid,forceVertical){
   const c4=colWrap('4','1');grid.appendChild(c4);
   const quiBlock=makeQuinielaBlock(byGame[25]||[]);
   quiBlock.style.flex='1';quiBlock.style.minHeight='0';c4.appendChild(quiBlock);
-  requestAnimationFrame(()=>grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock));
+  // Síncrono (no requestAnimationFrame) para que el contenido ya salga bien
+  // dimensionado la primera vez que se hace visible tras showLoading(false)
+  // — con rAF quedaba un instante muy breve con el tamaño sin corregir.
+  grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
+  grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
   resultsObserver.disconnect();
   resultsObserver.observe(grid);
 }
@@ -1808,17 +1817,15 @@ function renderMixedResults(data){
     });
   }
 
-  requestAnimationFrame(()=>{
-    grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
-    // Segundo rAF: con el anidamiento leftGroup>innerRow>col1/col2 el layout
-    // puede necesitar más de un frame para asentar clientWidth/clientHeight
-    // definitivos — leer el tamaño de Bonoloto demasiado pronto daba
-    // resultados inconsistentes entre recargas.
-    requestAnimationFrame(()=>{
-      grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
-      syncGordoToBonoloto();
-    });
-  });
+  // Dos pasadas SÍNCRONAS (sin requestAnimationFrame) — con el anidamiento
+  // leftGroup>innerRow>col1/col2 el layout puede necesitar más de una
+  // pasada para asentar clientWidth/clientHeight definitivos, y hacerlo vía
+  // rAF dejaba el contenido visible con el tamaño sin corregir durante uno
+  // o dos frames reales (además de dar resultados inconsistentes entre
+  // recargas). Leer clientHeight/clientWidth ya fuerza el layout síncrono.
+  grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
+  grid.querySelectorAll('.result-block').forEach(recalcBallsInBlock);
+  syncGordoToBonoloto();
 }
 
 // ── 11. CAMBIO DE VISTA Y NAVEGACIÓN ──────────────────────────
