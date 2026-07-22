@@ -12,6 +12,19 @@ class MainActivity : Activity() {
 
     private lateinit var webView: WebView
 
+    // Actualizado desde JS (applyOrientation, infolot-tv-app.html) cada vez que
+    // cambia la orientación. En vertical el contenido se rota 90° por CSS, así
+    // que hay que remapear las teclas de dirección (ver onKeyDown) para que la
+    // navegación nativa del WebView siga yendo hacia donde el usuario espera.
+    @Volatile private var isVerticalOrientation = false
+
+    private inner class OrientationBridge {
+        @JavascriptInterface
+        fun setVertical(vertical: Boolean) {
+            isVerticalOrientation = vertical
+        }
+    }
+
     companion object {
         const val APP_URL = "https://iainfolot.github.io/AppBotes/infolot-tv-app.html"
     }
@@ -27,6 +40,7 @@ class MainActivity : Activity() {
             isFocusableInTouchMode = true
             requestFocus()
         }
+        webView.addJavascriptInterface(OrientationBridge(), "AndroidBridge")
         setContentView(webView)
 
         webView.settings.apply {
@@ -155,5 +169,36 @@ class MainActivity : Activity() {
 
             else -> super.onKeyDown(keyCode, event)
         }
+    }
+
+    // El WebView consume las teclas de dirección él mismo (navegación nativa
+    // por foco) antes de que lleguen a onKeyDown, así que el remapeo tiene que
+    // interceptarse aquí — dispatchKeyEvent es lo primero que Android llama,
+    // antes de entregar el evento a la vista enfocada.
+    //
+    // El contenido está rotado 90° por CSS en modo vertical, así que la
+    // navegación nativa del WebView (que decide el siguiente foco según la
+    // posición ya rotada en pantalla) queda girada un cuarto de vuelta
+    // respecto a lo que el usuario espera. Se remapean aquí las direcciones
+    // para compensar ese giro (arriba pasa a comportarse como derecha, etc.).
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (isVerticalOrientation) {
+            val remapped = remapKeyForVerticalOrientation(event.keyCode)
+            if (remapped != event.keyCode) {
+                webView.dispatchKeyEvent(
+                    KeyEvent(event.downTime, event.eventTime, event.action, remapped, event.repeatCount)
+                )
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    private fun remapKeyForVerticalOrientation(keyCode: Int): Int = when (keyCode) {
+        KeyEvent.KEYCODE_DPAD_UP -> KeyEvent.KEYCODE_DPAD_RIGHT
+        KeyEvent.KEYCODE_DPAD_RIGHT -> KeyEvent.KEYCODE_DPAD_DOWN
+        KeyEvent.KEYCODE_DPAD_DOWN -> KeyEvent.KEYCODE_DPAD_LEFT
+        KeyEvent.KEYCODE_DPAD_LEFT -> KeyEvent.KEYCODE_DPAD_UP
+        else -> keyCode
     }
 }

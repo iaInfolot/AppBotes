@@ -6,3 +6,5 @@ local.properties
 *.keystore
 *.jks
 serve-local.ps1
+serve-local.log
+serve-local.err.log
