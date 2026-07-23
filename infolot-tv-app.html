@@ -715,11 +715,15 @@ const USE_LOCAL_PROXY_FOR_TESTING = false;
 const PROD_WS_URL = 'https://webservice.infolot.es';
 const DEV_WS_URL = 'https://dev-webservice.infolot.es';
 const LOCAL_PROXY_URL = '/proxy';
-// TEMPORAL — la cuenta de pruebas actual no está activada en el backend
-// ("El usuario no tiene este servicio activo" en todas las llamadas), lo cual
-// dispara la pantalla de emparejamiento igual que le pasaría a un cliente
-// real sin activar. Con esto seguimos viendo la app con normalidad durante
-// el desarrollo. Revertir a `false` antes de publicar la versión de cliente.
+// La pantalla de activación (código de dispositivo) todavía no tiene forma de
+// resolverse de verdad — falta la parte de backend donde soporte da de alta
+// el dispositivo y genera token/password. Hasta que eso exista, la dejamos
+// desactivada: un error de "servicio no activo" cae en el reintento genérico
+// de siempre (mensaje + reintento a los 5s) en vez de bloquear la pantalla.
+const PAIRING_FLOW_ENABLED = false;
+// TEMPORAL — pruebas locales: con PAIRING_FLOW_ENABLED en true, esto permite
+// seguir viendo la app con normalidad aunque la cuenta de pruebas no esté
+// activada en el backend. Revertir a `false` antes de publicar.
 const FORCE_PAIRED_FOR_TESTING = false;
 const SERVICE_NOT_ACTIVE_MSG = 'El usuario no tiene este servicio activo';
 function isNotActivatedError(e){
@@ -2098,7 +2102,7 @@ async function loadAllData(){
     if(!cfg.paired){cfg.paired=true;persistConfig(cfg);}
   }catch(e){
     console.error('[boot] loadAllData error:',e);
-    if(isNotActivatedError(e)&&!FORCE_PAIRED_FOR_TESTING){
+    if(PAIRING_FLOW_ENABLED&&isNotActivatedError(e)&&!FORCE_PAIRED_FOR_TESTING){
       _booted=false;_loadingInProgress=false;
       showLoading(false);
       showPairingScreen();
