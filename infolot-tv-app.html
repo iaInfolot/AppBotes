@@ -27,7 +27,7 @@
 
 /* ── 1. VARIABLES DE TEMA Y RESET ── */
 :root {
-  --pv-primary:#f0b429; --pv-secondary:#e05c2a;
+  --pv-primary:#f0b429; --pv-secondary:#e05c2a; --pv-primary-text:#000; --pv-secondary-text:#fff;
   --bg:#07090e; --surface:#0f1319; --card:#131820; --card2:#171e28;
   --border:#1d2738; --text:#e6ecf3; --text2:#8a9bb0; --muted:#3d4f62;
   --success:#27c97a; --radius:14px; --shadow:0 4px 24px rgba(0,0,0,.45);
@@ -44,7 +44,14 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 /* LOADING */
 #loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:200;}
 #loading-logo{font-family:var(--font-display);font-size:clamp(1.8rem,3vw,3rem);letter-spacing:6px;color:var(--pv-primary);}
+#loading-logo-img{height:clamp(3rem,6vw,5.5rem);width:auto;max-width:70vw;object-fit:contain;}
 #loading-step{font-family:var(--font-ui);font-size:var(--fs-sm);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+
+/* PAIRING (activación de dispositivo nuevo) */
+#pairing-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:22px;z-index:210;text-align:center;padding:20px;}
+#pairing-screen .pairing-title{font-family:var(--font-ui);font-size:var(--fs-sm);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+#pairing-code{font-family:var(--font-display);font-size:clamp(2rem,5vw,4rem);letter-spacing:8px;color:var(--pv-primary);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(14px,2vh,26px) clamp(24px,3vw,44px);}
+#pairing-screen .pairing-msg{font-family:var(--font-ui);font-size:var(--fs-sm);color:var(--text2);max-width:520px;line-height:1.7;}
 .spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--pv-primary);border-radius:50%;animation:spin .7s linear infinite;}
 
 /* APP SHELL */
@@ -169,7 +176,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 .ball-sep{display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text);background:var(--border);border-radius:3px;padding:1px 3px;margin:0 1px;flex-shrink:0;line-height:1;font-weight:700;opacity:.9;}
 
 /* ══ OVERLAY & MODALS ══ */
-#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;}
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center;}
 #overlay.visible{display:flex;}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:clamp(16px,2vh,28px) clamp(16px,2vw,32px);position:relative;box-shadow:0 24px 64px rgba(0,0,0,.5);}
 .modal h2{font-family:var(--font-display);font-size:clamp(1.3rem,2vw,1.8rem);letter-spacing:3px;color:var(--pv-primary);margin-bottom:3px;}
@@ -178,7 +185,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 .close-btn:hover{color:var(--text);}
 .btn{font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:8px;padding:clamp(7px,.8vh,10px) clamp(12px,1.2vw,20px);cursor:pointer;transition:opacity .2s,transform .1s;white-space:nowrap;}
 .btn:hover{opacity:.85;} .btn:active{transform:scale(.97);}
-.btn-primary{background:var(--pv-primary);color:#000;}
+.btn-primary{background:var(--pv-primary);color:var(--pv-primary-text);}
 .btn-secondary{background:var(--card);border:1px solid var(--border);color:var(--text);}
 .btn-danger{background:#b03020;color:#fff;margin-left:auto;}
 .menu-list{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:20px;}
@@ -198,6 +205,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 .form-group label{display:block;font-family:var(--font-ui);font-size:clamp(8px,.65vw,11px);letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
 .form-group input,.form-group select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-body);font-size:clamp(10px,.85vw,14px);padding:clamp(4px,.5vh,7px) clamp(6px,.7vw,10px);outline:none;transition:border-color .2s;appearance:none;}
 .form-group input:focus,.form-group select:focus{border-color:var(--pv-primary);}
+.form-group input.locked-field{opacity:.5;cursor:not-allowed;}
 .color-row{display:flex;align-items:center;gap:6px;}
 .color-row input[type="color"]{width:32px;height:28px;padding:2px 3px;border-radius:5px;cursor:pointer;flex-shrink:0;}
 .color-row input[type="text"]{flex:1;font-family:monospace;}
@@ -246,9 +254,17 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
 <body class="orient-h">
 
 <div id="loading">
+  <img id="loading-logo-img" alt="" style="display:none">
   <div id="loading-logo">Botes</div>
   <div class="spinner"></div>
   <div id="loading-step">Iniciando...</div>
+</div>
+
+<div id="pairing-screen">
+  <div class="pairing-title">Activación necesaria</div>
+  <div id="pairing-code">----</div>
+  <div class="pairing-msg">Llama a soporte y facilita este código. Te daremos un Token y una Contraseña — introdúcelos en Ajustes para activar la pantalla.</div>
+  <button class="btn btn-primary" onclick="openMenu();showConfig();">Abrir Ajustes</button>
 </div>
 
 <div id="app">
@@ -401,6 +417,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
       <button class="btn btn-secondary" onclick="diagRun('pv-info')">▶ pv-info</button>
       <button class="btn btn-secondary" onclick="diagRun('get-games')">▶ get-games</button>
       <button class="btn btn-secondary" onclick="diagRun('next-jackpots')">▶ next-jackpots</button>
+      <button class="btn btn-secondary" onclick="diagRun('get-service-config')">▶ get-service-config</button>
       <button class="btn btn-secondary" onclick="diagRun('last-results')">▶ last-results</button>
       <button class="btn btn-secondary" onclick="diagRunGameResults()">▶ last-game-results</button>
       <button class="btn btn-secondary" style="margin-left:auto" onclick="diagCopyLog()">📋 Copiar</button>
@@ -458,10 +475,12 @@ const DEFAULTS = {
   defaultView:'results',
   autoRotate:false,
   autoRotateInterval:30,
-  demoMode:false
+  demoMode:false,
+  paired:false
 };
+const DEVICE_CODE_KEY = 'infolot_device_code';
 
-let gamesMap={}, pvData={}, timers={}, countdownTimers=[];
+let gamesMap={}, pvData={}, serviceConfig={}, timers={}, countdownTimers=[];
 let lastJackpotsData=[], lastResultsData=[], currentView='jackpots';
 let _loadingInProgress=false, _booted=false;
 let autoRotateTimer=null;
@@ -472,6 +491,31 @@ function showLoading(s){
   document.getElementById('loading').style.display=s?'flex':'none';
   document.getElementById('app').classList.toggle('visible',!s);
   if(!s) setTimeout(()=>fitAmountFonts(),200);
+}
+// Código legible por teléfono para identificar el dispositivo durante la
+// activación — se genera una sola vez y se guarda al margen de la config,
+// para que sobreviva a un "Restablecer configuración".
+function generateDeviceCode(){
+  const chars='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // sin 0/O/1/I/L, para evitar confusiones al dictarlo
+  const bytes=new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  let out='';
+  for(let i=0;i<8;i++){out+=chars[bytes[i]%chars.length];if(i===3) out+='-';}
+  return out;
+}
+function getDeviceCode(){
+  let code=localStorage.getItem(DEVICE_CODE_KEY);
+  if(!code){code=generateDeviceCode();localStorage.setItem(DEVICE_CODE_KEY,code);}
+  return code;
+}
+function showPairingScreen(){
+  document.getElementById('pairing-code').textContent=getDeviceCode();
+  document.getElementById('loading').style.display='none';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('pairing-screen').style.display='flex';
+}
+function hidePairingScreen(){
+  document.getElementById('pairing-screen').style.display='none';
 }
 function setLoadingStep(m){document.getElementById('loading-step').textContent=m;}
 function setStatus(m,t){const el=document.getElementById('status-msg');if(el){el.textContent=m;el.className=t||'';}}
@@ -510,6 +554,9 @@ function saveConfig(){
     autoRotateInterval:Math.max(10,Math.min(300,parseInt(document.getElementById('cfg-autorotate-interval').value)||30)),
     demoMode:document.getElementById('cfg-demo-mode').value==='true',
   };
+  // "paired" solo lo activa loadAllData() tras una carga real con éxito —
+  // aquí nos limitamos a no perderlo al guardar otros ajustes sin relación.
+  cfg.paired = loadConfig().paired || false;
   persistConfig(cfg);
   applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyPvUrl(cfg.pvurl);
   updateDemoBadge(cfg);
@@ -525,6 +572,11 @@ function fillConfigForm(cfg){
   document.getElementById('cfg-appid').value=cfg.appid||DEFAULTS.appid;
   document.getElementById('cfg-token').value=cfg.token||DEFAULTS.token;
   document.getElementById('cfg-pass').value=cfg.pass||DEFAULTS.pass;
+  ['cfg-appid','cfg-token','cfg-pass'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.dataset.locked=cfg.paired?'1':'';
+    el.classList.toggle('locked-field',!!cfg.paired);
+  });
   document.getElementById('cfg-pvurl').value=cfg.pvurl||DEFAULTS.pvurl;
   document.getElementById('cfg-tagline').value=cfg.tagline||DEFAULTS.tagline;
   document.getElementById('cfg-color1').value=cfg.color1||DEFAULTS.color1;
@@ -573,7 +625,13 @@ function applyOrientation(o){
   // pantalla) necesita ese mismo giro aplicado a arriba/abajo/izquierda/derecha.
   if(window.AndroidBridge&&window.AndroidBridge.setVertical) window.AndroidBridge.setVertical(o==='v');
 }
-function applyBrandColors(c1,c2){const r=document.documentElement.style;r.setProperty('--pv-primary',c1||DEFAULTS.color1);r.setProperty('--pv-secondary',c2||DEFAULTS.color2);}
+function applyBrandColors(c1,c2,t1,t2){
+  const r=document.documentElement.style;
+  r.setProperty('--pv-primary',c1||DEFAULTS.color1);
+  r.setProperty('--pv-secondary',c2||DEFAULTS.color2);
+  r.setProperty('--pv-primary-text',t1||'#000');
+  r.setProperty('--pv-secondary-text',t2||'#fff');
+}
 function applyPvUrl(pvurl){
   const tagline=document.getElementById('pv-tagline');
   const urlEl=document.getElementById('pv-url');
@@ -647,14 +705,26 @@ function getISOWeek(d){
 }
 
 // ── 7. LLAMADAS AL WEBSERVICE ─────────────────────────────────
-// En local (serve-local.ps1 + `adb reverse`) hay que pasar por el proxy de
-// serve-local.ps1 (ruta "/proxy") porque el webservice real solo permite CORS
-// desde su origen (GitHub Pages). El proxy decide a qué host reenviar según
-// "_target" ('prod'|'dev'). En producción esto queda en `false` y sin efecto.
+// TEMPORAL — pruebas locales: tanto webservice.infolot.es (prod) como
+// dev-webservice.infolot.es (dev) solo permiten CORS desde su origen real
+// (GitHub Pages), así que en local hay que pasar por el proxy de
+// serve-local.ps1 (ruta "/proxy", que sí permite cualquier origen) para
+// las dos. El proxy decide a qué host reenviar según "_target" ('prod'|'dev').
+// Revertir a `false` antes de commitear.
 const USE_LOCAL_PROXY_FOR_TESTING = false;
 const PROD_WS_URL = 'https://webservice.infolot.es';
 const DEV_WS_URL = 'https://dev-webservice.infolot.es';
 const LOCAL_PROXY_URL = '/proxy';
+// TEMPORAL — la cuenta de pruebas actual no está activada en el backend
+// ("El usuario no tiene este servicio activo" en todas las llamadas), lo cual
+// dispara la pantalla de emparejamiento igual que le pasaría a un cliente
+// real sin activar. Con esto seguimos viendo la app con normalidad durante
+// el desarrollo. Revertir a `false` antes de publicar la versión de cliente.
+const FORCE_PAIRED_FOR_TESTING = false;
+const SERVICE_NOT_ACTIVE_MSG = 'El usuario no tiene este servicio activo';
+function isNotActivatedError(e){
+  return e.message===SERVICE_NOT_ACTIVE_MSG || e.message.startsWith('Missing credentials');
+}
 
 async function wsCall(endpoint,extra={}){
   const cfg=loadConfig();
@@ -688,6 +758,7 @@ async function fetchPvInfo(){
     applyPvInfo(pvData);
   }catch(e){
     console.error('[WS] pv-info FAILED:',e.message);
+    if(isNotActivatedError(e)) throw e; // loadAllData decide mostrar la pantalla de activación
     setLoadingStep('pv-info falló: '+e.message);
     const nameEl=document.getElementById('pv-name');
     if(nameEl){nameEl.textContent='Mi Lotería';nameEl.style.display='';}
@@ -699,16 +770,19 @@ function applyPvInfo(pv){
   const name=(pv?.company?.name_comercial||pv?.company?.name_social||'').trim()||'Mi Lotería';
   const nameEl=document.getElementById('pv-name');
   const logoEl=document.getElementById('pv-logo');
-  document.getElementById('loading-logo').textContent=name;
+  const loadingLogoEl=document.getElementById('loading-logo');
+  const loadingLogoImgEl=document.getElementById('loading-logo-img');
+  loadingLogoEl.textContent=name;
   document.title=name+' · Botes';
   if(nameEl){nameEl.textContent=name;nameEl.style.display='';}
   const css=pv?.css||{};
-  applyBrandColors(css.color_tema||cfg.color1||DEFAULTS.color1,css.secondary_color_tema||cfg.color2||DEFAULTS.color2);
+  applyBrandColors(css.color_tema||cfg.color1||DEFAULTS.color1,css.secondary_color_tema||cfg.color2||DEFAULTS.color2,css.color_texto,css.secondary_color_texto);
   const media=pv?.media||{};
   const logoPath=media.logo||media.logo_oficial||media.logo_small||'';
   if(logoEl&&logoPath){
     const logoUrl=logoPath.startsWith('http')?logoPath:LOGO_BASE+logoPath;
     logoEl.style.display='none';
+    if(loadingLogoImgEl) loadingLogoImgEl.style.display='none';
     console.log('[Logo] Attempting:',logoUrl);
     let settled=false;
     const logoTimer=setTimeout(()=>{
@@ -716,7 +790,9 @@ function applyPvInfo(pv){
     },3000);
     logoEl.onload=()=>{
       if(settled) return;settled=true;clearTimeout(logoTimer);
-      console.log('[Logo] Loaded OK:',logoUrl);logoEl.style.display='';if(nameEl)nameEl.style.display='none';
+      console.log('[Logo] Loaded OK:',logoUrl);
+      logoEl.style.display='block';if(nameEl)nameEl.style.display='none';
+      if(loadingLogoImgEl){loadingLogoImgEl.src=logoUrl;loadingLogoImgEl.style.display='block';loadingLogoEl.style.display='none';}
     };
     logoEl.onerror=()=>{
       if(settled) return;settled=true;clearTimeout(logoTimer);
@@ -725,6 +801,8 @@ function applyPvInfo(pv){
     logoEl.src=logoUrl;
   } else if(logoEl){
     logoEl.style.display='none';
+    if(loadingLogoImgEl) loadingLogoImgEl.style.display='none';
+    loadingLogoEl.style.display='';
   }
   applyPvUrl((pv?.url?.main||pv?.url?.web||cfg.pvurl||'').trim());
 }
@@ -737,7 +815,51 @@ async function fetchGames(){
     gamesMap={};
     if(data&&typeof data==='object') Object.values(data).forEach(g=>{if(g.lae)gamesMap[g.id]=g;});
     console.log('[WS] gamesMap:',Object.keys(gamesMap).length,'games');
-  }catch(e){console.error('[WS] get-games FAILED:',e.message);setLoadingStep('get-games falló: '+e.message);}
+  }catch(e){
+    console.error('[WS] get-games FAILED:',e.message);
+    if(isNotActivatedError(e)) throw e;
+    setLoadingStep('get-games falló: '+e.message);
+  }
+}
+
+// ── GET-SERVICE-CONFIG ───────────────────────────────────────
+// TEMPORAL — la cuenta de pruebas no tiene el servicio activo, así que
+// get-service-config nunca llega a responder de verdad. Con esto simulamos
+// una respuesta para poder comprobar a ojo que el filtrado de juegos y los
+// colores funcionan. Revertir a `false` antes de publicar.
+const USE_MOCK_SERVICE_CONFIG_FOR_TESTING = false;
+const MOCK_SERVICE_CONFIG = {
+  games: ['1','43','7','2','4','25','26'], // sin El Gordo (5) ni LotoTurf (21), para ver que desaparecen
+  styles: {
+    color_tema: '#2563eb',
+    color_texto: '#ffffff',
+    secondary_color_tema: '#16a34a',
+    secondary_color_texto: '#ffffff'
+  }
+};
+async function fetchServiceConfig(){
+  try{
+    console.log('[WS] get-service-config...');
+    const data=USE_MOCK_SERVICE_CONFIG_FOR_TESTING?MOCK_SERVICE_CONFIG:(await wsCall('get-service-config')||{});
+    serviceConfig=data;
+    applyServiceConfig(data);
+    console.log('[WS] serviceConfig aplicado',data);
+  }catch(e){console.error('[WS] get-service-config FAILED:',e.message);}
+}
+
+function applyServiceConfig(sc){
+  const allowedIds=Array.isArray(sc.games)?sc.games.map(id=>parseInt(id)):null;
+  if(allowedIds&&allowedIds.length){
+    Object.keys(gamesMap).forEach(id=>{if(!allowedIds.includes(parseInt(id))) delete gamesMap[id];});
+  }
+  const st=sc.styles||{};
+  const cfg=loadConfig();
+  applyBrandColors(
+    st.color_tema||cfg.color1||DEFAULTS.color1,
+    st.secondary_color_tema||cfg.color2||DEFAULTS.color2,
+    st.color_texto,
+    st.secondary_color_texto
+  );
 }
 
 // ── NEXT-JACKPOTS ────────────────────────────────────────────
@@ -819,7 +941,7 @@ function renderJackpots(data){
   items.forEach((item,i)=>{
     const game=gamesMap[item.id_game]||{};
     const barClr=game.fg_color||game.bg_color||'var(--pv-primary)';
-    const rawAmtClr=game.jackpot_fg_color||'';
+    const rawAmtClr=game.jackpot_fg_color||serviceConfig.styles?.jackpot_fg_color||'';
     const amtClr=(rawAmtClr&&rawAmtClr!=='#000000'&&rawAmtClr!=='#FFFFFF'&&rawAmtClr!=='#ffffff'&&rawAmtClr!=='#000')?rawAmtClr:'var(--pv-primary)';
     const jackpot=parseFloat(item.jackpot)||0;
     const millones=jackpot/1000000;
@@ -1009,14 +1131,14 @@ function buildBlockHTML(gameId,draws,availW){
         entries=draws||[];
       }
       const isCompact=entries.length>1; // con 2+ sorteos apilados, no se puede dejar que las bolas crezcan sin límite con el ancho
-      const headerMB=isCompact?(gameId===4?'3px':'2px'):'6px', drawMB=isCompact?(gameId===4?'4px':'3px'):'8px', drawPB=isCompact?(gameId===4?'4px':'3px'):'6px';
+      const headerMB=isCompact?'2px':'6px', drawMB=isCompact?'3px':'8px', drawPB=isCompact?'3px':'6px';
       const hasE=game.num_extra_per_bet>0,hasC=game.is_num_complementary===1,hasR=game.is_num_refund===1,hasCA=game.is_code_a===1;
       const fd=(draws&&draws[0])||{};
       const nMain=Array.isArray(fd.bet)?fd.bet.length:(game.num_bet_per_game||6);
       const nExtra=hasE?(Array.isArray(fd.extra)?fd.extra.length:(game.num_extra_per_bet||0)):0;
       const nComp=hasC&&fd.other?.complementary?.length?1:0;
       const nRef=hasR&&fd.other?.refund!=null?1:0;
-      const bsz=calcBSZ(nMain,nExtra,nComp,nRef,availW||200,isCompact?([1,43].includes(gameId)?32:gameId===2?27:gameId===4?20:20):(gameId===5?26:30));
+      const bsz=calcBSZ(nMain,nExtra,nComp,nRef,availW||200,isCompact?([1,43].includes(gameId)?32:gameId===2?27:gameId===4?24:24):(gameId===5?26:30));
       // Bloque ancho (p.ej. Euromillón a ancho completo en la vista mixta):
       // los sorteos van uno al lado del otro en vez de apilados — mismo
       // patrón que la rama 'nacional' con sideBySide.
@@ -1043,8 +1165,11 @@ function buildBlockHTML(gameId,draws,availW){
         if(hasR&&r.other?.refund!=null) row+=bsep('R')+mkBall(r.other.refund,refBg,refFg,refShape,bsz);
         const extraLabelHtml=hasE&&game.extra_name
           ?`<span class="rb-extra-label" style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text2);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;flex-shrink:0">${esc(game.extra_name)}</span>`:'';
+        const codeABg=serviceConfig.styles?.code_a_bg_color||'rgba(39,201,122,.12)';
+        const codeAFg=serviceConfig.styles?.code_a_fg_color||'var(--success)';
+        const codeABorder=serviceConfig.styles?.code_a_bg_color||'rgba(39,201,122,.3)';
         const codeAHtml=hasCA&&r.other?.code_a?.length
-          ?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;background:rgba(39,201,122,.12);border:1px solid rgba(39,201,122,.3);border-radius:4px;padding:1px 6px;white-space:nowrap"><span style="color:var(--text2)">${esc(game.code_a_name||'Código')}</span><span style="color:var(--success)">${esc(r.other.code_a[0])}</span></span>`:'';
+          ?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;background:${codeABg};border:1px solid ${codeABorder};border-radius:4px;padding:1px 6px;white-space:nowrap"><span style="color:var(--text2)">${esc(game.code_a_name||'Código')}</span><span style="color:${codeAFg}">${esc(r.other.code_a[0])}</span></span>`:'';
         bodyHtml+=`<div style="${ds}"><div class="rb-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${headerMB};gap:4px"><span class="rb-date" style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span>${codeAHtml}${extraLabelHtml}</div>${brow(row,nMain,nExtra,nComp,nRef)}</div>`;
       });
       if(sideBySide) bodyHtml+=`</div>`;
@@ -1685,7 +1810,7 @@ function renderMixedJackpots(data){
   items.forEach((item,i)=>{
     const game=gamesMap[item.id_game]||{};
     const barClr=game.fg_color||game.bg_color||'var(--pv-primary)';
-    const rawAmtClr=game.jackpot_fg_color||'';
+    const rawAmtClr=game.jackpot_fg_color||serviceConfig.styles?.jackpot_fg_color||'';
     const amtClr=(rawAmtClr&&rawAmtClr!=='#000000'&&rawAmtClr!=='#FFFFFF'&&rawAmtClr!=='#ffffff'&&rawAmtClr!=='#000')?rawAmtClr:'var(--pv-primary)';
     const jackpot=parseFloat(item.jackpot)||0;
     const millones=jackpot/1000000;
@@ -1885,6 +2010,7 @@ function setupDpadTextInputs(){
     el.dataset.dpadReady='1';
     el.readOnly=true;
     function enterEdit(){
+      if(el.dataset.locked==='1') return; // App ID/Token/Contraseña ya emparejados: no editables
       if(!el.readOnly) return;
       el.readOnly=false;
       el._reentering=true; // el blur() de abajo es interno, no una salida real del campo
@@ -1954,6 +2080,7 @@ function setupTimers(cfg){
 async function loadAllData(){
   if(_booted){console.log('[boot] already booted');return;}
   if(_loadingInProgress){console.log('[boot] already running');return;}
+  hidePairingScreen();
   _booted=true;_loadingInProgress=true;
   showLoading(true);
   const cfg=loadConfig();
@@ -1962,11 +2089,21 @@ async function loadAllData(){
     await fetchPvInfo();
     setLoadingStep('Cargando juegos...');
     await fetchGames();
+    await fetchServiceConfig();
     setLoadingStep(cfg.demoMode?'Cargando resultados (DEMO)...':'Cargando datos...');
     await Promise.all([fetchJackpots(),fetchResults()]);
     setLoadingStep('Listo');
+    // Primera carga con éxito real del webservice: el dispositivo queda
+    // "emparejado" para siempre — App ID/Token/Contraseña pasan a solo lectura.
+    if(!cfg.paired){cfg.paired=true;persistConfig(cfg);}
   }catch(e){
     console.error('[boot] loadAllData error:',e);
+    if(isNotActivatedError(e)&&!FORCE_PAIRED_FOR_TESTING){
+      _booted=false;_loadingInProgress=false;
+      showLoading(false);
+      showPairingScreen();
+      return;
+    }
     setLoadingStep('ERROR: '+e.message);
     await new Promise(r=>setTimeout(r,5000));
   }
@@ -1975,7 +2112,7 @@ async function loadAllData(){
   switchView(currentView||'jackpots');
   startAutoRotate(cfg);
 }
-async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();}
+async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();await fetchServiceConfig();}
 
 // ── 14. DIAGNÓSTICO ───────────────────────────────────────────
 async function diagRunGameResults(){
