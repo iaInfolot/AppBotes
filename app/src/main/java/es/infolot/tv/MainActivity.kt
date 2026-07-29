@@ -2,27 +2,101 @@ package es.infolot.tv
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.webkit.*
+import org.json.JSONObject
+import java.net.Inet4Address
+import java.net.NetworkInterface
 
 class MainActivity : Activity() {
 
     private lateinit var webView: WebView
 
     // Actualizado desde JS (applyOrientation, infolot-tv-app.html) cada vez que
-    // cambia la orientación. En vertical el contenido se rota 90° por CSS, así
-    // que hay que remapear las teclas de dirección (ver onKeyDown) para que la
-    // navegación nativa del WebView siga yendo hacia donde el usuario espera.
-    @Volatile private var isVerticalOrientation = false
+    // cambia la orientación — 0/90/180/270. El contenido se rota ese mismo
+    // ángulo por CSS, así que hay que remapear las teclas de dirección (ver
+    // dispatchKeyEvent) para que la navegación nativa del WebView siga yendo
+    // hacia donde el usuario espera.
+    @Volatile private var rotationDegrees = 0
 
     private inner class OrientationBridge {
         @JavascriptInterface
-        fun setVertical(vertical: Boolean) {
-            isVerticalOrientation = vertical
+        fun setRotation(degrees: Int) {
+            rotationDegrees = degrees
         }
+
+        // Consultado desde la pantalla de emparejamiento (infolot-tv-app.html,
+        // populatePairingInfo) para mostrar datos de diagnóstico a soporte
+        // cuando un PV no consigue activar su código — cosas que un WebView
+        // no puede leer por sí mismo con JS puro.
+        @JavascriptInterface
+        fun getDeviceInfo(): String {
+            val json = JSONObject()
+            json.put("model", "${Build.MANUFACTURER} ${Build.MODEL}")
+            json.put("androidVersion", Build.VERSION.RELEASE)
+            json.put("sdkInt", Build.VERSION.SDK_INT)
+            json.put("network", currentNetworkType())
+            val wifi = wifiSignal()
+            json.put("signalLevel", wifi?.first ?: -1)
+            if (wifi != null) json.put("signalDbm", wifi.second)
+            json.put("ip", localIpAddress())
+            return json.toString()
+        }
+    }
+
+    private fun currentNetworkType(): String {
+        return try {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return "Sin conexión"
+            when {
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "WiFi"
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "Ethernet"
+                caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "Datos móviles"
+                else -> "Desconocida"
+            }
+        } catch (e: Exception) {
+            "—"
+        }
+    }
+
+    // Solo intensidad de señal (RSSI/nivel), sin SSID: leer el nombre de la
+    // red WiFi conectada exige permiso de ubicación desde Android 8.1, y no
+    // queríamos añadir ese diálogo de permisos a un dispositivo de kiosco.
+    // Devuelve (nivel 0-4, rssi en dBm), o null si no hay WiFi conectada —
+    // el dibujo del icono (punto + arcos) se hace en JS a partir del nivel.
+    private fun wifiSignal(): Pair<Int, Int>? {
+        return try {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return null
+            if (!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return null
+            val wifiManager = getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val rssi = wifiManager.connectionInfo.rssi
+            val level = WifiManager.calculateSignalLevel(rssi, 5)
+            Pair(level, rssi)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun localIpAddress(): String {
+        try {
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            for (intf in interfaces) {
+                if (!intf.isUp || intf.isLoopback) continue
+                for (addr in intf.inetAddresses) {
+                    if (addr is Inet4Address) return addr.hostAddress ?: "—"
+                }
+            }
+        } catch (e: Exception) {
+        }
+        return "—"
     }
 
     companion object {
@@ -93,6 +167,10 @@ class MainActivity : Activity() {
                             if (e.keyCode === 13 || e.keyCode === 23) { // Enter or D-Pad center
                                 var el = document.activeElement;
                                 if (el && el !== document.body) {
+                                    // preventDefault: en <button>/<a> el WebView ya dispara un
+                                    // click nativo al pulsar Enter/DPAD_CENTER; sin esto, el
+                                    // click() manual de abajo se suma y duplica el evento.
+                                    e.preventDefault();
                                     el.click();
                                 }
                             }
@@ -176,14 +254,14 @@ class MainActivity : Activity() {
     // interceptarse aquí — dispatchKeyEvent es lo primero que Android llama,
     // antes de entregar el evento a la vista enfocada.
     //
-    // El contenido está rotado 90° por CSS en modo vertical, así que la
+    // El contenido está rotado por CSS según rotationDegrees, así que la
     // navegación nativa del WebView (que decide el siguiente foco según la
-    // posición ya rotada en pantalla) queda girada un cuarto de vuelta
-    // respecto a lo que el usuario espera. Se remapean aquí las direcciones
-    // para compensar ese giro (arriba pasa a comportarse como derecha, etc.).
+    // posición ya rotada en pantalla) queda girada ese mismo ángulo respecto
+    // a lo que el usuario espera. Se remapean aquí las direcciones para
+    // compensar ese giro.
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (isVerticalOrientation) {
-            val remapped = remapKeyForVerticalOrientation(event.keyCode)
+        if (rotationDegrees != 0) {
+            val remapped = remapKeyForRotation(event.keyCode, rotationDegrees)
             if (remapped != event.keyCode) {
                 webView.dispatchKeyEvent(
                     KeyEvent(event.downTime, event.eventTime, event.action, remapped, event.repeatCount)
@@ -194,11 +272,19 @@ class MainActivity : Activity() {
         return super.dispatchKeyEvent(event)
     }
 
-    private fun remapKeyForVerticalOrientation(keyCode: Int): Int = when (keyCode) {
-        KeyEvent.KEYCODE_DPAD_UP -> KeyEvent.KEYCODE_DPAD_RIGHT
-        KeyEvent.KEYCODE_DPAD_RIGHT -> KeyEvent.KEYCODE_DPAD_DOWN
-        KeyEvent.KEYCODE_DPAD_DOWN -> KeyEvent.KEYCODE_DPAD_LEFT
-        KeyEvent.KEYCODE_DPAD_LEFT -> KeyEvent.KEYCODE_DPAD_UP
-        else -> keyCode
+    // Cada 90° de giro desplaza una posición en este orden cíclico (arriba →
+    // derecha → abajo → izquierda → arriba...). degrees/90 da cuántas
+    // posiciones desplazar: 1 para 90°, 2 para 180°, 3 para 270°.
+    private fun remapKeyForRotation(keyCode: Int, degrees: Int): Int {
+        val order = listOf(
+            KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_DPAD_LEFT
+        )
+        val idx = order.indexOf(keyCode)
+        if (idx == -1) return keyCode
+        val shift = (degrees / 90) % 4
+        return order[(idx + shift) % 4]
     }
 }

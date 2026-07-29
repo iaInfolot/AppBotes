@@ -48,58 +48,58 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #loading-step{font-family:var(--font-ui);font-size:var(--fs-sm);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
 
 /* PAIRING (activación de dispositivo nuevo) */
-#pairing-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:22px;z-index:210;text-align:center;padding:20px;}
-#pairing-screen .pairing-title{font-family:var(--font-ui);font-size:var(--fs-sm);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+#pairing-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:210;text-align:center;padding:20px;}
+#pairing-screen .pairing-title{font-family:var(--font-ui);font-size:var(--fs-lg);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
 #pairing-code{font-family:var(--font-display);font-size:clamp(2rem,5vw,4rem);letter-spacing:8px;color:var(--pv-primary);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(14px,2vh,26px) clamp(24px,3vw,44px);}
-#pairing-screen .pairing-msg{font-family:var(--font-ui);font-size:var(--fs-sm);color:var(--text2);max-width:520px;line-height:1.7;}
+#pairing-screen .pairing-msg{font-family:var(--font-ui);font-size:var(--fs-base);color:var(--text2);max-width:560px;line-height:1.7;}
+#pairing-error{font-family:var(--font-ui);font-size:var(--fs-sm);color:var(--pv-secondary);min-height:.4em;}
+#pairing-check-btn{font-size:var(--fs-lg);padding:clamp(10px,1.4vh,16px) clamp(20px,2vw,32px);}
+#pairing-info{font-family:var(--font-ui);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 22px;max-width:460px;width:100%;text-align:left;}
+#pairing-info-title{font-size:var(--fs-sm);letter-spacing:2px;text-transform:uppercase;color:var(--text2);text-align:center;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border);}
+#pairing-info-grid{display:grid;grid-template-columns:auto 1fr;column-gap:16px;row-gap:7px;font-size:var(--fs-base);}
+#pairing-info-grid span:nth-child(odd){color:var(--text2);}
+#pairing-info-grid span:nth-child(even){color:var(--text);text-align:right;word-break:break-all;}
 .spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--pv-primary);border-radius:50%;animation:spin .7s linear infinite;}
 
 /* APP SHELL */
 #app{display:none;width:100vw;height:100vh;flex-direction:column;}
 #app.visible{display:flex;}
 
-/* Vista vertical: el hardware de TV no puede rotar la pantalla de verdad
-   (Android TV asume horizontal a nivel de plataforma), así que cuando el
-   instalador gira el monitor 90° físicamente y activa "Vertical" en
-   Configuración, giramos aquí el contenido por CSS para que quede leíble
-   una vez el monitor esté de lado. #app pasa a tener las medidas
-   intercambiadas (ancho=100vh, alto=100vw) y se rota, así su huella visual
-   vuelve a coincidir exactamente con la pantalla real. */
-body.orient-v #app{
-  position:fixed;
-  top:50%;
-  left:50%;
-  width:100vh;
-  height:100vw;
-  transform:translate(-50%,-50%) rotate(90deg);
-  transform-origin:center center;
-}
-
-/* El menú, Configuración y Diagnóstico viven dentro de #overlay, que es
-   hermano de #app (no está dentro) — así que necesita el mismo giro por
-   separado, si no se quedaría horizontal encima del contenido ya girado. */
-body.orient-v #overlay{
-  inset:auto;
-  top:50%;
-  left:50%;
-  width:100vh;
-  height:100vw;
-  transform:translate(-50%,-50%) rotate(90deg);
-  transform-origin:center center;
-}
-
-/* #loading también es hermano de #app (no está dentro) — al cambiar de
-   horizontal a vertical y guardar, loadAllData() la vuelve a mostrar
-   mientras recarga los datos, así que necesita el mismo giro para no
-   aparecer horizontal encima del resto ya girado. */
-body.orient-v #loading{
+/* Rotación de pantalla: el hardware de TV no puede rotar la pantalla de
+   verdad (Android TV asume horizontal a nivel de plataforma), así que
+   cuando el instalador gira el monitor físicamente y elige la orientación
+   en Configuración (botón que recorre 0°→90°→180°→270°→0°...), giramos
+   aquí el contenido por CSS para que quede legible. #app, #overlay,
+   #loading y #pairing-screen son hermanos entre sí (ninguno está dentro
+   de otro), así que cada uno necesita el mismo giro por separado — si no,
+   se verían horizontales encima del resto ya girado.
+   90°/270° intercambian ancho/alto (100vh/100vw) porque pasan a ocupar el
+   hueco vertical de la pantalla; 180° no los intercambia, porque sigue
+   siendo el mismo hueco horizontal, solo boca abajo. */
+body.rot-90 #app, body.rot-90 #overlay, body.rot-90 #loading, body.rot-90 #pairing-screen,
+body.rot-270 #app, body.rot-270 #overlay, body.rot-270 #loading, body.rot-270 #pairing-screen{
   position:fixed;
   inset:auto;
   top:50%;
   left:50%;
   width:100vh;
   height:100vw;
+  transform-origin:center center;
+}
+body.rot-90 #app, body.rot-90 #overlay, body.rot-90 #loading, body.rot-90 #pairing-screen{
   transform:translate(-50%,-50%) rotate(90deg);
+}
+body.rot-270 #app, body.rot-270 #overlay, body.rot-270 #loading, body.rot-270 #pairing-screen{
+  transform:translate(-50%,-50%) rotate(270deg);
+}
+body.rot-180 #app, body.rot-180 #overlay, body.rot-180 #loading, body.rot-180 #pairing-screen{
+  position:fixed;
+  inset:auto;
+  top:50%;
+  left:50%;
+  width:100vw;
+  height:100vh;
+  transform:translate(-50%,-50%) rotate(180deg);
   transform-origin:center center;
 }
 
@@ -133,11 +133,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 
 /* ══ JACKPOTS ══ */
 #jackpots-grid{flex:1;display:grid;gap:clamp(6px,.8vw,12px);overflow:hidden;min-height:0;}
-.jackpot-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(10px,1.2vh,16px) clamp(12px,1.2vw,18px);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .35s ease both;transition:transform .2s,box-shadow .2s,border-color .2s;min-height:0;}
+.jackpot-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(10px,1.2vh,16px) clamp(12px,1.2vw,18px);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--shadow);animation:fadeUpOpacity .35s ease both;transition:transform .2s,box-shadow .2s,border-color .2s;min-height:0;}
 .jackpot-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.35);border-color:var(--pv-primary);}
-.jackpot-card.is-highest{border-color:var(--pv-primary);box-shadow:0 0 0 2px var(--pv-primary),0 8px 32px rgba(0,0,0,.4);}
 .jackpot-card.is-highest::after{content:'★ MAYOR BOTE';position:absolute;top:8px;right:12px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:700;letter-spacing:2px;color:var(--pv-primary);animation:pulseLabel 2s ease-in-out infinite;}
-.jackpot-card.is-next{border-color:var(--pv-secondary);box-shadow:0 0 0 2px var(--pv-secondary),0 8px 32px rgba(0,0,0,.4);}
 .jackpot-card.is-next:not(.is-highest)::after{content:'⚡ PRÓXIMO SORTEO';position:absolute;top:8px;right:12px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:700;letter-spacing:2px;color:var(--pv-secondary);animation:pulseLabel 2s ease-in-out infinite;}
 .card-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0;}
 .card-header{display:flex;align-items:center;gap:clamp(6px,.8vw,12px);margin-bottom:clamp(4px,.5vh,8px);flex-shrink:0;}
@@ -206,9 +204,17 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 .form-group input,.form-group select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-body);font-size:clamp(10px,.85vw,14px);padding:clamp(4px,.5vh,7px) clamp(6px,.7vw,10px);outline:none;transition:border-color .2s;appearance:none;}
 .form-group input:focus,.form-group select:focus{border-color:var(--pv-primary);}
 .form-group input.locked-field{opacity:.5;cursor:not-allowed;}
-.color-row{display:flex;align-items:center;gap:6px;}
-.color-row input[type="color"]{width:32px;height:28px;padding:2px 3px;border-radius:5px;cursor:pointer;flex-shrink:0;}
-.color-row input[type="text"]{flex:1;font-family:monospace;}
+/* Desplegable propio para Ajustes: un <select> nativo no se puede abrir con
+   mando (Chromium exige un toque/clic real, no un click() simulado), así
+   que este panel de opciones lo dibujamos y controlamos nosotros — un div
+   con onclick sí responde al click() simulado que dispara el mando. */
+.cfg-dropdown{position:relative;}
+.dd-trigger{display:block;width:100%;background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-body);font-weight:400;font-size:clamp(10px,.85vw,14px);letter-spacing:normal;text-transform:none;text-align:left;padding:clamp(4px,.5vh,7px) clamp(6px,.7vw,10px);cursor:pointer;}
+.dd-panel{position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--card);border:1px solid var(--border);border-radius:7px;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.dd-option{padding:clamp(4px,.5vh,7px) clamp(6px,.7vw,10px);font-family:var(--font-body);font-size:clamp(10px,.85vw,14px);color:var(--text);text-align:left;cursor:pointer;border-bottom:1px solid var(--border);outline:none;-webkit-tap-highlight-color:transparent;}
+.dd-option:first-child{border-top-left-radius:7px;border-top-right-radius:7px;}
+.dd-option:last-child{border-bottom:none;border-bottom-left-radius:7px;border-bottom-right-radius:7px;}
+.cfg-dropdown .dd-option:hover,.cfg-dropdown .dd-option:focus,.cfg-dropdown .dd-option:focus-visible{background:var(--card2);color:var(--pv-primary);outline:none!important;box-shadow:none!important;}
 .cfg-actions{display:flex;gap:8px;padding-top:clamp(8px,1vh,14px);border-top:1px solid var(--border);flex-shrink:0;align-items:center;}
 
 /* ══ DIAGNOSTIC ══ */
@@ -246,6 +252,11 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
 
 /* ══ ANIMATIONS ══ */
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* Igual que fadeUp pero sin transform — en .jackpot-card, combinar una
+   animación de transform con overflow:hidden + border-radius provocaba un
+   glitch de renderizado (un icono aparecía distorsionado y flotando fuera de
+   su tarjeta durante la entrada). Solo con opacity no reproduce el bug. */
+@keyframes fadeUpOpacity{from{opacity:0}to{opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulseLabel{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes viewIn{from{opacity:0}to{opacity:1}}
@@ -263,8 +274,24 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
 <div id="pairing-screen">
   <div class="pairing-title">Activación necesaria</div>
   <div id="pairing-code">----</div>
-  <div class="pairing-msg">Llama a soporte y facilita este código. Te daremos un Token y una Contraseña — introdúcelos en Ajustes para activar la pantalla.</div>
-  <button class="btn btn-primary" onclick="openMenu();showConfig();">Abrir Ajustes</button>
+  <div class="pairing-msg">Llama a soporte y facilita este código. Cuando te confirmen que ya está activado, pulsa el botón.</div>
+  <button class="btn btn-primary" id="pairing-check-btn" onclick="checkPairingActivation()">Comprobar activación</button>
+  <div id="pairing-error"></div>
+  <div id="pairing-info">
+    <div id="pairing-info-title">Información técnica</div>
+    <div id="pairing-info-grid">
+      <span>Dispositivo</span><span id="pi-device">—</span>
+      <span>Android</span><span id="pi-android">—</span>
+      <span>Fecha local</span><span id="pi-datetime">—</span>
+      <span>Red</span><span id="pi-network">—</span>
+      <span>Señal</span><span id="pi-signal">—</span>
+      <span>IP local</span><span id="pi-ip">—</span>
+      <span>Webservice</span><span id="pi-ws">—</span>
+      <span>Conexión WS</span><span id="pi-wscheck">—</span>
+      <span>App ID</span><span id="pi-appid">—</span>
+      <span>Versión app</span><span id="pi-appver">—</span>
+    </div>
+  </div>
 </div>
 
 <div id="app">
@@ -332,6 +359,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
       <li><button onclick="switchView('jackpots');closeOverlay()"><span class="menu-icon">🏆</span>Botes</button></li>
       <li><button onclick="switchView('results');closeOverlay()"><span class="menu-icon">📋</span>Resultados</button></li>
       <li><button onclick="switchView('mixed');closeOverlay()"><span class="menu-icon">⊞</span>Vista Mixta</button></li>
+      <li><button onclick="cycleOrientation()"><span class="menu-icon">🔄</span><span id="menu-orient-label">Horizontal (0°)</span></button></li>
       <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
       <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
     </ul>
@@ -359,23 +387,14 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
         <div class="cfg-divider">Punto de Venta &amp; Apariencia</div>
         <div class="form-group"><label>URL web del PV</label><input type="text" id="cfg-pvurl" placeholder="https://www.webpremium.eu"></div>
         <div class="form-group"><label>Texto tagline</label><input type="text" id="cfg-tagline" placeholder="Juega con nosotros en"></div>
-        <div class="form-group"><label>Color primario</label>
-          <div class="color-row">
-            <input type="color" id="cfg-color1-pick" oninput="syncColor('cfg-color1','cfg-color1-pick')">
-            <input type="text" id="cfg-color1" maxlength="7" oninput="syncColor('cfg-color1-pick','cfg-color1',true)">
-          </div>
-        </div>
-        <div class="form-group"><label>Color secundario</label>
-          <div class="color-row">
-            <input type="color" id="cfg-color2-pick" oninput="syncColor('cfg-color2','cfg-color2-pick')">
-            <input type="text" id="cfg-color2" maxlength="7" oninput="syncColor('cfg-color2-pick','cfg-color2',true)">
-          </div>
-        </div>
         <div class="form-group"><label>Modo</label>
-          <select id="cfg-theme"><option value="dark">Oscuro</option><option value="light">Claro</option></select>
-        </div>
-        <div class="form-group"><label>Orientación</label>
-          <select id="cfg-orient"><option value="h">Horizontal</option><option value="v">Vertical</option></select>
+          <div class="cfg-dropdown">
+            <button type="button" class="dd-trigger" id="cfg-theme-trigger" onclick="toggleDropdown('cfg-theme')"></button>
+            <div class="dd-panel" id="cfg-theme-panel" style="display:none">
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-theme','dark','Oscuro')">Oscuro</div>
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-theme','light','Claro')">Claro</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -383,20 +402,35 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
       <div class="cfg-col">
         <div class="cfg-divider">Temporización &amp; Modo</div>
         <div class="form-group"><label>Vista por defecto</label>
-          <select id="cfg-default-view">
-            <option value="jackpots">Botes</option>
-            <option value="results">Resultados</option>
-            <option value="mixed">Mixta (Botes + Resultados)</option>
-          </select>
+          <div class="cfg-dropdown">
+            <button type="button" class="dd-trigger" id="cfg-default-view-trigger" onclick="toggleDropdown('cfg-default-view')"></button>
+            <div class="dd-panel" id="cfg-default-view-panel" style="display:none">
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-default-view','jackpots','Botes')">Botes</div>
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-default-view','results','Resultados')">Resultados</div>
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-default-view','mixed','Mixta (Botes + Resultados)')">Mixta (Botes + Resultados)</div>
+            </div>
+          </div>
         </div>
         <div class="form-group"><label>Refresco botes (min)</label><input type="number" id="cfg-refresh-jackpots" min="0" max="1440"></div>
         <div class="form-group"><label>Refresco PV+Juegos (horas)</label><input type="number" id="cfg-refresh-pvinfo" min="0" max="168"></div>
         <div class="form-group"><label>Rotación automática</label>
-          <select id="cfg-autorotate"><option value="false">No</option><option value="true">Sí</option></select>
+          <div class="cfg-dropdown">
+            <button type="button" class="dd-trigger" id="cfg-autorotate-trigger" onclick="toggleDropdown('cfg-autorotate')"></button>
+            <div class="dd-panel" id="cfg-autorotate-panel" style="display:none">
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-autorotate','false','No')">No</div>
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-autorotate','true','Sí')">Sí</div>
+            </div>
+          </div>
         </div>
         <div class="form-group"><label>Intervalo rotación (seg, 10-300)</label><input type="number" id="cfg-autorotate-interval" min="10" max="300"></div>
         <div class="form-group"><label>Modo Demo</label>
-          <select id="cfg-demo-mode"><option value="false">No</option><option value="true">Sí</option></select>
+          <div class="cfg-dropdown">
+            <button type="button" class="dd-trigger" id="cfg-demo-mode-trigger" onclick="toggleDropdown('cfg-demo-mode')"></button>
+            <div class="dd-panel" id="cfg-demo-mode-panel" style="display:none">
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-demo-mode','false','No')">No</div>
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-demo-mode','true','Sí')">Sí</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -462,8 +496,8 @@ const DEFAULTS = {
   url:'https://webservice.infolot.es',
   //appid:'a5de640e-7149-4b31-b296-7b1e9cc191f4',
   appid:'41461407-985d-4834-973f-1a672edb74e2',
-  token:'8f1a97f8-1ae8-4fb4-9ea8-6bbaf05a0cd2',
-  pass:'t/o47X[%i%V&i14%',
+  token:'',
+  pass:'',
   pvurl:'https://www.webpremium.eu',
   tagline:'Juega con nosotros en',
   color1:'#f0b429',
@@ -494,28 +528,132 @@ function showLoading(s){
 }
 // Código legible por teléfono para identificar el dispositivo durante la
 // activación — se genera una sola vez y se guarda al margen de la config,
-// para que sobreviva a un "Restablecer configuración".
+// para que sobreviva a un "Restablecer configuración". Tiene que ser
+// numérico (sin letras ni guion): el campo "Código Inicio" del backend es
+// un entero, y cualquier carácter no numérico se pierde al guardarlo ahí.
 function generateDeviceCode(){
-  const chars='23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // sin 0/O/1/I/L, para evitar confusiones al dictarlo
-  const bytes=new Uint8Array(8);
+  const bytes=new Uint32Array(1);
   crypto.getRandomValues(bytes);
-  let out='';
-  for(let i=0;i<8;i++){out+=chars[bytes[i]%chars.length];if(i===3) out+='-';}
-  return out;
+  const code=100000+(bytes[0]%900000); // 6 dígitos, 100000-999999 (nunca empieza por 0)
+  return String(code);
 }
 function getDeviceCode(){
   let code=localStorage.getItem(DEVICE_CODE_KEY);
   if(!code){code=generateDeviceCode();localStorage.setItem(DEVICE_CODE_KEY,code);}
   return code;
 }
+// Icono de intensidad WiFi (punto + 3 arcos concéntricos), al estilo del
+// icono clásico de señal. level 0-4 (mismo rango que WifiManager.
+// calculateSignalLevel con 5 niveles): 0 = nada encendido, 4 = todo encendido.
+function wifiSignalIconSVG(level){
+  const on='#27c97a', off='#3a4552';
+  const dot  = level>=1?on:off;
+  const arc1 = level>=2?on:off;
+  const arc2 = level>=3?on:off;
+  const arc3 = level>=4?on:off;
+  return `<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-4px">
+    <circle cx="12" cy="19" r="1.6" fill="${dot}"/>
+    <path d="M8.5 15.5a5 5 0 0 1 7 0" stroke="${arc1}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M5.3 12a9.4 9.4 0 0 1 13.4 0" stroke="${arc2}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M2.2 8.4a13.7 13.7 0 0 1 19.6 0" stroke="${arc3}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
 function showPairingScreen(){
   document.getElementById('pairing-code').textContent=getDeviceCode();
   document.getElementById('loading').style.display='none';
   document.getElementById('app').classList.remove('visible');
   document.getElementById('pairing-screen').style.display='flex';
+  populatePairingInfo();
+}
+// Fecha/hora local del dispositivo en la pantalla de emparejamiento — útil
+// para que soporte detecte un reloj mal ajustado como causa de fallos raros
+// de autenticación. Se actualiza cada segundo mientras la pantalla esté
+// visible; hidePairingScreen() para el intervalo para no dejarlo de fondo.
+let pairingDatetimeTimer=null;
+function updatePairingDateTime(){
+  const n=new Date(),el=document.getElementById('pi-datetime');
+  if(!el) return;
+  const day=DAY_SHORT[n.getDay()];
+  const date=n.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+  const time=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  el.textContent=`${day}, ${date} · ${time}`;
+}
+// Panel de diagnóstico de la pantalla de emparejamiento: datos de red,
+// dispositivo y configuración que soporte puede necesitar si un PV no
+// consigue activar su código (antes de asumir que el código está mal).
+async function populatePairingInfo(){
+  const cfg=loadConfig();
+  updatePairingDateTime();
+  if(pairingDatetimeTimer) clearInterval(pairingDatetimeTimer);
+  pairingDatetimeTimer=setInterval(updatePairingDateTime,1000);
+  document.getElementById('pi-ws').textContent=cfg.url||'—';
+  document.getElementById('pi-appid').textContent=(cfg.appid||DEFAULTS.appid).substring(0,8)+'…';
+  document.getElementById('pi-appver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
+
+  // Modelo, Android e IP/red vienen del bridge nativo (MainActivity.kt) —
+  // un WebView no puede leerlos por sí mismo con JS puro. Si no existe
+  // (p.ej. probando en un navegador de escritorio con serve-local.ps1),
+  // se dejan los guiones por defecto del HTML.
+  try{
+    if(window.AndroidBridge&&window.AndroidBridge.getDeviceInfo){
+      const info=JSON.parse(window.AndroidBridge.getDeviceInfo());
+      document.getElementById('pi-device').textContent=info.model||'—';
+      document.getElementById('pi-android').textContent=info.androidVersion?`${info.androidVersion} (API ${info.sdkInt})`:'—';
+      document.getElementById('pi-network').textContent=info.network||'—';
+      const sigEl=document.getElementById('pi-signal');
+      if(info.signalLevel>=0){
+        sigEl.innerHTML=wifiSignalIconSVG(info.signalLevel)+`<span style="margin-left:8px">${info.signalDbm} dBm</span>`;
+      }else{
+        sigEl.textContent='—'; // Ethernet o sin conexión: no hay "señal" que mostrar
+      }
+      document.getElementById('pi-ip').textContent=info.ip||'—';
+    }
+  }catch(e){console.error('[pairing-info] getDeviceInfo error:',e);}
+
+  // Comprobación rápida de si el webservice configurado responde — así
+  // soporte sabe si el problema es de red/URL antes de mirar el código.
+  // mode:'no-cors' porque solo nos interesa si la petición llega a completarse
+  // a nivel de red (DNS/TCP/TLS); con el modo normal, un servidor sin
+  // cabeceras CORS hace que fetch() rechace aunque la red funcione bien.
+  const wsEl=document.getElementById('pi-wscheck');
+  wsEl.textContent='Comprobando…';
+  try{
+    const t0=Date.now();
+    const ctrl=new AbortController();
+    const timeout=setTimeout(()=>ctrl.abort(),4000);
+    await fetch(cfg.url,{method:'GET',mode:'no-cors',signal:ctrl.signal});
+    clearTimeout(timeout);
+    wsEl.textContent=`OK (${Date.now()-t0}ms)`;
+  }catch(e){
+    wsEl.textContent='Sin respuesta';
+  }
 }
 function hidePairingScreen(){
   document.getElementById('pairing-screen').style.display='none';
+  if(pairingDatetimeTimer){clearInterval(pairingDatetimeTimer);pairingDatetimeTimer=null;}
+}
+async function checkPairingActivation(){
+  const btn=document.getElementById('pairing-check-btn');
+  const errEl=document.getElementById('pairing-error');
+  errEl.textContent='';
+  btn.disabled=true;
+  const origText=btn.textContent;
+  btn.textContent='Comprobando...';
+  try{
+    const data=await validateServiceCode(getDeviceCode());
+    if(!data||!data.token||!data.pass) throw new Error('Respuesta incompleta');
+    const cfg=loadConfig();
+    cfg.appid=DEFAULTS.appid;
+    cfg.token=data.token;
+    cfg.pass=data.pass;
+    persistConfig(cfg);
+    loadAllData();
+  }catch(e){
+    console.error('[pairing] validate-service-code FAILED:',e.message);
+    errEl.textContent='Todavía no está activado. Inténtalo de nuevo en un momento.';
+    btn.disabled=false;
+    btn.textContent=origText;
+  }
 }
 function setLoadingStep(m){document.getElementById('loading-step').textContent=m;}
 function setStatus(m,t){const el=document.getElementById('status-msg');if(el){el.textContent=m;el.className=t||'';}}
@@ -543,22 +681,21 @@ function saveConfig(){
     pass:document.getElementById('cfg-pass').value||DEFAULTS.pass,
     pvurl:fv('cfg-pvurl')||DEFAULTS.pvurl,
     tagline:fv('cfg-tagline')||DEFAULTS.tagline,
-    color1:fv('cfg-color1')||DEFAULTS.color1,
-    color2:fv('cfg-color2')||DEFAULTS.color2,
-    theme:document.getElementById('cfg-theme').value,
-    orient:document.getElementById('cfg-orient').value,
+    theme:document.getElementById('cfg-theme-trigger').dataset.value||'dark',
     refreshJackpots:parseInt(document.getElementById('cfg-refresh-jackpots').value)||0,
     refreshPvInfo:parseInt(document.getElementById('cfg-refresh-pvinfo').value)||0,
-    defaultView:document.getElementById('cfg-default-view').value||'jackpots',
-    autoRotate:document.getElementById('cfg-autorotate').value==='true',
+    defaultView:document.getElementById('cfg-default-view-trigger').dataset.value||'jackpots',
+    autoRotate:document.getElementById('cfg-autorotate-trigger').dataset.value==='true',
     autoRotateInterval:Math.max(10,Math.min(300,parseInt(document.getElementById('cfg-autorotate-interval').value)||30)),
-    demoMode:document.getElementById('cfg-demo-mode').value==='true',
+    demoMode:document.getElementById('cfg-demo-mode-trigger').dataset.value==='true',
   };
-  // "paired" solo lo activa loadAllData() tras una carga real con éxito —
-  // aquí nos limitamos a no perderlo al guardar otros ajustes sin relación.
+  // "paired" solo lo activa loadAllData() tras una carga real con éxito, y
+  // "orient" ya lo aplica y guarda cycleOrientation() al momento — aquí nos
+  // limitamos a no perderlos al guardar otros ajustes sin relación.
   cfg.paired = loadConfig().paired || false;
+  cfg.orient = loadConfig().orient || DEFAULTS.orient;
   persistConfig(cfg);
-  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyPvUrl(cfg.pvurl);
+  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(DEFAULTS.color1,DEFAULTS.color2);applyPvUrl(cfg.pvurl);
   updateDemoBadge(cfg);
   closeOverlay();
   setupTimers(cfg);
@@ -579,18 +716,13 @@ function fillConfigForm(cfg){
   });
   document.getElementById('cfg-pvurl').value=cfg.pvurl||DEFAULTS.pvurl;
   document.getElementById('cfg-tagline').value=cfg.tagline||DEFAULTS.tagline;
-  document.getElementById('cfg-color1').value=cfg.color1||DEFAULTS.color1;
-  document.getElementById('cfg-color1-pick').value=cfg.color1||DEFAULTS.color1;
-  document.getElementById('cfg-color2').value=cfg.color2||DEFAULTS.color2;
-  document.getElementById('cfg-color2-pick').value=cfg.color2||DEFAULTS.color2;
-  document.getElementById('cfg-theme').value=cfg.theme||'dark';
-  document.getElementById('cfg-orient').value=cfg.orient||detectOrientation();
+  setDropdownValue('cfg-theme',cfg.theme||'dark',{dark:'Oscuro',light:'Claro'});
   document.getElementById('cfg-refresh-jackpots').value=cfg.refreshJackpots||0;
   document.getElementById('cfg-refresh-pvinfo').value=cfg.refreshPvInfo||0;
-  document.getElementById('cfg-default-view').value=cfg.defaultView||'jackpots';
-  document.getElementById('cfg-autorotate').value=String(cfg.autoRotate||false);
+  setDropdownValue('cfg-default-view',cfg.defaultView||'jackpots',{jackpots:'Botes',results:'Resultados',mixed:'Mixta (Botes + Resultados)'});
+  setDropdownValue('cfg-autorotate',cfg.autoRotate||false,{false:'No',true:'Sí'});
   document.getElementById('cfg-autorotate-interval').value=cfg.autoRotateInterval||30;
-  document.getElementById('cfg-demo-mode').value=String(cfg.demoMode||false);
+  setDropdownValue('cfg-demo-mode',cfg.demoMode||false,{false:'No',true:'Sí'});
 }
 
 function resetConfig(){
@@ -602,29 +734,95 @@ function resetConfig(){
   setStatus('Configuración restablecida','ok');
 }
 
-function syncColor(tid,sid,fromText){
-  const s=document.getElementById(sid),t=document.getElementById(tid);
-  if(!s||!t) return;
-  if(fromText&&!/^#[0-9a-fA-F]{6}$/.test(s.value)) return;
-  t.value=s.value;
-}
-
 function fv(id){return document.getElementById(id).value.trim();}
 
 // ── 4. APARIENCIA / TEMA ──────────────────────────────────────
 function detectOrientation(){
-  try{const t=screen.orientation?screen.orientation.type:'';if(t.includes('portrait'))return'v';if(t.includes('landscape'))return'h';return window.innerHeight>window.innerWidth?'v':'h';}catch{return'h';}
+  try{const t=screen.orientation?screen.orientation.type:'';if(t.includes('portrait'))return'90';if(t.includes('landscape'))return'0';return window.innerHeight>window.innerWidth?'90':'0';}catch{return'0';}
 }
 function applyTheme(t){document.body.classList.toggle('light',t==='light');}
+// o es el ángulo de rotación como texto: '0'|'90'|'180'|'270'. orient-h/
+// orient-v se mantienen (derivadas del ángulo) porque el resto del código
+// las usa para decidir el layout (columnas, tamaños de bola...) — 0°/180°
+// tienen la misma forma de pantalla (horizontal), 90°/270° la misma entre
+// sí (vertical), así que ese código no necesita enterarse del ángulo exacto.
 function applyOrientation(o){
-  document.body.classList.remove('orient-h','orient-v');
-  document.body.classList.add('orient-'+(o||'h'));
+  const deg=['0','90','180','270'].includes(o)?o:'0';
+  document.body.classList.remove('orient-h','orient-v','rot-0','rot-90','rot-180','rot-270');
+  document.body.classList.add(deg==='90'||deg==='270'?'orient-v':'orient-h');
+  document.body.classList.add('rot-'+deg);
   // Avisa a MainActivity.kt para que remapee las teclas de dirección del
-  // mando/teclado — el contenido está rotado 90° por CSS, así que la
-  // navegación nativa del WebView (que usa las posiciones ya rotadas en
-  // pantalla) necesita ese mismo giro aplicado a arriba/abajo/izquierda/derecha.
-  if(window.AndroidBridge&&window.AndroidBridge.setVertical) window.AndroidBridge.setVertical(o==='v');
+  // mando/teclado — el contenido está rotado por CSS, así que la navegación
+  // nativa del WebView (que usa las posiciones ya rotadas en pantalla)
+  // necesita ese mismo giro aplicado a arriba/abajo/izquierda/derecha.
+  if(window.AndroidBridge&&window.AndroidBridge.setRotation) window.AndroidBridge.setRotation(parseInt(deg));
+  updateOrientButtonLabel(deg);
 }
+// Vive como opción directa del Menú (no en Ajustes) porque se usa a menudo
+// durante la instalación física del PV — cada pulsación gira 90° más y se
+// aplica/guarda al momento, sin esperar a "Guardar", para que el instalador
+// vea el giro en vivo mientras coloca la pantalla.
+function cycleOrientation(){
+  const order=['0','90','180','270'];
+  const cfg=loadConfig();
+  const idx=order.indexOf(cfg.orient);
+  const next=order[(idx===-1?0:idx+1)%4];
+  cfg.orient=next;
+  persistConfig(cfg);
+  applyOrientation(next);
+  switchView(currentView);
+}
+function updateOrientButtonLabel(o){
+  const labels={'0':'Horizontal (0°)','90':'Vertical (90°)','180':'Horizontal invertido (180°)','270':'Vertical invertido (270°)'};
+  const btn=document.getElementById('menu-orient-label');
+  if(btn) btn.textContent=labels[o]||labels['0'];
+}
+// Sustituye a los <select> de Ajustes que no eran usables con mando: el
+// WebView solo abre el desplegable nativo de un <select> ante un toque/clic
+// real, no ante un click() simulado por JS (que es como respondemos al
+// mando en dispatchKeyEvent/keydown) — así que con mando no había forma de
+// abrirlos. Este panel de opciones es HTML normal controlado por nosotros
+// (un div con onclick sí responde al click() simulado), así que funciona
+// igual con mando que con toque. id es el prefijo compartido por el botón
+// (id-trigger) y el panel (id-panel); el valor "pendiente" (sin guardar) se
+// guarda en data-value del botón — saveConfig()/fillConfigForm() leen y
+// escriben ahí.
+function toggleDropdown(id){
+  const panel=document.getElementById(id+'-panel');
+  if(!panel) return;
+  const isOpen=panel.style.display==='block';
+  document.querySelectorAll('.dd-panel').forEach(p=>p.style.display='none');
+  panel.style.display=isOpen?'none':'block';
+}
+function selectDropdownOption(id,value,label){
+  const trigger=document.getElementById(id+'-trigger');
+  trigger.dataset.value=value;
+  trigger.textContent=label;
+  document.getElementById(id+'-panel').style.display='none';
+}
+function setDropdownValue(id,value,labels){
+  const trigger=document.getElementById(id+'-trigger');
+  if(!trigger) return;
+  const v=String(value);
+  trigger.dataset.value=v;
+  trigger.textContent=labels[v]||v;
+}
+// Cierra el desplegable en cuanto el foco sale de él — con mando (al mover
+// el cursor de foco a otro campo) o con ratón/táctil (al pulsar fuera).
+// focusout burbujea (blur no), así que un único listener en document vale
+// para los tres desplegables. El setTimeout es necesario porque, en el
+// instante del propio focusout, document.activeElement todavía apunta al
+// elemento que pierde el foco, no al que lo recibe.
+document.addEventListener('focusout',function(e){
+  const dd=e.target.closest('.cfg-dropdown');
+  if(!dd) return;
+  setTimeout(()=>{
+    if(!dd.contains(document.activeElement)){
+      const panel=dd.querySelector('.dd-panel');
+      if(panel) panel.style.display='none';
+    }
+  },0);
+});
 function applyBrandColors(c1,c2,t1,t2){
   const r=document.documentElement.style;
   r.setProperty('--pv-primary',c1||DEFAULTS.color1);
@@ -705,25 +903,18 @@ function getISOWeek(d){
 }
 
 // ── 7. LLAMADAS AL WEBSERVICE ─────────────────────────────────
-// TEMPORAL — pruebas locales: tanto webservice.infolot.es (prod) como
-// dev-webservice.infolot.es (dev) solo permiten CORS desde su origen real
-// (GitHub Pages), así que en local hay que pasar por el proxy de
-// serve-local.ps1 (ruta "/proxy", que sí permite cualquier origen) para
-// las dos. El proxy decide a qué host reenviar según "_target" ('prod'|'dev').
-// Revertir a `false` antes de commitear.
 const USE_LOCAL_PROXY_FOR_TESTING = false;
 const PROD_WS_URL = 'https://webservice.infolot.es';
 const DEV_WS_URL = 'https://dev-webservice.infolot.es';
 const LOCAL_PROXY_URL = '/proxy';
-// La pantalla de activación (código de dispositivo) todavía no tiene forma de
-// resolverse de verdad — falta la parte de backend donde soporte da de alta
-// el dispositivo y genera token/password. Hasta que eso exista, la dejamos
-// desactivada: un error de "servicio no activo" cae en el reintento genérico
-// de siempre (mensaje + reintento a los 5s) en vez de bloquear la pantalla.
-const PAIRING_FLOW_ENABLED = false;
-// TEMPORAL — pruebas locales: con PAIRING_FLOW_ENABLED en true, esto permite
-// seguir viendo la app con normalidad aunque la cuenta de pruebas no esté
-// activada en el backend. Revertir a `false` antes de publicar.
+// Pantalla de activación (código de dispositivo) — ver checkPairingActivation()/
+// showPairingScreen() y validateServiceCode() para el emparejamiento real
+// contra el backend (validate-service-code).
+const PAIRING_FLOW_ENABLED = true;
+// Solo para pruebas locales con una cuenta sin activar en el backend: salta
+// la pantalla de emparejamiento aunque el webservice devuelva "servicio no
+// activo", para poder ver la app con normalidad. Debe estar en `false` salvo
+// durante esas pruebas puntuales.
 const FORCE_PAIRED_FOR_TESTING = false;
 const SERVICE_NOT_ACTIVE_MSG = 'El usuario no tiene este servicio activo';
 function isNotActivatedError(e){
@@ -751,6 +942,29 @@ async function wsCall(endpoint,extra={}){
   const json=await resp.json();
   if(json.error) throw new Error(json.error);
   return json.data;
+}
+
+// ── VALIDATE-SERVICE-CODE (activación de dispositivo nuevo) ──
+// A diferencia de wsCall, aquí todavía no hay token/pass — es precisamente
+// lo que se consigue a cambio del código. Solo hacen falta code + app_id.
+async function validateServiceCode(code){
+  const cfg=loadConfig();
+  const useProxy=USE_LOCAL_PROXY_FOR_TESTING&&(cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL);
+  const target=cfg.url===DEV_WS_URL?'dev':'prod';
+  const endpoint='validate-service-code';
+  const url=useProxy?LOCAL_PROXY_URL:`${cfg.url}/ws/${endpoint}`;
+  const body=useProxy
+    ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid}
+    :{code,app_id:DEFAULTS.appid};
+  const resp=await fetch(url,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const json=await resp.json();
+  if(json.error) throw new Error(json.error);
+  return json.data; // {token, pass}
 }
 
 // ── PV-INFO ──────────────────────────────────────────────────
@@ -827,10 +1041,10 @@ async function fetchGames(){
 }
 
 // ── GET-SERVICE-CONFIG ───────────────────────────────────────
-// TEMPORAL — la cuenta de pruebas no tiene el servicio activo, así que
-// get-service-config nunca llega a responder de verdad. Con esto simulamos
-// una respuesta para poder comprobar a ojo que el filtrado de juegos y los
-// colores funcionan. Revertir a `false` antes de publicar.
+// Solo para pruebas locales con una cuenta cuyo get-service-config no
+// responde de verdad: simula una respuesta para comprobar a ojo que el
+// filtrado de juegos y los colores de marca funcionan. Debe estar en `false`
+// salvo durante esas pruebas puntuales.
 const USE_MOCK_SERVICE_CONFIG_FOR_TESTING = false;
 const MOCK_SERVICE_CONFIG = {
   games: ['1','43','7','2','4','25','26'], // sin El Gordo (5) ni LotoTurf (21), para ver que desaparecen
@@ -847,7 +1061,6 @@ async function fetchServiceConfig(){
     const data=USE_MOCK_SERVICE_CONFIG_FOR_TESTING?MOCK_SERVICE_CONFIG:(await wsCall('get-service-config')||{});
     serviceConfig=data;
     applyServiceConfig(data);
-    console.log('[WS] serviceConfig aplicado',data);
   }catch(e){console.error('[WS] get-service-config FAILED:',e.message);}
 }
 

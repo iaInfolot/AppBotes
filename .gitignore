@@ -5,6 +5,7 @@ local.properties
 .idea/
 *.keystore
 *.jks
+keystore.properties
 serve-local.ps1
 serve-local.log
 serve-local.err.log
