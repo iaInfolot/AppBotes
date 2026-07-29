@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.webkit.*
 import org.json.JSONObject
 import java.net.Inet4Address
@@ -194,6 +196,10 @@ class MainActivity : Activity() {
     private fun hideSystemUI() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false)
+            window.insetsController?.let { controller ->
+                controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (
