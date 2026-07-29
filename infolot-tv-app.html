@@ -47,13 +47,17 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #loading-logo-img{height:clamp(3rem,6vw,5.5rem);width:auto;max-width:70vw;object-fit:contain;}
 #loading-step{font-family:var(--font-ui);font-size:var(--fs-sm);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
 
-/* PAIRING (activación de dispositivo nuevo) */
-#pairing-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:210;text-align:center;padding:20px;}
+/* PAIRING (activación de dispositivo nuevo) — dos mitades: info técnica a la
+   izquierda, activación (código/mensaje/botones) a la derecha. */
+#pairing-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:row;align-items:center;justify-content:center;gap:clamp(20px,4vw,60px);z-index:210;padding:20px;}
+#pairing-left{flex:1;display:flex;justify-content:center;}
+#pairing-right{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;}
 #pairing-screen .pairing-title{font-family:var(--font-ui);font-size:var(--fs-lg);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
 #pairing-code{font-family:var(--font-display);font-size:clamp(2rem,5vw,4rem);letter-spacing:8px;color:var(--pv-primary);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(14px,2vh,26px) clamp(24px,3vw,44px);}
 #pairing-screen .pairing-msg{font-family:var(--font-ui);font-size:var(--fs-base);color:var(--text2);max-width:560px;line-height:1.7;}
 #pairing-error{font-family:var(--font-ui);font-size:var(--fs-sm);color:var(--pv-secondary);min-height:.4em;}
 #pairing-check-btn{font-size:var(--fs-lg);padding:clamp(10px,1.4vh,16px) clamp(20px,2vw,32px);}
+#pairing-settings-btn{font-size:var(--fs-sm);}
 #pairing-info{font-family:var(--font-ui);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 22px;max-width:460px;width:100%;text-align:left;}
 #pairing-info-title{font-size:var(--fs-sm);letter-spacing:2px;text-transform:uppercase;color:var(--text2);text-align:center;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border);}
 #pairing-info-grid{display:grid;grid-template-columns:auto 1fr;column-gap:16px;row-gap:7px;font-size:var(--fs-base);}
@@ -272,25 +276,30 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
 </div>
 
 <div id="pairing-screen">
-  <div class="pairing-title">Activación necesaria</div>
-  <div id="pairing-code">----</div>
-  <div class="pairing-msg">Llama a soporte y facilita este código. Cuando te confirmen que ya está activado, pulsa el botón.</div>
-  <button class="btn btn-primary" id="pairing-check-btn" onclick="checkPairingActivation()">Comprobar activación</button>
-  <div id="pairing-error"></div>
-  <div id="pairing-info">
-    <div id="pairing-info-title">Información técnica</div>
-    <div id="pairing-info-grid">
-      <span>Dispositivo</span><span id="pi-device">—</span>
-      <span>Android</span><span id="pi-android">—</span>
-      <span>Fecha local</span><span id="pi-datetime">—</span>
-      <span>Red</span><span id="pi-network">—</span>
-      <span>Señal</span><span id="pi-signal">—</span>
-      <span>IP local</span><span id="pi-ip">—</span>
-      <span>Webservice</span><span id="pi-ws">—</span>
-      <span>Conexión WS</span><span id="pi-wscheck">—</span>
-      <span>App ID</span><span id="pi-appid">—</span>
-      <span>Versión app</span><span id="pi-appver">—</span>
+  <div id="pairing-left">
+    <div id="pairing-info">
+      <div id="pairing-info-title">Información técnica</div>
+      <div id="pairing-info-grid">
+        <span>Dispositivo</span><span id="pi-device">—</span>
+        <span>Android</span><span id="pi-android">—</span>
+        <span>Fecha local</span><span id="pi-datetime">—</span>
+        <span>Red</span><span id="pi-network">—</span>
+        <span>Señal</span><span id="pi-signal">—</span>
+        <span>IP local</span><span id="pi-ip">—</span>
+        <span>Webservice</span><span id="pi-ws">—</span>
+        <span>Conexión WS</span><span id="pi-wscheck">—</span>
+        <span>App ID</span><span id="pi-appid">—</span>
+        <span>Versión app</span><span id="pi-appver">—</span>
+      </div>
     </div>
+  </div>
+  <div id="pairing-right">
+    <div class="pairing-title">Activación necesaria</div>
+    <div id="pairing-code">----</div>
+    <div class="pairing-msg">Llama a soporte al 966 295 825 y facilita este código. Cuando te confirmen que ya está activado, pulsa el botón.</div>
+    <button class="btn btn-primary" id="pairing-check-btn" onclick="checkPairingActivation()">Comprobar activación</button>
+    <div id="pairing-error"></div>
+    <button class="btn btn-secondary" id="pairing-settings-btn" onclick="openConfigFromPairing()">Introducir credenciales manualmente</button>
   </div>
 </div>
 
@@ -502,7 +511,7 @@ const DEFAULTS = {
   tagline:'Juega con nosotros en',
   color1:'#f0b429',
   color2:'#e05c2a',
-  theme:'dark',
+  theme:'light',
   orient:null,
   refreshJackpots:0,
   refreshPvInfo:0,
@@ -681,7 +690,7 @@ function saveConfig(){
     pass:document.getElementById('cfg-pass').value||DEFAULTS.pass,
     pvurl:fv('cfg-pvurl')||DEFAULTS.pvurl,
     tagline:fv('cfg-tagline')||DEFAULTS.tagline,
-    theme:document.getElementById('cfg-theme-trigger').dataset.value||'dark',
+    theme:document.getElementById('cfg-theme-trigger').dataset.value||'light',
     refreshJackpots:parseInt(document.getElementById('cfg-refresh-jackpots').value)||0,
     refreshPvInfo:parseInt(document.getElementById('cfg-refresh-pvinfo').value)||0,
     defaultView:document.getElementById('cfg-default-view-trigger').dataset.value||'jackpots',
@@ -716,7 +725,7 @@ function fillConfigForm(cfg){
   });
   document.getElementById('cfg-pvurl').value=cfg.pvurl||DEFAULTS.pvurl;
   document.getElementById('cfg-tagline').value=cfg.tagline||DEFAULTS.tagline;
-  setDropdownValue('cfg-theme',cfg.theme||'dark',{dark:'Oscuro',light:'Claro'});
+  setDropdownValue('cfg-theme',cfg.theme||'light',{dark:'Oscuro',light:'Claro'});
   document.getElementById('cfg-refresh-jackpots').value=cfg.refreshJackpots||0;
   document.getElementById('cfg-refresh-pvinfo').value=cfg.refreshPvInfo||0;
   setDropdownValue('cfg-default-view',cfg.defaultView||'jackpots',{jackpots:'Botes',results:'Resultados',mixed:'Mixta (Botes + Resultados)'});
@@ -2199,6 +2208,16 @@ function switchView(view){
   if(cfg.autoRotate && view!=='mixed') resetRotateBar(cfg);
 }
 
+// Vía de escape desde la pantalla de activación: en vez de esperar al
+// código+soporte, permite meter directamente unas credenciales ya activas
+// (URL/App ID/Token/Contraseña de un PV real) para entrar sin pasar por el
+// emparejamiento — necesario para que Google Play pueda revisar la app con
+// unas credenciales fijas que no dependan de activar el dispositivo de
+// turno del revisor.
+function openConfigFromPairing(){
+  showConfig();
+  document.getElementById('overlay').classList.add('visible');
+}
 function openMenu(){
   stopAutoRotate();
   showMenu();
