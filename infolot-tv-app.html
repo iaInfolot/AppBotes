@@ -299,7 +299,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
     <div class="pairing-msg">Llama a soporte al 966 295 825 y facilita este código. Cuando te confirmen que ya está activado, pulsa el botón.</div>
     <button class="btn btn-primary" id="pairing-check-btn" onclick="checkPairingActivation()">Comprobar activación</button>
     <div id="pairing-error"></div>
-    <button class="btn btn-secondary" id="pairing-settings-btn" onclick="openConfigFromPairing()">Introducir credenciales manualmente</button>
+    <button class="btn btn-secondary" id="pairing-settings-btn" onclick="openManualLoginFromPairing()">Introducir credenciales manualmente</button>
   </div>
 </div>
 
@@ -469,6 +469,19 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:4px solid var(--p
     <div id="diag-output">Pulsa un botón para ejecutar la llamada...</div>
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn btn-secondary" onclick="showConfig()">← Volver</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-manual-login" style="display:none;width:420px;max-width:95vw;">
+    <button class="close-btn" onclick="closeOverlay()">✕</button>
+    <h2>Credenciales manuales</h2>
+    <div class="modal-sub">Token y contraseña de un punto de venta activo</div>
+    <div class="form-group"><label>Token</label><input type="text" id="manual-token"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="manual-pass"></div>
+    <div id="manual-login-error" style="font-family:var(--font-ui);font-size:var(--fs-sm);color:var(--pv-secondary);min-height:1.3em;margin-bottom:8px;"></div>
+    <div class="cfg-actions">
+      <button class="btn btn-primary" onclick="submitManualLogin()">Entrar</button>
+      <button class="btn btn-secondary" onclick="closeOverlay()">← Volver</button>
     </div>
   </div>
 
@@ -2209,13 +2222,12 @@ function switchView(view){
 }
 
 // Vía de escape desde la pantalla de activación: en vez de esperar al
-// código+soporte, permite meter directamente unas credenciales ya activas
-// (URL/App ID/Token/Contraseña de un PV real) para entrar sin pasar por el
-// emparejamiento — necesario para que Google Play pueda revisar la app con
-// unas credenciales fijas que no dependan de activar el dispositivo de
-// turno del revisor.
-function openConfigFromPairing(){
-  showConfig();
+// código+soporte, permite meter directamente el token/contraseña de un PV
+// ya activo para entrar sin pasar por el emparejamiento — necesario para
+// que Google Play pueda revisar la app con unas credenciales fijas que no
+// dependan de activar el dispositivo de turno del revisor.
+function openManualLoginFromPairing(){
+  showManualLogin();
   document.getElementById('overlay').classList.add('visible');
 }
 function openMenu(){
@@ -2232,6 +2244,7 @@ function showMenu(){
   document.getElementById('modal-menu').style.display='';
   document.getElementById('modal-config').style.display='none';
   document.getElementById('modal-diag').style.display='none';
+  document.getElementById('modal-manual-login').style.display='none';
   setTimeout(()=>{const first=document.querySelector('#modal-menu button');if(first)first.focus();},50);
 }
 // El mando (D-Pad) navega por los campos moviendo el foco, y WebView abre el
@@ -2240,7 +2253,7 @@ function showMenu(){
 // teclado al enfocar) y solo se habilitan para escribir cuando el usuario
 // pulsa Intro/OK sobre ellos; al salir del campo, vuelven a bloquearse.
 function setupDpadTextInputs(){
-  const sel='#modal-config input[type="text"],#modal-config input[type="password"],#modal-config input[type="number"]';
+  const sel='#modal-config input[type="text"],#modal-config input[type="password"],#modal-config input[type="number"],#modal-manual-login input[type="text"],#modal-manual-login input[type="password"]';
   document.querySelectorAll(sel).forEach(el=>{
     if(el.dataset.dpadReady) return;
     el.dataset.dpadReady='1';
@@ -2263,6 +2276,7 @@ function showConfig(){
   document.getElementById('modal-menu').style.display='none';
   document.getElementById('modal-config').style.display='flex';
   document.getElementById('modal-diag').style.display='none';
+  document.getElementById('modal-manual-login').style.display='none';
   setupDpadTextInputs();
   setTimeout(()=>{
     document.querySelectorAll('#modal-config input,#modal-config select,#modal-config button').forEach((el,i)=>el.setAttribute('tabindex',String(i+1)));
@@ -2274,8 +2288,46 @@ function showDiag(){
   document.getElementById('modal-menu').style.display='none';
   document.getElementById('modal-config').style.display='none';
   document.getElementById('modal-diag').style.display='';
+  document.getElementById('modal-manual-login').style.display='none';
 }
 function manualRefresh(){closeOverlay();_booted=false;_loadingInProgress=false;loadAllData();}
+// Modal mínimo para la vía de escape de la pantalla de activación: solo pide
+// token y contraseña (URL/App ID ya son los fijos de producción en
+// DEFAULTS), para no exponer todo Ajustes a quien solo necesita entrar con
+// unas credenciales ya activas — típicamente el equipo de revisión de
+// Google Play, ver openManualLogin().
+function showManualLogin(){
+  document.getElementById('modal-menu').style.display='none';
+  document.getElementById('modal-config').style.display='none';
+  document.getElementById('modal-diag').style.display='none';
+  document.getElementById('modal-manual-login').style.display='flex';
+  document.getElementById('manual-token').value='';
+  document.getElementById('manual-pass').value='';
+  document.getElementById('manual-login-error').textContent='';
+  setupDpadTextInputs();
+  setTimeout(()=>{
+    document.querySelectorAll('#modal-manual-login input,#modal-manual-login button').forEach((el,i)=>el.setAttribute('tabindex',String(i+1)));
+    const first=document.querySelector('#modal-manual-login input');
+    if(first) first.focus();
+  },50);
+}
+function submitManualLogin(){
+  const token=document.getElementById('manual-token').value.trim();
+  const pass=document.getElementById('manual-pass').value;
+  const errEl=document.getElementById('manual-login-error');
+  if(!token||!pass){errEl.textContent='Rellena los dos campos.';return;}
+  errEl.textContent='';
+  const cfg=loadConfig();
+  cfg.url=DEFAULTS.url;
+  cfg.appid=DEFAULTS.appid;
+  cfg.token=token;
+  cfg.pass=pass;
+  persistConfig(cfg);
+  closeOverlay();
+  setupTimers(cfg);
+  _booted=false;_loadingInProgress=false;
+  loadAllData();
+}
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Back')closeOverlay();});
 window.addEventListener('resize',()=>{if(document.querySelectorAll('.jackpot-card').length)fitAmountFonts();});
