@@ -108,7 +108,6 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        hideSystemUI()
 
         webView = WebView(this).apply {
             // Enable D-Pad / remote control navigation
@@ -118,6 +117,10 @@ class MainActivity : Activity() {
         }
         webView.addJavascriptInterface(OrientationBridge(), "AndroidBridge")
         setContentView(webView)
+        // Tiene que ir después de setContentView(): antes de attachar la
+        // decor view a la ventana, window.insetsController puede lanzar NPE
+        // en vez de devolver null (visto en algún OEM con Android 11+).
+        hideSystemUI()
 
         webView.settings.apply {
             javaScriptEnabled                = true
@@ -196,9 +199,12 @@ class MainActivity : Activity() {
     private fun hideSystemUI() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false)
-            window.insetsController?.let { controller ->
-                controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            try {
+                window.insetsController?.let { controller ->
+                    controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                    controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            } catch (e: Exception) {
             }
         } else {
             @Suppress("DEPRECATION")
