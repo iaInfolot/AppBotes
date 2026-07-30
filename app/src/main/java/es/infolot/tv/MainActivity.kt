@@ -2,7 +2,10 @@ package es.infolot.tv
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.UiModeManager
 import android.content.Context
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
@@ -105,9 +108,27 @@ class MainActivity : Activity() {
         const val APP_URL = "https://iainfolot.github.io/AppBotes/infolot-tv-app.html"
     }
 
+    // Una sola app para TV y tablet — en vez de dos builds separados, se
+    // detecta el tipo de dispositivo en tiempo de ejecución (UiModeManager
+    // ya sabe distinguir Android TV de un tablet/móvil normal). Se usa tanto
+    // para fijar la orientación (TV bloqueada en horizontal; el resto rota
+    // de verdad con el sensor) como para avisar al HTML vía ?device=... (ver
+    // IS_TV en infolot-tv-app.html).
+    private fun isRunningOnTv(): Boolean {
+        val uiModeManager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+        return uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val isTv = isRunningOnTv()
+        requestedOrientation = if (isTv) {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        }
 
         webView = WebView(this).apply {
             // Enable D-Pad / remote control navigation
@@ -192,10 +213,11 @@ class MainActivity : Activity() {
         webView.clearCache(true)
         webView.clearHistory()
         // Add timestamp to bust CDN/proxy cache
-        // device=tv|tablet le dice a infolot-tv-app.html en qué variante corre
-        // (ver IS_TV ahí) — en tablet la orientación la gestiona el sensor de
-        // verdad, así que no debe aplicar el giro por CSS pensado para TV.
-        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis() + "&device=" + BuildConfig.DEVICE_TYPE
+        // device=tv|tablet le dice a infolot-tv-app.html en qué tipo de
+        // dispositivo corre (ver IS_TV ahí) — fuera de TV la orientación la
+        // gestiona el sensor de verdad, así que no debe aplicar el giro por
+        // CSS pensado para TV.
+        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis() + "&device=" + (if (isTv) "tv" else "tablet")
         webView.loadUrl(bustUrl)
     }
 

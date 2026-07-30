@@ -26,7 +26,7 @@
             android:exported="true"
             android:immersive="true"
             android:launchMode="singleInstance"
-            android:screenOrientation="${screenOrientation}">
+            android:screenOrientation="fullSensor">
 
             <!-- Standard launcher (phones, tablets) -->
             <intent-filter>
