@@ -73,7 +73,8 @@ body.device-tablet #pairing-info-grid{font-size:calc(var(--fs-base)*1.15);row-ga
 /* Modal "Introducir credenciales manualmente": en tablet, a (casi) toda
    pantalla y con todo más grande — en TV se queda en su tamaño pequeño
    original (420px), pensado para un mando a distancia, no para dedos. */
-body.device-tablet #modal-manual-login{width:92vw;max-width:92vw;height:85vh;max-height:85vh;padding:clamp(30px,5vh,60px) clamp(30px,6vw,80px);}
+body.device-tablet.orient-v #modal-manual-login{width:92vw;max-width:92vw;height:85vh;max-height:85vh;padding:clamp(30px,5vh,60px) clamp(30px,6vw,80px);display:flex;flex-direction:column;justify-content:center;}
+body.device-tablet.orient-h #modal-manual-login{width:min(640px,90vw);max-width:640px;padding:clamp(30px,4vh,50px) clamp(30px,4vw,60px);}
 body.device-tablet #modal-manual-login h2{font-size:calc(var(--fs-lg)*1.6);}
 body.device-tablet #modal-manual-login .modal-sub{font-size:calc(var(--fs-sm)*1.4);margin-bottom:clamp(24px,4vh,48px);}
 body.device-tablet #modal-manual-login .form-group{margin-bottom:clamp(20px,3vh,36px);}
