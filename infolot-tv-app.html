@@ -52,6 +52,12 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #pairing-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:row;align-items:center;justify-content:center;gap:clamp(20px,4vw,60px);z-index:210;padding:20px;}
 #pairing-left{flex:1;display:flex;justify-content:center;}
 #pairing-right{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;}
+/* Vertical (tablet en portrait, o TV girado — ahí todo el bloque ya viene
+   rotado por CSS desde fuera): apilado en vez de lado a lado, activación
+   primero porque es lo que hay que usar, info técnica debajo. */
+body.orient-v #pairing-screen{flex-direction:column;justify-content:flex-start;overflow-y:auto;padding:clamp(20px,4vh,40px) 20px;}
+body.orient-v #pairing-left{flex:none;width:100%;order:2;}
+body.orient-v #pairing-right{flex:none;width:100%;order:1;margin-bottom:clamp(14px,3vh,28px);}
 #pairing-screen .pairing-title{font-family:var(--font-ui);font-size:var(--fs-lg);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
 #pairing-code{font-family:var(--font-display);font-size:clamp(2rem,5vw,4rem);letter-spacing:8px;color:var(--pv-primary);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(14px,2vh,26px) clamp(24px,3vw,44px);}
 #pairing-screen .pairing-msg{font-family:var(--font-ui);font-size:var(--fs-base);color:var(--text2);max-width:560px;line-height:1.7;}
