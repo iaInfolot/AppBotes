@@ -74,13 +74,16 @@ body.device-tablet #pairing-info-grid{font-size:calc(var(--fs-base)*1.15);row-ga
    pantalla y con todo más grande — en TV se queda en su tamaño pequeño
    original (420px), pensado para un mando a distancia, no para dedos. */
 body.device-tablet.orient-v #modal-manual-login{width:92vw;max-width:92vw;height:85vh;max-height:85vh;padding:clamp(30px,5vh,60px) clamp(30px,6vw,80px);display:flex;flex-direction:column;justify-content:center;}
-body.device-tablet.orient-h #modal-manual-login{width:min(640px,90vw);max-width:640px;padding:clamp(30px,4vh,50px) clamp(30px,4vw,60px);}
+body.device-tablet.orient-h #modal-manual-login{width:min(640px,90vw);max-width:640px;padding:clamp(24px,4vh,40px) clamp(28px,4vw,48px);}
 body.device-tablet #modal-manual-login h2{font-size:calc(var(--fs-lg)*1.6);}
 body.device-tablet #modal-manual-login .modal-sub{font-size:calc(var(--fs-sm)*1.4);margin-bottom:clamp(24px,4vh,48px);}
+body.device-tablet.orient-h #modal-manual-login .modal-sub{margin-bottom:clamp(10px,1.5vh,16px);}
 body.device-tablet #modal-manual-login .form-group{margin-bottom:clamp(20px,3vh,36px);}
+body.device-tablet.orient-h #modal-manual-login .form-group{margin-bottom:clamp(10px,1.5vh,16px);}
 body.device-tablet #modal-manual-login .form-group label{font-size:calc(var(--fs-sm)*1.5);margin-bottom:8px;}
 body.device-tablet #modal-manual-login .form-group input{font-size:calc(var(--fs-base)*1.6);padding:clamp(14px,2vh,22px) clamp(16px,2vw,24px);}
 body.device-tablet #modal-manual-login #manual-login-error{font-size:calc(var(--fs-base)*1.2)!important;}
+body.device-tablet.orient-h #modal-manual-login #manual-login-error{font-size:calc(var(--fs-base)*1.05)!important;min-height:1em;}
 body.device-tablet #modal-manual-login .btn{font-size:calc(var(--fs-lg)*1.2);padding:clamp(16px,2.4vh,26px) clamp(28px,4vw,50px);}
 #pairing-screen .pairing-title{font-family:var(--font-ui);font-size:var(--fs-lg);letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
 #pairing-code{font-family:var(--font-display);font-size:clamp(2rem,5vw,4rem);letter-spacing:8px;color:var(--pv-primary);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:clamp(14px,2vh,26px) clamp(24px,3vw,44px);}
