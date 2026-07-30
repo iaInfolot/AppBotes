@@ -367,7 +367,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     <ul class="menu-list">
       <li><button onclick="switchView('jackpots');closeOverlay()"><span class="menu-icon">🏆</span>Botes</button></li>
       <li><button onclick="switchView('results');closeOverlay()"><span class="menu-icon">📋</span>Resultados</button></li>
-      <li><button onclick="switchView('mixed');closeOverlay()"><span class="menu-icon">⊞</span>Vista Mixta</button></li>
+      <li id="menu-item-mixed"><button onclick="switchView('mixed');closeOverlay()"><span class="menu-icon">⊞</span>Vista Mixta</button></li>
       <li><button onclick="cycleOrientation()"><span class="menu-icon">🔄</span><span id="menu-orient-label">Horizontal (0°)</span></button></li>
       <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
       <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
@@ -771,7 +771,8 @@ function applyTheme(t){document.body.classList.toggle('light',t==='light');}
 function applyOrientation(o){
   const deg=['0','90','180','270'].includes(o)?o:'0';
   document.body.classList.remove('orient-h','orient-v','rot-0','rot-90','rot-180','rot-270');
-  document.body.classList.add(deg==='90'||deg==='270'?'orient-v':'orient-h');
+  const isVertical=deg==='90'||deg==='270';
+  document.body.classList.add(isVertical?'orient-v':'orient-h');
   document.body.classList.add('rot-'+deg);
   // Avisa a MainActivity.kt para que remapee las teclas de dirección del
   // mando/teclado — el contenido está rotado por CSS, así que la navegación
@@ -779,6 +780,11 @@ function applyOrientation(o){
   // necesita ese mismo giro aplicado a arriba/abajo/izquierda/derecha.
   if(window.AndroidBridge&&window.AndroidBridge.setRotation) window.AndroidBridge.setRotation(parseInt(deg));
   updateOrientButtonLabel(deg);
+  // De momento Vista Mixta (dos columnas lado a lado) no está pensada para
+  // vertical — se oculta del Menú, y si ya estabas en ella, se cambia a Botes.
+  const mixedItem=document.getElementById('menu-item-mixed');
+  if(mixedItem) mixedItem.style.display=isVertical?'none':'';
+  if(isVertical&&currentView==='mixed') switchView('jackpots');
 }
 // Vive como opción directa del Menú (no en Ajustes) porque se usa a menudo
 // durante la instalación física del PV — cada pulsación gira 90° más y se
@@ -2479,7 +2485,11 @@ async function diagRun(endpoint){
   document.getElementById('app-ver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
   updateClock();setInterval(updateClock,30000);
   setupTimers(cfg);
-  if(cfg.defaultView&&cfg.defaultView!=='jackpots'){
+  // Vista Mixta no está disponible en vertical (ver applyOrientation) — si
+  // esa es la vista por defecto guardada, al arrancar en vertical se ignora
+  // y se queda en Botes.
+  const mixedBlockedAtBoot=cfg.defaultView==='mixed'&&document.body.classList.contains('orient-v');
+  if(cfg.defaultView&&cfg.defaultView!=='jackpots'&&!mixedBlockedAtBoot){
     currentView=cfg.defaultView;
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     const vEl=document.getElementById('view-'+cfg.defaultView);
