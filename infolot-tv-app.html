@@ -529,14 +529,20 @@ const APP_REVISION = '20260730-001';
 const STORAGE_KEY  = 'infolot_cfg_v23';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-// MainActivity.kt manda ?device=tv|tablet en la URL (BuildConfig.DEVICE_TYPE
-// de cada flavor). En tablet la orientación la gestiona el sensor de verdad
-// — no se aplica el giro de contenido por CSS ni el botón manual de
-// Orientación, pensados para TVs que no pueden rotar la pantalla físicamente.
-// Sin el parámetro (p.ej. probando en un navegador de escritorio) se asume TV,
-// que es el comportamiento que llevamos probando toda la sesión.
+// MainActivity.kt manda ?device=tv|tablet en la URL, decidido en tiempo de
+// ejecución según UiModeManager (una sola app para los dos casos, ver
+// isRunningOnTv() en MainActivity.kt). En tablet la orientación la gestiona
+// el sensor de verdad — no se aplica el giro de contenido por CSS ni el
+// botón manual de Orientación, pensados para TVs que no pueden rotar la
+// pantalla físicamente. Sin el parámetro (p.ej. probando en un navegador de
+// escritorio) se asume TV, que es el comportamiento que llevamos probando
+// toda la sesión.
 const DEVICE_TYPE = new URLSearchParams(location.search).get('device') || 'tv';
 const IS_TV = DEVICE_TYPE !== 'tablet';
+// Marca en <body> para poder limitar en CSS cualquier ajuste de tablet
+// (.device-tablet ...) sin ningún riesgo de afectar a TV — la clase
+// contraria ni siquiera existe en ese caso.
+document.body.classList.add(IS_TV?'device-tv':'device-tablet');
 
 const DEFAULTS = {
   url:'https://webservice.infolot.es',
