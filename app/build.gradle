@@ -45,7 +45,12 @@ android {
             versionCode 1
             versionName "1.0.0"
             buildConfigField "String", "DEVICE_TYPE", '"tablet"'
-            manifestPlaceholders = [screenOrientation: "unspecified"]
+            // "unspecified" solo deja rotar dentro del eje "natural" del
+            // dispositivo — en una tablet grande como la Pixel Tablet, ese eje
+            // es horizontal, así que 180° (mismo eje, invertido) funcionaba
+            // pero vertical no giraba nunca. fullSensor fuerza las 4
+            // orientaciones de verdad, sin importar el eje natural.
+            manifestPlaceholders = [screenOrientation: "fullSensor"]
         }
     }
 
