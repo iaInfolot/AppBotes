@@ -21,6 +21,34 @@ android {
         versionName "1.5.0"
     }
 
+    buildFeatures {
+        buildConfig true
+    }
+
+    // Dos variantes del mismo código: "tv" (cajas Android TV, mando a
+    // distancia, orientación simulada por CSS porque el hardware no gira de
+    // verdad) y "tablet" (pantalla táctil, rota de verdad con el sensor).
+    // screenOrientation se resuelve vía manifest placeholder según el flavor
+    // (ver AndroidManifest.xml); DEVICE_TYPE se manda al WebView como
+    // parámetro de URL para que infolot-tv-app.html sepa en qué variante
+    // corre (ver MainActivity.APP_URL / IS_TV en el HTML).
+    flavorDimensions "device"
+    productFlavors {
+        tv {
+            dimension "device"
+            buildConfigField "String", "DEVICE_TYPE", '"tv"'
+            manifestPlaceholders = [screenOrientation: "landscape"]
+        }
+        tablet {
+            dimension "device"
+            applicationId "es.infolot.tv.tablet"
+            versionCode 1
+            versionName "1.0.0"
+            buildConfigField "String", "DEVICE_TYPE", '"tablet"'
+            manifestPlaceholders = [screenOrientation: "unspecified"]
+        }
+    }
+
     signingConfigs {
         release {
             if (keystorePropertiesFile.exists()) {

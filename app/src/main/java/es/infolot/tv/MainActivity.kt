@@ -192,7 +192,10 @@ class MainActivity : Activity() {
         webView.clearCache(true)
         webView.clearHistory()
         // Add timestamp to bust CDN/proxy cache
-        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis()
+        // device=tv|tablet le dice a infolot-tv-app.html en qué variante corre
+        // (ver IS_TV ahí) — en tablet la orientación la gestiona el sensor de
+        // verdad, así que no debe aplicar el giro por CSS pensado para TV.
+        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis() + "&device=" + BuildConfig.DEVICE_TYPE
         webView.loadUrl(bustUrl)
     }
 

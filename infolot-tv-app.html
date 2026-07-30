@@ -368,7 +368,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
       <li><button onclick="switchView('jackpots');closeOverlay()"><span class="menu-icon">🏆</span>Botes</button></li>
       <li><button onclick="switchView('results');closeOverlay()"><span class="menu-icon">📋</span>Resultados</button></li>
       <li id="menu-item-mixed"><button onclick="switchView('mixed');closeOverlay()"><span class="menu-icon">⊞</span>Vista Mixta</button></li>
-      <li><button onclick="cycleOrientation()"><span class="menu-icon">🔄</span><span id="menu-orient-label">Horizontal (0°)</span></button></li>
+      <li id="menu-item-orient"><button onclick="cycleOrientation()"><span class="menu-icon">🔄</span><span id="menu-orient-label">Horizontal (0°)</span></button></li>
       <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
       <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
     </ul>
@@ -513,6 +513,14 @@ const APP_REVISION = '20260730-001';
 const STORAGE_KEY  = 'infolot_cfg_v23';
 const LOGO_BASE    = 'https://panel.infolot.es';
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+// MainActivity.kt manda ?device=tv|tablet en la URL (BuildConfig.DEVICE_TYPE
+// de cada flavor). En tablet la orientación la gestiona el sensor de verdad
+// — no se aplica el giro de contenido por CSS ni el botón manual de
+// Orientación, pensados para TVs que no pueden rotar la pantalla físicamente.
+// Sin el parámetro (p.ej. probando en un navegador de escritorio) se asume TV,
+// que es el comportamiento que llevamos probando toda la sesión.
+const DEVICE_TYPE = new URLSearchParams(location.search).get('device') || 'tv';
+const IS_TV = DEVICE_TYPE !== 'tablet';
 
 const DEFAULTS = {
   url:'https://webservice.infolot.es',
@@ -717,7 +725,9 @@ function saveConfig(){
   cfg.paired = loadConfig().paired || false;
   cfg.orient = loadConfig().orient || DEFAULTS.orient;
   persistConfig(cfg);
-  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(DEFAULTS.color1,DEFAULTS.color2);applyPvUrl(cfg.pvurl);
+  applyTheme(cfg.theme);
+  if(IS_TV) applyOrientation(cfg.orient); else updateRealOrientation();
+  applyBrandColors(DEFAULTS.color1,DEFAULTS.color2);applyPvUrl(cfg.pvurl);
   updateDemoBadge(cfg);
   closeOverlay();
   setupTimers(cfg);
@@ -763,11 +773,22 @@ function detectOrientation(){
   try{const t=screen.orientation?screen.orientation.type:'';if(t.includes('portrait'))return'90';if(t.includes('landscape'))return'0';return window.innerHeight>window.innerWidth?'90':'0';}catch{return'0';}
 }
 function applyTheme(t){document.body.classList.toggle('light',t==='light');}
+// De momento Vista Mixta (dos columnas lado a lado) no está pensada para
+// vertical — se oculta del Menú, y si ya estabas en ella (o es la vista por
+// defecto), se cambia a Botes. Usado tanto en TV (giro manual) como en
+// tablet (giro real por sensor).
+function updateMixedViewAvailability(isVertical){
+  const mixedItem=document.getElementById('menu-item-mixed');
+  if(mixedItem) mixedItem.style.display=isVertical?'none':'';
+  if(isVertical&&currentView==='mixed') switchView('jackpots');
+}
 // o es el ángulo de rotación como texto: '0'|'90'|'180'|'270'. orient-h/
 // orient-v se mantienen (derivadas del ángulo) porque el resto del código
 // las usa para decidir el layout (columnas, tamaños de bola...) — 0°/180°
 // tienen la misma forma de pantalla (horizontal), 90°/270° la misma entre
 // sí (vertical), así que ese código no necesita enterarse del ángulo exacto.
+// Solo se usa en TV — en tablet la pantalla ya rota de verdad con el sensor,
+// ver updateRealOrientation().
 function applyOrientation(o){
   const deg=['0','90','180','270'].includes(o)?o:'0';
   document.body.classList.remove('orient-h','orient-v','rot-0','rot-90','rot-180','rot-270');
@@ -780,11 +801,18 @@ function applyOrientation(o){
   // necesita ese mismo giro aplicado a arriba/abajo/izquierda/derecha.
   if(window.AndroidBridge&&window.AndroidBridge.setRotation) window.AndroidBridge.setRotation(parseInt(deg));
   updateOrientButtonLabel(deg);
-  // De momento Vista Mixta (dos columnas lado a lado) no está pensada para
-  // vertical — se oculta del Menú, y si ya estabas en ella, se cambia a Botes.
-  const mixedItem=document.getElementById('menu-item-mixed');
-  if(mixedItem) mixedItem.style.display=isVertical?'none':'';
-  if(isVertical&&currentView==='mixed') switchView('jackpots');
+  updateMixedViewAvailability(isVertical);
+}
+// Tablet: no hay ángulo que guardar ni girar por CSS — el sensor ya presenta
+// la ventana en la orientación real, así que solo hace falta mantener
+// orient-h/orient-v (para el layout responsive) sincronizados con las
+// dimensiones reales. Se llama una vez al arrancar y en cada 'resize'.
+function updateRealOrientation(){
+  document.body.classList.remove('orient-h','orient-v','rot-0','rot-90','rot-180','rot-270');
+  const isVertical=window.innerHeight>window.innerWidth;
+  document.body.classList.add(isVertical?'orient-v':'orient-h');
+  document.body.classList.add('rot-0');
+  updateMixedViewAvailability(isVertical);
 }
 // Vive como opción directa del Menú (no en Ajustes) porque se usa a menudo
 // durante la instalación física del PV — cada pulsación gira 90° más y se
@@ -2479,8 +2507,18 @@ async function diagRun(endpoint){
 
 (function boot(){
   const cfg=loadConfig();
-  if(cfg.orient===null){cfg.orient=detectOrientation();persistConfig(cfg);}
-  applyTheme(cfg.theme);applyOrientation(cfg.orient);applyBrandColors(cfg.color1,cfg.color2);applyPvUrl(cfg.pvurl);
+  // Orientación del Menú (giro manual) solo tiene sentido en TV — en tablet
+  // el sensor ya rota de verdad, ver updateRealOrientation() más abajo.
+  const orientMenuItem=document.getElementById('menu-item-orient');
+  if(orientMenuItem) orientMenuItem.style.display=IS_TV?'':'none';
+  if(IS_TV){
+    if(cfg.orient===null){cfg.orient=detectOrientation();persistConfig(cfg);}
+    applyOrientation(cfg.orient);
+  }else{
+    updateRealOrientation();
+    window.addEventListener('resize',updateRealOrientation);
+  }
+  applyTheme(cfg.theme);applyBrandColors(cfg.color1,cfg.color2);applyPvUrl(cfg.pvurl);
   updateDemoBadge(cfg);
   document.getElementById('app-ver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
   updateClock();setInterval(updateClock,30000);
