@@ -57,9 +57,24 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
    Va con .device-tablet a propósito — en TV "vertical" ya se resuelve
    rotando el bloque entero por CSS (ver body.rot-90 más abajo), así que
    esta regla NUNCA debe llegarle o descuadraría esa rotación. */
-body.device-tablet.orient-v #pairing-screen{flex-direction:column;justify-content:center;overflow-y:auto;padding:clamp(20px,4vh,40px) 20px;gap:clamp(20px,4vh,40px);}
-body.device-tablet.orient-v #pairing-left{flex:none;width:100%;order:2;}
+body.device-tablet.orient-v #pairing-screen{flex-direction:column;justify-content:flex-start;overflow-y:auto;padding:clamp(16px,3vh,32px) 20px;gap:clamp(16px,2.5vh,28px);}
+body.device-tablet.orient-v #pairing-left{flex:1;width:100%;order:2;min-height:0;}
 body.device-tablet.orient-v #pairing-right{flex:none;width:100%;order:1;}
+/* La info técnica se reserva la mitad inferior de la pantalla (el flex:1 de
+   arriba hace que #pairing-left crezca hasta llenar lo que sobra debajo de
+   la activación). El cuadro (#pairing-info) ahora se estira a esa altura
+   completa (height:100%, sin align-items:center/flex-end) para no dejar
+   ningún hueco muerto arriba ni abajo — el contenido de dentro se reparte
+   con flex-direction:column + align-content:center en el grid. */
+body.device-tablet.orient-v #pairing-info{width:100%;max-width:680px;height:100%;padding:clamp(14px,2vh,20px) clamp(24px,3.5vw,30px) clamp(12px,1.8vh,18px);display:flex;flex-direction:column;}
+body.device-tablet.orient-v #pairing-info-title{font-size:calc(var(--fs-base)*2);padding-bottom:clamp(6px,1vh,10px);margin-bottom:clamp(6px,1vh,10px);}
+body.device-tablet.orient-v #pairing-info-grid{flex:1;align-content:center;font-size:calc(var(--fs-base)*2.4);row-gap:clamp(20px,3vh,20px);}
+/* Textos de la activación (arriba) también más grandes en vertical. */
+body.device-tablet.orient-v #pairing-screen .pairing-title{font-size:calc(var(--fs-lg)*1.7);color:var(--text);font-weight:700;}
+body.device-tablet.orient-v #pairing-screen .pairing-msg{font-size:calc(var(--fs-base)*2);max-width:720px;}
+body.device-tablet.orient-v #pairing-check-btn{font-size:calc(var(--fs-lg)*1.6);padding:clamp(18px,2.6vh,28px) clamp(32px,5vw,56px);}
+body.device-tablet.orient-v #pairing-settings-btn{font-size:calc(var(--fs-base)*2);}
+body.device-tablet.orient-v #pairing-error{font-size:calc(var(--fs-sm)*2.2);}
 /* Tablet en general (las dos orientaciones): todo más grande que en TV —
    se ve/sujeta más de cerca y sobra margen en pantalla. */
 body.device-tablet #pairing-screen .pairing-title{font-size:calc(var(--fs-lg)*1.4);}
@@ -70,9 +85,18 @@ body.device-tablet #pairing-settings-btn{font-size:var(--fs-base);}
 body.device-tablet #pairing-info{max-width:680px;padding:20px 30px;}
 body.device-tablet #pairing-info-title{font-size:calc(var(--fs-base)*1.1);}
 body.device-tablet #pairing-info-grid{font-size:calc(var(--fs-base)*1.15);row-gap:12px;}
+/* Horizontal en tablet: el cuadro de información técnica crece para ocupar
+   casi todo el alto de la mitad izquierda (en vertical va apilado y no
+   aplica, ver body.device-tablet.orient-v más arriba). */
+body.device-tablet.orient-h #pairing-info{height:82vh;max-height:82vh;padding:clamp(24px,4vh,48px) clamp(28px,3vw,48px);display:flex;flex-direction:column;}
+body.device-tablet.orient-h #pairing-info-title{font-size:calc(var(--fs-base)*1.35);padding-bottom:clamp(14px,2vh,24px);margin-bottom:clamp(14px,2vh,24px);}
+body.device-tablet.orient-h #pairing-info-grid{flex:1;align-content:center;font-size:calc(var(--fs-base)*1.5);row-gap:clamp(18px,3vh,32px);}
 /* Modal "Introducir credenciales manualmente": en tablet, a (casi) toda
    pantalla y con todo más grande — en TV se queda en su tamaño pequeño
-   original (420px), pensado para un mando a distancia, no para dedos. */
+   original (420px), pensado para un mando a distancia, no para dedos.
+   El ancho base va aquí (antes estaba en un style="" inline en el HTML,
+   que por especificidad ganaba siempre a estas reglas y las anulaba). */
+#modal-manual-login{width:420px;max-width:95vw;}
 body.device-tablet.orient-v #modal-manual-login{width:92vw;max-width:92vw;height:85vh;max-height:85vh;padding:clamp(30px,5vh,60px) clamp(30px,6vw,80px);display:flex;flex-direction:column;justify-content:center;}
 body.device-tablet.orient-h #modal-manual-login{width:min(640px,90vw);max-width:640px;padding:clamp(24px,4vh,40px) clamp(28px,4vw,48px);}
 body.device-tablet #modal-manual-login h2{font-size:calc(var(--fs-lg)*1.6);}
@@ -205,7 +229,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 .result-block-bar{width:3px;height:clamp(18px,2.5vh,26px);border-radius:2px;flex-shrink:0;}
 .result-block-logo{width:clamp(16px,2.2vh,24px);height:clamp(16px,2.2vh,24px);object-fit:contain;flex-shrink:0;}
 .result-block-name{font-family:var(--font-ui);font-size:calc(var(--fs-base)*1);font-weight:700;letter-spacing:.5px;color:var(--text);flex:1;}
+/* Tablet horizontal: cabecera de cada recuadro (icono + nombre) más grande. */
+body.device-tablet.orient-h .result-block-header{padding:clamp(8px,1vh,12px) clamp(10px,1.2vw,16px);gap:10px;}
+body.device-tablet.orient-h .result-block-bar{width:4px;height:clamp(26px,3.4vh,34px);}
+body.device-tablet.orient-h .result-block-logo{width:clamp(24px,3vh,32px);height:clamp(24px,3vh,32px);}
+body.device-tablet.orient-h .result-block-name{font-size:calc(var(--fs-base)*1.5);}
 .rb-body{padding:clamp(4px,.5vh,6px) clamp(6px,.8vw,10px);overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column;}
+/* Tablet horizontal: centrar verticalmente el contenido de cada recuadro de
+   resultados cuando sobra alto (ver ajustes de tamaño de bola más abajo,
+   en recalcBallsInBlock), en vez de quedarse pegado arriba. */
+body.device-tablet.orient-h .rb-body{justify-content:center;}
 .ball-row{display:flex;flex-wrap:nowrap;align-items:center;gap:2px;width:100%;}
 .ball-sized{display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-weight:700;flex-shrink:0;}
 .ball-sep{display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text);background:var(--border);border-radius:3px;padding:1px 3px;margin:0 1px;flex-shrink:0;line-height:1;font-weight:700;opacity:.9;}
@@ -311,7 +344,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
 <div id="pairing-screen">
   <div id="pairing-left">
     <div id="pairing-info">
-      <div id="pairing-info-title">Información técnica</div>
+      <div id="pairing-info-title"><strong>Información técnica</strong></div>
       <div id="pairing-info-grid">
         <span>Dispositivo</span><span id="pi-device">—</span>
         <span>Android</span><span id="pi-android">—</span>
@@ -327,9 +360,9 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     </div>
   </div>
   <div id="pairing-right">
-    <div class="pairing-title">Activación necesaria</div>
+    <div class="pairing-title"><strong>Activación necesaria</strong></div>
     <div id="pairing-code">----</div>
-    <div class="pairing-msg">Llama a soporte al 966 295 825 y facilita este código. Cuando te confirmen que ya está activado, pulsa el botón.</div>
+    <div class="pairing-msg">Llama al <b>966 295 825</b> y facilita este código. Pulsa el botón cuando to lo indiquen.</div>
     <button class="btn btn-primary" id="pairing-check-btn" onclick="checkPairingActivation()">Comprobar activación</button>
     <div id="pairing-error"></div>
     <button class="btn btn-secondary" id="pairing-settings-btn" onclick="openManualLoginFromPairing()">Introducir credenciales manualmente</button>
@@ -505,7 +538,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     </div>
   </div>
 
-  <div class="modal" id="modal-manual-login" style="display:none;width:420px;max-width:95vw;">
+  <div class="modal" id="modal-manual-login" style="display:none;">
     <button class="close-btn" onclick="closeOverlay()">✕</button>
     <h2>Credenciales manuales</h2>
     <div class="modal-sub">Token y contraseña de un punto de venta activo</div>
@@ -1443,7 +1476,21 @@ function buildBlockHTML(gameId,draws,availW){
         entries=draws||[];
       }
       const isCompact=entries.length>1; // con 2+ sorteos apilados, no se puede dejar que las bolas crezcan sin límite con el ancho
-      const headerMB=isCompact?'2px':'6px', drawMB=isCompact?'3px':'8px', drawPB=isCompact?'3px':'6px';
+      // En tablet horizontal sobra alto (ver recalcBallsInBlock), así que en
+      // vez del apretado "isCompact" de TV se deja más margen entre sorteos
+      // y las fechas/código más grandes — no toca Lotería Nacional/QuiniGol/
+      // La Quiniela porque esos van por otras ramas de renderizado.
+      const isTabletH=document.body.classList.contains('device-tablet')&&!document.body.classList.contains('orient-v');
+      // Bonoloto puede llegar a tener 6-7 sorteos apilados en la misma
+      // semana (resto: 2, como mucho 3) — con tantas filas no le cabe el
+      // mismo margen que a los demás, así que a partir de 5 filas usa su
+      // propio margen (más pequeño que el resto, pero no tan apretado como
+      // TV) para llenar el bloque sin desbordar. El tamaño de fecha/código
+      // sí es igual que en el resto de sorteos, no cae al de TV.
+      const manyRows=isTabletH&&entries.length>=5;
+      const headerMB=isTabletH?(manyRows?'6px':'10px'):(isCompact?'2px':'6px'), drawMB=isTabletH?(manyRows?'8px':'10px'):(isCompact?'3px':'8px'), drawPB=isTabletH?(manyRows?'7px':'8px'):(isCompact?'3px':'6px');
+      const dateFs=isTabletH?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
+      const codeFs=isTabletH?'calc(var(--fs-xs)*1.25)':'var(--fs-xs)';
       const hasE=game.num_extra_per_bet>0,hasC=game.is_num_complementary===1,hasR=game.is_num_refund===1,hasCA=game.is_code_a===1;
       const fd=(draws&&draws[0])||{};
       const nMain=Array.isArray(fd.bet)?fd.bet.length:(game.num_bet_per_game||6);
@@ -1468,7 +1515,7 @@ function buildBlockHTML(gameId,draws,availW){
           if(hasE) rowPh+=bsep('+')+ballsArr(Array(nExtra).fill('·'),'var(--muted)','transparent',extShape,bsz);
           if(hasC) rowPh+=bsep('C')+mkBall('·','var(--muted)','transparent',compShape,bsz);
           if(hasR) rowPh+=bsep('R')+mkBall('·','var(--muted)','transparent',refShape,bsz);
-          bodyHtml+=`<div style="${ds}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${headerMB};gap:4px"><span class="rb-date" style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span><span style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);font-style:italic">Pendiente</span></div><div style="opacity:.35">${brow(rowPh,nMain,nExtra,hasC?1:0,hasR?1:0)}</div></div>`;
+          bodyHtml+=`<div style="${ds}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${headerMB};gap:4px"><span class="rb-date" style="font-family:var(--font-ui);font-size:${dateFs};font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span><span style="font-family:var(--font-ui);font-size:${codeFs};color:var(--muted);font-style:italic">Pendiente</span></div><div style="opacity:.35">${brow(rowPh,nMain,nExtra,hasC?1:0,hasR?1:0)}</div></div>`;
           return;
         }
         let row=ballsArr(r.bet,numBg,numFg,numShape,bsz);
@@ -1481,8 +1528,8 @@ function buildBlockHTML(gameId,draws,availW){
         const codeAFg=serviceConfig.styles?.code_a_fg_color||'var(--success)';
         const codeABorder=serviceConfig.styles?.code_a_bg_color||'rgba(39,201,122,.3)';
         const codeAHtml=hasCA&&r.other?.code_a?.length
-          ?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;background:${codeABg};border:1px solid ${codeABorder};border-radius:4px;padding:1px 6px;white-space:nowrap"><span style="color:var(--text2)">${esc(game.code_a_name||'Código')}</span><span style="color:${codeAFg}">${esc(r.other.code_a[0])}</span></span>`:'';
-        bodyHtml+=`<div style="${ds}"><div class="rb-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${headerMB};gap:4px"><span class="rb-date" style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span>${codeAHtml}${extraLabelHtml}</div>${brow(row,nMain,nExtra,nComp,nRef)}</div>`;
+          ?`<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-ui);font-size:${codeFs};font-weight:600;background:${codeABg};border:1px solid ${codeABorder};border-radius:4px;padding:1px 6px;white-space:nowrap"><span style="color:var(--text2)">${esc(game.code_a_name||'Código')}</span><span style="color:${codeAFg}">${esc(r.other.code_a[0])}</span></span>`:'';
+        bodyHtml+=`<div style="${ds}"><div class="rb-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${headerMB};gap:4px"><span class="rb-date" style="font-family:var(--font-ui);font-size:${dateFs};font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span>${codeAHtml}${extraLabelHtml}</div>${brow(row,nMain,nExtra,nComp,nRef)}</div>`;
       });
       if(sideBySide) bodyHtml+=`</div>`;
     } else if(gt==='match'){
@@ -1918,15 +1965,32 @@ function recalcBallsInBlock(block){
     // práctica, con este tope tan holgado, el ancho real es quien manda.
     maxSz=Math.max(14,Math.min(90,heightSz));
   } else {
-    const maxSzCap=rowCount>1?([1,43].includes(gameId)?32:gameId===2?27:44):(gameId===5?26:30); // Euromillón/EuroDreams grandes; Primitiva/Gordo más pequeños (necesitan compartir alto con QuiniGol); Bonoloto/LotoTurf: manda la altura real disponible
+    const maxSzCap=rowCount>1?(gameId===1?38:gameId===43?32:gameId===2?27:44):(gameId===5?26:30); // Euromillón grande, EuroDreams igual que antes; Primitiva/Gordo más pequeños (necesitan compartir alto con QuiniGol); Bonoloto/LotoTurf: manda la altura real disponible
     maxSz=maxSzCap;
     // Con varios sorteos apilados, el nº de filas puede variar (p.ej. Bonoloto suma el sorteo del domingo):
     // se limita también por el alto real disponible para que la última fila no quede cortada por el bloque.
     if(rowCount>1){
+      // En tablet horizontal el tope de arriba (maxSzCap) está pensado para
+      // TV y deja tamaño de sobra sin usar, pero subirlo demasiado (se probó
+      // con 90 fijo) hace que las bolas crezcan más de lo que el bloque
+      // puede contener y se solape con los bloques vecinos — un aumento
+      // moderado (*1.3, conservando la proporción entre juegos) en vez de
+      // un tope plano. Solo afecta a bloques con más de una fila (los
+      // mencionados: Euromillón, EuroDreams, La Primitiva, Bonoloto...); los
+      // de una sola fila (Quiniela, QuiniGol, Gordo, LotoTurf) no se tocan.
+      const isTabletDevice=document.body.classList.contains('device-tablet');
+      // El hueco real disponible (heightSz de abajo) ya manda para bloques
+      // con muchas filas, así que no hace falta bajar este tope ahí también.
+      const heightCapForTablet=isTabletDevice?Math.round(maxSzCap*1.3):maxSzCap;
       const availH=Math.max(40,body.clientHeight);
-      const perRowOverhead=24; // etiqueta de fecha + márgenes entre sorteos
+      // Bonoloto puede llegar a 6-7 filas apiladas (resto: 2-3) y usa su
+      // propio margen más pequeño (ver "manyRows" en buildBlockHTML) — el
+      // hueco fijo por fila tiene que coincidir con ese margen menor, o el
+      // cálculo cree que sobra más alto del que realmente hay y desborda.
+      const manyRows=rowCount>=5;
+      const perRowOverhead=isTabletDevice?(manyRows?34:40):24; // etiqueta de fecha + márgenes entre sorteos
       const heightSz=Math.floor(availH/rowCount)-perRowOverhead;
-      maxSz=Math.max(14,Math.min(maxSzCap,heightSz));
+      maxSz=Math.max(14,Math.min(heightCapForTablet,heightSz));
     }
   }
   rows.forEach(row=>{
@@ -2046,12 +2110,12 @@ function makeQuinielaBlock(quiDraws){
     }
   }
 
-  function logoImg(src){return src?`<img style="width:20px;height:20px;object-fit:contain;flex-shrink:0" src="${esc(src)}" alt="" onerror="hideImg(this)">`:''}
+  function logoImg(src){return src?`<img class="result-block-logo" src="${esc(src)}" alt="" onerror="hideImg(this)">`:''}
   const block=document.createElement('div');
   block.className='result-block';
   block.dataset.gameId=25;
   block.style.cssText='overflow:hidden;display:flex;flex-direction:column;border-radius:var(--radius);';
-  block.innerHTML=`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--border);flex-shrink:0"><div style="width:3px;height:22px;border-radius:2px;flex-shrink:0;background:${quiColor}"></div>${logoImg(logoSrcQui)}<span style="font-family:var(--font-ui);font-size:calc(var(--fs-base)*1);font-weight:700;color:var(--text);white-space:nowrap">${esc(gameQui.name||'La Quiniela')}</span></div><div class="rb-body" style="padding:4px 8px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column;align-items:stretch">${bodyHtml}</div>`;
+  block.innerHTML=`<div class="result-block-header"><div class="result-block-bar" style="background:${quiColor}"></div>${logoImg(logoSrcQui)}<span class="result-block-name" style="white-space:nowrap">${esc(gameQui.name||'La Quiniela')}</span></div><div class="rb-body" style="padding:4px 8px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column;align-items:stretch">${bodyHtml}</div>`;
   return block;
 }
 
@@ -2096,12 +2160,12 @@ function makeQuiniGolBlock(qgDraws){
     });
   }
 
-  function logoImg(src){return src?`<img style="width:20px;height:20px;object-fit:contain;flex-shrink:0" src="${esc(src)}" alt="" onerror="hideImg(this)">`:''}
+  function logoImg(src){return src?`<img class="result-block-logo" src="${esc(src)}" alt="" onerror="hideImg(this)">`:''}
   const block=document.createElement('div');
   block.className='result-block';
   block.dataset.gameId=26;
   block.style.cssText='overflow:hidden;display:flex;flex-direction:column;border-radius:var(--radius);';
-  block.innerHTML=`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--border);flex-shrink:0"><div style="width:3px;height:22px;border-radius:2px;flex-shrink:0;background:${qgColor}"></div>${logoImg(logoSrcQG)}<span style="font-family:var(--font-ui);font-size:calc(var(--fs-base)*1);font-weight:700;color:var(--text);white-space:nowrap">${esc(gameQG.name||'QuiniGol')}</span></div><div class="rb-body" style="padding:4px 8px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column">${bodyHtml}</div>`;
+  block.innerHTML=`<div class="result-block-header"><div class="result-block-bar" style="background:${qgColor}"></div>${logoImg(logoSrcQG)}<span class="result-block-name" style="white-space:nowrap">${esc(gameQG.name||'QuiniGol')}</span></div><div class="rb-body" style="padding:4px 8px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column">${bodyHtml}</div>`;
   return block;
 }
 
