@@ -291,7 +291,7 @@ body.device-tablet #modal-config .form-group label{font-size:calc(var(--fs-sm)*2
 body.device-tablet #modal-config .form-group input,body.device-tablet #modal-config .form-group select{font-size:calc(var(--fs-base)*1.3);padding:clamp(10px,1.4vh,16px) clamp(12px,1.4vw,18px);}
 body.device-tablet #modal-config .dd-trigger{font-size:calc(var(--fs-base)*1.3);padding:clamp(10px,1.4vh,16px) clamp(12px,1.4vw,18px);}
 body.device-tablet #modal-config .dd-option{font-size:calc(var(--fs-base)*1.3);padding:clamp(10px,1.4vh,16px) clamp(12px,1.4vw,18px);}
-body.device-tablet #modal-config .cfg-grid{min-height:0;overflow-y:auto;}
+body.device-tablet #modal-config .cfg-grid{min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 6px;margin:0 -6px;}
 body.device-tablet #modal-config .cfg-actions{padding-top:clamp(16px,2vh,24px);flex-shrink:0;}
 /* Vertical: una sola columna, y cada opción en una fila (etiqueta a la
    izquierda, campo a la derecha) en vez de etiqueta arriba/campo debajo —
@@ -491,33 +491,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     <div class="modal-sub">Parámetros del sistema</div>
 
     <div class="cfg-grid">
-      <!-- COL 1: WebService -->
-      <div class="cfg-col">
-        <div class="cfg-divider">WebService</div>
-        <div class="form-group"><label>URL del WebService</label><input type="text" id="cfg-url"></div>
-        <div class="form-group"><label>URL del Proxy</label><input type="text" id="cfg-proxy"></div>
-        <div class="form-group"><label>App ID</label><input type="text" id="cfg-appid"></div>
-        <div class="form-group"><label>Token</label><input type="text" id="cfg-token"></div>
-        <div class="form-group"><label>Contraseña</label><input type="password" id="cfg-pass"></div>
-      </div>
-
-      <!-- COL 2: PV & Apariencia -->
-      <div class="cfg-col">
-        <div class="cfg-divider">Punto de Venta &amp; Apariencia</div>
-        <div class="form-group"><label>URL web del PV</label><input type="text" id="cfg-pvurl" placeholder="https://www.webpremium.eu"></div>
-        <div class="form-group"><label>Texto tagline</label><input type="text" id="cfg-tagline" placeholder="Juega con nosotros en"></div>
-        <div class="form-group"><label>Modo</label>
-          <div class="cfg-dropdown">
-            <button type="button" class="dd-trigger" id="cfg-theme-trigger" onclick="toggleDropdown('cfg-theme')"></button>
-            <div class="dd-panel" id="cfg-theme-panel" style="display:none">
-              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-theme','dark','Oscuro')">Oscuro</div>
-              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-theme','light','Claro')">Claro</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- COL 3: Timing & Mode -->
+      <!-- COL 1: Timing & Mode -->
       <div class="cfg-col">
         <div class="cfg-divider">Temporización &amp; Modo</div>
         <div class="form-group"><label>Vista por defecto</label>
@@ -526,7 +500,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
             <div class="dd-panel" id="cfg-default-view-panel" style="display:none">
               <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-default-view','jackpots','Botes')">Botes</div>
               <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-default-view','results','Resultados')">Resultados</div>
-              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-default-view','mixed','Mixta (Botes + Resultados)')">Mixta (Botes + Resultados)</div>
+              <div class="dd-option" id="cfg-default-view-mixed-option" tabindex="0" onclick="selectDropdownOption('cfg-default-view','mixed','Mixta (Botes + Resultados)')">Mixta (Botes + Resultados)</div>
             </div>
           </div>
         </div>
@@ -551,6 +525,31 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- COL 2: PV & Apariencia -->
+      <div class="cfg-col">
+        <div class="cfg-divider">Punto de Venta &amp; Apariencia</div>
+        <div class="form-group"><label>URL web del PV</label><input type="text" id="cfg-pvurl" placeholder="https://www.webpremium.eu"></div>
+        <div class="form-group"><label>Texto tagline</label><input type="text" id="cfg-tagline" placeholder="Juega con nosotros en"></div>
+        <div class="form-group"><label>Modo</label>
+          <div class="cfg-dropdown">
+            <button type="button" class="dd-trigger" id="cfg-theme-trigger" onclick="toggleDropdown('cfg-theme')"></button>
+            <div class="dd-panel" id="cfg-theme-panel" style="display:none">
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-theme','dark','Oscuro')">Oscuro</div>
+              <div class="dd-option" tabindex="0" onclick="selectDropdownOption('cfg-theme','light','Claro')">Claro</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 3: WebService -->
+      <div class="cfg-col">
+        <div class="cfg-divider">WebService</div>
+        <div class="form-group"><label>URL del WebService</label><input type="text" id="cfg-url"></div>
+        <div class="form-group"><label>App ID</label><input type="text" id="cfg-appid"></div>
+        <div class="form-group"><label>Token</label><input type="text" id="cfg-token"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="cfg-pass"></div>
       </div>
     </div>
 
@@ -821,7 +820,6 @@ function persistConfig(cfg){localStorage.setItem(STORAGE_KEY,JSON.stringify(cfg)
 function saveConfig(){
   const cfg={
     url:fv('cfg-url')||DEFAULTS.url,
-    proxy:fv('cfg-proxy')||'',
     appid:fv('cfg-appid')||DEFAULTS.appid,
     token:fv('cfg-token')||DEFAULTS.token,
     pass:document.getElementById('cfg-pass').value||DEFAULTS.pass,
@@ -853,7 +851,6 @@ function saveConfig(){
 
 function fillConfigForm(cfg){
   document.getElementById('cfg-url').value=cfg.url||DEFAULTS.url;
-  document.getElementById('cfg-proxy').value=cfg.proxy||'';
   document.getElementById('cfg-appid').value=cfg.appid||DEFAULTS.appid;
   document.getElementById('cfg-token').value=cfg.token||DEFAULTS.token;
   document.getElementById('cfg-pass').value=cfg.pass||DEFAULTS.pass;
@@ -889,14 +886,15 @@ function detectOrientation(){
   try{const t=screen.orientation?screen.orientation.type:'';if(t.includes('portrait'))return'90';if(t.includes('landscape'))return'0';return window.innerHeight>window.innerWidth?'90':'0';}catch{return'0';}
 }
 function applyTheme(t){document.body.classList.toggle('light',t==='light');}
-// De momento Vista Mixta (dos columnas lado a lado) no está pensada para
-// vertical — se oculta del Menú, y si ya estabas en ella (o es la vista por
-// defecto), se cambia a Botes. Usado tanto en TV (giro manual) como en
-// tablet (giro real por sensor).
+// Vista Mixta (dos columnas lado a lado) no está pensada para vertical, y en
+// tablet no se ofrece en ninguna orientación — se oculta del Menú, y si ya
+// estabas en ella (o es la vista por defecto), se cambia a Botes. Usado
+// tanto en TV (giro manual) como en tablet (giro real por sensor).
 function updateMixedViewAvailability(isVertical){
+  const hideMixed=!IS_TV||isVertical;
   const mixedItem=document.getElementById('menu-item-mixed');
-  if(mixedItem) mixedItem.style.display=isVertical?'none':'';
-  if(isVertical&&currentView==='mixed') switchView('jackpots');
+  if(mixedItem) mixedItem.style.display=hideMixed?'none':'';
+  if(hideMixed&&currentView==='mixed') switchView('jackpots');
 }
 // o es el ángulo de rotación como texto: '0'|'90'|'180'|'270'. orient-h/
 // orient-v se mantienen (derivadas del ángulo) porque el resto del código
@@ -2505,7 +2503,7 @@ function showConfig(){
   setupDpadTextInputs();
   setTimeout(()=>{
     document.querySelectorAll('#modal-config input,#modal-config select,#modal-config button').forEach((el,i)=>el.setAttribute('tabindex',String(i+1)));
-    const first=document.querySelector('#modal-config input,#modal-config select');
+    const first=document.querySelector('#modal-config .cfg-grid input,#modal-config .cfg-grid select,#modal-config .cfg-grid .dd-trigger');
     if(first) first.focus();
   },50);
 }
@@ -2702,6 +2700,10 @@ async function diagRun(endpoint){
   // el sensor ya rota de verdad, ver updateRealOrientation() más abajo.
   const orientMenuItem=document.getElementById('menu-item-orient');
   if(orientMenuItem) orientMenuItem.style.display=IS_TV?'':'none';
+  // Vista Mixta no existe en tablet — se quita también del desplegable de
+  // "Vista por defecto" en Ajustes, para que no se pueda ni seleccionar.
+  const mixedOption=document.getElementById('cfg-default-view-mixed-option');
+  if(mixedOption) mixedOption.style.display=IS_TV?'':'none';
   if(IS_TV){
     if(cfg.orient===null){cfg.orient=detectOrientation();persistConfig(cfg);}
     applyOrientation(cfg.orient);
@@ -2714,10 +2716,10 @@ async function diagRun(endpoint){
   document.getElementById('app-ver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
   updateClock();setInterval(updateClock,30000);
   setupTimers(cfg);
-  // Vista Mixta no está disponible en vertical (ver applyOrientation) — si
-  // esa es la vista por defecto guardada, al arrancar en vertical se ignora
-  // y se queda en Botes.
-  const mixedBlockedAtBoot=cfg.defaultView==='mixed'&&document.body.classList.contains('orient-v');
+  // Vista Mixta no está disponible en vertical, ni en tablet en ninguna
+  // orientación (ver updateMixedViewAvailability) — si esa es la vista por
+  // defecto guardada, al arrancar se ignora y se queda en Botes.
+  const mixedBlockedAtBoot=cfg.defaultView==='mixed'&&(!IS_TV||document.body.classList.contains('orient-v'));
   if(cfg.defaultView&&cfg.defaultView!=='jackpots'&&!mixedBlockedAtBoot){
     currentView=cfg.defaultView;
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
