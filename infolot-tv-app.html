@@ -245,6 +245,14 @@ body.device-tablet.orient-v .result-block-name{font-size:calc(var(--fs-base)*1.5
    resultados cuando sobra alto (ver ajustes de tamaño de bola más abajo,
    en recalcBallsInBlock), en vez de quedarse pegado arriba. */
 body.device-tablet.orient-h .rb-body{justify-content:center;}
+/* TV horizontal: mismo centrado que en tablet, pero solo para Euromillón (1),
+   EuroDreams (43), La Primitiva (2) y Bonoloto (4) — el resto de bloques
+   (Gordo, LotoTurf, Nacional, Quiniela, QuiniGol) van por otras ramas de
+   renderizado y no se tocan. */
+body.device-tv.orient-h .result-block[data-game-id="1"] .rb-body,
+body.device-tv.orient-h .result-block[data-game-id="43"] .rb-body,
+body.device-tv.orient-h .result-block[data-game-id="2"] .rb-body,
+body.device-tv.orient-h .result-block[data-game-id="4"] .rb-body{justify-content:center;}
 .ball-row{display:flex;flex-wrap:nowrap;align-items:center;gap:2px;width:100%;}
 .ball-sized{display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-weight:700;flex-shrink:0;}
 .ball-sep{display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text);background:var(--border);border-radius:3px;padding:1px 3px;margin:0 1px;flex-shrink:0;line-height:1;font-weight:700;opacity:.9;}
@@ -1153,6 +1161,153 @@ async function validateServiceCode(code){
   return json.data; // {token, pass}
 }
 
+// ── WEBSOCKETS EN TIEMPO REAL (AWS AppSync Events) ────────────
+// Ver message.txt (raíz del repo) para el documento del backend con el
+// formato exacto. Resumen del flujo:
+//   1. get-socket-info(token,pass,app_id) por REST -> datos de conexión.
+//   2. Abrir WebSocket contra ws_host con esos datos (protocolo propio de
+//      AppSync Events, no es un WebSocket genérico).
+//   3. Los mensajes que llegan son solo avisos ({action, id_game}) — hay
+//      que volver a llamar a next-jackpots/get-game-results para traer el
+//      dato real, igual que ya hacen fetchJackpots()/fetchResults().
+// PENDIENTE: confirmar con el backend si la acción de resultados se llama
+// 'draw-results' o 'game-results' (el documento usa las dos en sitios
+// distintos) antes de rellenar el switch de manageMessage().
+
+let socketInfo=null; // {http_host, ws_host, channel, api_key, uuid_user, auth_token, auth_token_ttl}
+let socket=null;
+
+async function fetchSocketInfo(){
+  // TODO: wsCall('get-socket-info') y guardar el resultado en socketInfo.
+  try {
+    socketInfo = await wsCall('get-socket-info')||{};
+  } catch (e) {
+    console.error('[WS] get-socket-info FAILED:', e.message);
+    if (isNotActivatedError(e)) throw e;
+    setLoadingStep('get-socket-info falló: ' + e.message);
+  }
+}
+
+function connectLiveUpdates(){
+  // TODO: abrir el WebSocket contra socketInfo.ws_host con la autenticación que pide AWS AppSync Events
+  socket = new WebSocket(socketInfo.ws_host.concat('/event/realtime'), ['aws-appsync-event-ws', getAuthProtocol(socketInfo.auth_token, socketInfo.http_host, socketInfo.uuid_user)]);
+  socket.onopen = socket_open;
+  socket.onmessage = manageMessageGlobal;
+  socket.onclose = socket_close;
+}
+
+// socket_open() se dispara en cuanto el WebSocket conecta — aquí todavía no
+// llega ningún dato, solo hay que mandar el mensaje "subscribe" para
+// empezar a recibir eventos del canal. Composición del mensaje (ver
+// documentación, sección "Suscripción: Petición"):
+//   id            -> un UUID nuevo para ESTE mensaje en concreto (no es el
+//                     auth_token ni ningún otro dato de socketInfo).
+//   type          -> siempre el string 'subscribe' en esta función.
+//   channel       -> '/default/' + socketInfo.channel — el prefijo
+//                     "/default/" hay que añadirlo a mano, socketInfo.channel
+//                     (el que devuelve get-socket-info) no lo trae incluido.
+//   authorization -> {Authorization: <blob>} — el blob es, según lo que
+//                     hablamos, probablemente el mismo base64 que ya calcula
+//                     getAuthProtocol pero SIN el prefijo 'header-' (ese
+//                     prefijo es solo para el subprotocolo del WebSocket).
+//                     Pendiente de confirmar probando: si te llega
+//                     subscribe_error en vez de subscribe_success, empieza
+//                     a sospechar por aquí.
+function socket_open(){
+  // TODO: construir el objeto "message" con la forma de arriba y mandarlo
+  // con socket.send(JSON.stringify(message)).
+  socket.send(JSON.stringify({
+    id: crypto.randomUUID(),
+    channel: '/default/' + socketInfo.channel,
+    type: 'subscribe',
+    authorization: {
+      Authorization: btoa(`${socketInfo.auth_token}:${socketInfo.uuid_user}`),
+      host: socketInfo.http_host.replace(/^https?:\/\//, '')
+    }
+  }))
+}
+
+// socket_close() se dispara cuando la conexión se cierra (el servidor la
+// corta, se pierde la red, etc.). De momento puede quedar simple (un
+// console.log) — más adelante aquí iría la lógica de reconexión automática.
+function socket_close(){
+  console.warn('[WS] WebSocket closed');
+}
+
+// Mensajes "en crudo" de AppSync: {id, type, event}. type puede ser
+// 'ka' (keep-alive), 'subscribe-success', 'subscribe-error',
+// 'publish-success', 'publish-error', o 'data' (evento real, event viene
+// como JSON en forma de string y hay que volver a parsearlo).
+function manageMessageGlobal(rawEvent){
+  // TODO: switch(message.type) { ... }
+  const message = JSON.parse(rawEvent.data);
+  switch (message.type) {
+    case 'ka':
+      console.log('[WS] keep-alive');
+      break;
+
+    case 'subscribe_success':
+      console.log('[WS] subscribe-success');
+      break;
+
+    case 'subscribe_error':
+      console.error('[WS] subscribe-error:', message);
+      break;
+
+    case 'publish_success':
+      console.log('[WS] publish-success');
+      break;
+
+    case 'publish_error':
+      console.error('[WS] publish-error:', message);
+      break;
+
+    case 'data':
+      const eventData = JSON.parse(message.event);
+      manageMessage(eventData);
+      break;
+
+    case 'connection_error':
+      console.error('[WS] connection_error:', message.errors);
+      break;
+
+    default:
+      console.warn('[WS] unknown message type:', message.type);
+  }
+}
+
+// Mensajes de negocio ya parseados: {action, id_game?}.
+function manageMessage(message){
+  // TODO: switch(message.action) { case 'next-jackpots': ...; case
+  // 'draw-results'/'game-results': ...; }
+
+  switch (message.action) {
+    case 'next-jackpots':
+      console.log('[WS] next-jackpots for game', message.id_game);
+      fetchJackpots(message.id_game);
+      break;
+
+    case 'game-results':
+      console.log('[WS] get-results for game', message.id_game);
+      fetchResults(message.id_game);
+      break;
+
+    default:
+      console.warn('[WS] unknown action:', message.action);
+  }
+}
+
+function getAuthProtocol(token, http_host, uuid_user) {
+  const bareHost = http_host.replace(/^https?:\/\//, '');
+  const header = btoa(JSON.stringify({ 'Authorization': btoa(`${token}:${uuid_user}`), 'host': bareHost }))
+      .replace(/\+/g, '-') // Convert '+' to '-'
+      .replace(/\//g, '_') // Convert '/' to '_'
+      .replace(/=+$/, '') // Remove padding `=`
+
+  return `header-${header}`
+}
+
+
 // ── PV-INFO ──────────────────────────────────────────────────
 async function fetchPvInfo(){
   try{
@@ -1279,11 +1434,15 @@ async function fetchJackpots(){
 }
 
 // ── LAST-RESULTS ─────────────────────────────────────────────
-async function fetchResults(){
+async function fetchResults(id_game){
   setStatus('Actualizando resultados...','');
   try{
     const cfg=loadConfig();
-    const gameIds=Object.keys(gamesMap);
+
+    const gameIds = (Number.isInteger(id_game) && gamesMap[id_game])
+      ? [String(id_game)]
+      : Object.keys(gamesMap);
+
     if(!gameIds.length){setStatus('Sin juegos','error');return;}
     setLoadingStep(cfg.demoMode?'Cargando resultados (DEMO)...':'Cargando resultados semana...');
     const calls=gameIds.map(id=>wsCall('last-game-results',{id_game:parseInt(id),limit:20})
@@ -1308,7 +1467,14 @@ async function fetchResults(){
       });
     });
     console.log('[Results] flat:',flat.length,'draws');
-    lastResultsData=flat;
+    if(id_game){
+      // Solo se ha refrescado un juego: quitar sus entradas viejas del array
+      // existente y añadir las nuevas, sin tocar el resto de juegos.
+      lastResultsData=lastResultsData.filter(x=>x.id_game!==id_game).concat(flat);
+    }else{
+      // Refresco completo: sustituye todo, como hacía hasta ahora.
+      lastResultsData=flat;
+    }
     if(currentView==='mixed') renderMixedResults(lastResultsData);
     if(currentView==='results'){
       const el=document.getElementById('section-label-text'),w=document.getElementById('section-label-header');
@@ -1551,7 +1717,11 @@ function buildBlockHTML(gameId,draws,availW){
       // dos les sobraba menos).
       const isReduced=gameId===2||gameId===21;
       const headerMB=isTabletH?(manyRows?'5px':isReduced?'6px':'10px'):(isCompact?'2px':'6px'), drawMB=isTabletH?(manyRows?'7px':isReduced?'6px':'10px'):(isCompact?'3px':'8px'), drawPB=isTabletH?(manyRows?'6px':isReduced?'5px':'8px'):(isCompact?'3px':'6px');
-      const dateFs=isTabletH?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
+      // TV horizontal: fecha más grande, como en tablet, pero solo para
+      // Euromillón/EuroDreams/La Primitiva/Bonoloto (los mismos 4 que se
+      // centran arriba en la regla body.device-tv.orient-h .rb-body).
+      const isTvHBigDate=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
+      const dateFs=(isTabletH||isTvHBigDate)?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
       const codeFs=isTabletH?'calc(var(--fs-xs)*1.25)':'var(--fs-xs)';
       // El Gordo (is_link_num_refund_extra:1) manda el reintegro siempre
       // idéntico al Número Clave — no es un número independiente, así que
@@ -1615,7 +1785,8 @@ function buildBlockHTML(gameId,draws,availW){
       });
     } else if(gt==='nacional'){
       // Mismo tamaño de fecha que el resto de sorteos en tablet horizontal.
-      const dateFsNat=document.body.classList.contains('device-tablet')&&!document.body.classList.contains('orient-v')?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
+      const isTvHNat=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
+      const dateFsNat=(document.body.classList.contains('device-tablet')&&!document.body.classList.contains('orient-v'))||isTvHNat?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
       // Lotería Nacional sortea los jueves y los sábados. Si a la semana aún
       // le falta uno de los dos, se añade un hueco "Pendiente" en su sitio
       // (mismo día de la semana) en vez de dejar el bloque con espacio vacío.
@@ -1653,10 +1824,15 @@ function buildBlockHTML(gameId,draws,availW){
         // (letter-spacing incluido) se salían del bloque.
         const effAvailW=sideBySide?(availW||200)/entries.length:(availW||200);
         const narrow=effAvailW<220;
+        // TV horizontal: el bloque va a ancho completo (ver "Lotería Nacional
+        // a ancho completo" en paintTvResultsCols/paintResultsCols12), así
+        // que nunca cae en "narrow" y usaba el tamaño grande pensado para
+        // huecos más estrechos — quedaba desproporcionado. Reducir solo aquí.
+        const isTvH=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
         bodyHtml+=`<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;${ds}">`;
         bodyHtml+=`<div class="rb-date" style="font-family:var(--font-ui);font-size:${dateFsNat};font-weight:600;color:var(--text2)">${esc(fd)}</div>`;
         // MARGENES Y TAMAÑO DEL CONTENIDO DEL BLOQUE
-        const rowGap=narrow?'2px':(crowded?'3px':'5px'), numPad=narrow?'1px 3px':(crowded?'2px 4px':'2px 7px'), numFs=narrow?'var(--fs-sm)':'calc(var(--fs-lg)*1.3)', numLs=narrow?'0':'2px', dividerH=narrow?'16px':(crowded?'20px':'28px'), refBallSz=narrow?13:(crowded?18:20);
+        const rowGap=narrow?'2px':(crowded?'3px':'5px'), numPad=narrow?'1px 3px':(crowded?'2px 4px':isTvH?'2px 5px':'2px 7px'), numFs=narrow?'var(--fs-sm)':(isTvH?'calc(var(--fs-lg)*1.05)':'calc(var(--fs-lg)*1.3)'), numLs=narrow?'0':'2px', dividerH=narrow?'16px':(crowded?'20px':'28px'), refBallSz=narrow?13:(isTvH?16:(crowded?18:20));
         bodyHtml+=`<div style="display:flex;align-items:center;align-self:center;gap:${rowGap};flex-wrap:nowrap">`;
         numEntries.forEach(({ord,n},idx)=>{
           bodyHtml+=`<div style="text-align:center;flex-shrink:0"><div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text2);margin-bottom:1px;font-weight:600">${ord} Premio</div><div style="background:${numBg};color:${numFg};border-radius:5px;padding:${numPad};font-family:var(--font-display);font-size:${numFs};letter-spacing:${numLs};white-space:nowrap">${esc(n)}</div></div>`;
@@ -2042,7 +2218,11 @@ function recalcBallsInBlock(block){
     // práctica, con este tope tan holgado, el ancho real es quien manda.
     maxSz=Math.max(14,Math.min(90,heightSz));
   } else {
-    const maxSzCap=rowCount>1?(gameId===1?38:gameId===43?32:gameId===2?27:44):(gameId===5?38:30); // Euromillón grande, EuroDreams igual que antes; Primitiva/Gordo más pequeños (necesitan compartir alto con QuiniGol); Bonoloto/LotoTurf: manda la altura real disponible
+    // El Gordo en TV horizontal comparte columna con QuiniGol/Nacional/EuroDreams
+    // (ver "Col 3" más abajo) y con el tope de 38 se desbordaba — se reduce
+    // solo para ese caso concreto, tablet y TV vertical quedan igual.
+    const isTvH=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
+    const maxSzCap=rowCount>1?(gameId===1?38:gameId===43?32:gameId===2?27:44):(gameId===5?(isTvH?24:38):30); // Euromillón grande, EuroDreams igual que antes; Primitiva/Gordo más pequeños (necesitan compartir alto con QuiniGol); Bonoloto/LotoTurf: manda la altura real disponible
     maxSz=maxSzCap;
     // Con varios sorteos apilados, el nº de filas puede variar (p.ej. Bonoloto suma el sorteo del domingo):
     // se limita también por el alto real disponible para que la última fila no quede cortada por el bloque.
@@ -2137,7 +2317,8 @@ function syncBallSizesForGroup(gameIds){
 function makeQuinielaBlock(quiDraws){
   // Mismo tamaño de fecha que el resto de sorteos en tablet horizontal.
   const isTabletHQui=document.body.classList.contains('device-tablet')&&!document.body.classList.contains('orient-v');
-  const dateFsQui=isTabletHQui?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
+  const isTvHQui=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
+  const dateFsQui=(isTabletHQui||isTvHQui)?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
   const gameQui=gamesMap[25]||{};
   const quiColor=gameQui.fg_color||gameQui.bg_color||'var(--pv-primary)';
   let logoSrcQui='';
@@ -2205,7 +2386,8 @@ function makeQuinielaBlock(quiDraws){
 function makeQuiniGolBlock(qgDraws){
   // Mismo tamaño de fecha que el resto de sorteos en tablet horizontal.
   const isTabletHQG=document.body.classList.contains('device-tablet')&&!document.body.classList.contains('orient-v');
-  const dateFsQG=isTabletHQG?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
+  const isTvHQG=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
+  const dateFsQG=(isTabletHQG||isTvHQG)?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
   const gameQG=gamesMap[26]||{};
   let logoSrcQG='';
   if(gameQG.logo_official) logoSrcQG=gameQG.logo_official.startsWith('http')?gameQG.logo_official:LOGO_BASE+gameQG.logo_official;
@@ -2607,6 +2789,14 @@ async function loadAllData(){
     // Primera carga con éxito real del webservice: el dispositivo queda
     // "emparejado" para siempre — App ID/Token/Contraseña pasan a solo lectura.
     if(!cfg.paired){cfg.paired=true;persistConfig(cfg);}
+
+    if (!socket) {
+      await fetchSocketInfo();
+      if (socketInfo && socketInfo.ws_host) {
+        connectLiveUpdates();
+      }
+    }
+
   }catch(e){
     console.error('[boot] loadAllData error:',e);
     if(PAIRING_FLOW_ENABLED&&isNotActivatedError(e)&&!FORCE_PAIRED_FOR_TESTING){

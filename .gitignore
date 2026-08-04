@@ -9,3 +9,5 @@ keystore.properties
 serve-local.ps1
 serve-local.log
 serve-local.err.log
+proxy-debug.log
+message.txt
