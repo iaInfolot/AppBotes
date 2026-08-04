@@ -243,8 +243,11 @@ body.device-tablet.orient-v .result-block-name{font-size:calc(var(--fs-base)*1.5
 .rb-body{padding:clamp(4px,.5vh,6px) clamp(6px,.8vw,10px);overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column;}
 /* Tablet horizontal: centrar verticalmente el contenido de cada recuadro de
    resultados cuando sobra alto (ver ajustes de tamaño de bola más abajo,
-   en recalcBallsInBlock), en vez de quedarse pegado arriba. */
-body.device-tablet.orient-h .rb-body{justify-content:center;}
+   en recalcBallsInBlock), en vez de quedarse pegado arriba. Quiniela (25) y
+   QuiniGol (26) quedan fuera: cuando todavía no hay sorteo, la fecha
+   "Pendiente" quedaba flotando centrada en medio de un bloque vacío en vez
+   de arriba. */
+body.device-tablet.orient-h .result-block:not([data-game-id="25"]):not([data-game-id="26"]) .rb-body{justify-content:center;}
 /* TV horizontal: mismo centrado que en tablet, pero solo para Euromillón (1),
    EuroDreams (43), La Primitiva (2) y Bonoloto (4) — el resto de bloques
    (Gordo, LotoTurf, Nacional, Quiniela, QuiniGol) van por otras ramas de
