@@ -1281,18 +1281,13 @@ function manageMessageGlobal(rawEvent){
 
 // Mensajes de negocio ya parseados: {action, id_game?}.
 function manageMessage(message){
-  // TODO: switch(message.action) { case 'next-jackpots': ...; case
-  // 'draw-results'/'game-results': ...; }
+  // TODO: switch(message.action) --> Espera el evento del WebSocket
 
   switch (message.action) {
-    case 'next-jackpots':
-      console.log('[WS] next-jackpots for game', message.id_game);
-      fetchJackpots(message.id_game);
-      break;
-
-    case 'game-results':
-      console.log('[WS] get-results for game', message.id_game);
-      fetchResults(message.id_game);
+    case 'results':
+      console.log('[WS] results for games', message.ids);
+      fetchJackpots();
+      (message.ids || []).forEach(id => fetchResults(id));
       break;
 
     default:
