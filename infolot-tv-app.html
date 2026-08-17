@@ -714,11 +714,21 @@ function wifiSignalIconSVG(level){
     <path d="M2.2 8.4a13.7 13.7 0 0 1 19.6 0" stroke="${arc3}" stroke-width="2" fill="none" stroke-linecap="round"/>
   </svg>`;
 }
-function showPairingScreen(){
+function showPairingScreen(message){
   document.getElementById('pairing-code').textContent=getDeviceCode();
   document.getElementById('loading').style.display='none';
   document.getElementById('app').classList.remove('visible');
   document.getElementById('pairing-screen').style.display='flex';
+  // checkPairingActivation() llama a loadAllData() sin esperarla — si el
+  // código es válido pero la cuenta falla más adelante (p.ej. sin servicio
+  // activo), loadAllData() vuelve a traer aquí, pero el botón se queda tal
+  // cual lo dejó checkPairingActivation() (deshabilitado, "Comprobando...")
+  // porque su propio catch nunca llega a ejecutarse. Resetearlo siempre
+  // aquí evita que se quede bloqueado para siempre sin avisar de nada.
+  const btn=document.getElementById('pairing-check-btn');
+  if(btn){btn.disabled=false;btn.textContent='Comprobar activación';}
+  const errEl=document.getElementById('pairing-error');
+  if(errEl) errEl.textContent=message||'';
   populatePairingInfo();
 }
 // Fecha/hora local del dispositivo en la pantalla de emparejamiento — útil
@@ -2842,7 +2852,7 @@ async function loadAllData(){
     if(PAIRING_FLOW_ENABLED&&isNotActivatedError(e)&&!FORCE_PAIRED_FOR_TESTING){
       _booted=false;_loadingInProgress=false;
       showLoading(false);
-      showPairingScreen();
+      showPairingScreen(e.message===SERVICE_NOT_ACTIVE_MSG?'Este código es válido, pero la cuenta asociada no tiene el servicio activo. Contacta con soporte.':undefined);
       return;
     }
     setLoadingStep('ERROR: '+e.message);
