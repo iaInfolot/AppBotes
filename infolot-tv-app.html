@@ -1179,11 +1179,13 @@ async function validateServiceCode(code){
 
 let socketInfo=null; // {http_host, ws_host, channel, api_key, uuid_user, auth_token, auth_token_ttl}
 let socket=null;
+let socketInfoFetchedAt = null; // Date.now() de la última vez que refrescamos el token
 
 async function fetchSocketInfo(){
   // TODO: wsCall('get-socket-info') y guardar el resultado en socketInfo.
   try {
     socketInfo = await wsCall('get-socket-info')||{};
+        socketInfoFetchedAt = Date.now();
   } catch (e) {
     console.error('[WS] get-socket-info FAILED:', e.message);
     if (isNotActivatedError(e)) throw e;
@@ -1197,6 +1199,23 @@ function connectLiveUpdates(){
   socket.onopen = socket_open;
   socket.onmessage = manageMessageGlobal;
   socket.onclose = socket_close;
+}
+
+async function ensureFreshAuthToken(){
+  const ttlMs = parseInt(socketInfo?.auth_token_ttl || 0) * 1000;
+  const elapsed = Date.now() - (socketInfoFetchedAt || 0);
+  const margin = 60000; // refrescar 1 minuto antes de que caduque de verdad, por seguridad
+  if (elapsed < ttlMs - margin) return; // todavía es válido, no hace falta nada
+
+  try {
+    const data = await wsCall('get-socket-auth-token');
+    if (data) {
+      socketInfo.auth_token = data;
+      socketInfoFetchedAt = Date.now();
+    }
+  } catch (e) {
+    console.error('[WS] get-socket-auth-token FAILED:', e.message);
+  }
 }
 
 // socket_open() se dispara en cuanto el WebSocket conecta — aquí todavía no
@@ -1234,7 +1253,14 @@ function socket_open(){
 // corta, se pierde la red, etc.). De momento puede quedar simple (un
 // console.log) — más adelante aquí iría la lógica de reconexión automática.
 function socket_close(){
-  console.warn('[WS] WebSocket closed');
+  console.warn('[WS] WebSocket closed, reintentando en 5s...');
+  socket = null;
+  setTimeout(reconnectLiveUpdates, 5000);
+}
+
+async function reconnectLiveUpdates(){
+  await ensureFreshAuthToken();
+  connectLiveUpdates();
 }
 
 // Mensajes "en crudo" de AppSync: {id, type, event}. type puede ser
