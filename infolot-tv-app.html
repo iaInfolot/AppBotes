@@ -1153,11 +1153,27 @@ async function validateServiceCode(code){
   const body=useProxy
     ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid}
     :{code,app_id:DEFAULTS.appid};
-  const resp=await fetch(url,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
+  // Sin esto, si el backend se queda colgado sin responder (en vez de dar
+  // un error claro), el fetch nunca resuelve ni rechaza — el botón de
+  // "Comprobar activación" se queda bloqueado en "Comprobando..." para
+  // siempre, sin ningún mensaje. Confirmado con una cuenta sin el servicio
+  // asociado: el backend no contesta nada, ni éxito ni error.
+  const ctrl=new AbortController();
+  const timeout=setTimeout(()=>ctrl.abort(),15000);
+  let resp;
+  try{
+    resp=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body),
+      signal:ctrl.signal
+    });
+  }catch(e){
+    if(e.name==='AbortError') throw new Error('Sin respuesta del servidor');
+    throw e;
+  }finally{
+    clearTimeout(timeout);
+  }
   if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const json=await resp.json();
   if(json.error) throw new Error(json.error);
