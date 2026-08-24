@@ -31,6 +31,13 @@ class MainActivity : Activity() {
     // hacia donde el usuario espera.
     @Volatile private var rotationDegrees = 0
 
+    // Recarga programada tras un error de red (ver webViewClient más abajo).
+    // Sin guardar la referencia no se puede cancelar, y si la página termina
+    // cargando bien por su cuenta antes de que pasen los 30s (un parpadeo de
+    // red momentáneo que se recupera solo), la recarga salta igualmente
+    // encima de una app que ya está funcionando, arrancando boot() dos veces.
+    private var pendingReloadRunnable: Runnable? = null
+
     private inner class OrientationBridge {
         @JavascriptInterface
         fun setRotation(degrees: Int) {
@@ -167,13 +174,21 @@ class MainActivity : Activity() {
                 request: WebResourceRequest,
                 error: WebResourceError
             ) {
-                // Retry after 30s on network error
+                // Retry after 30s on network error — se cancela en
+                // onPageFinished si la carga se recupera sola antes de que
+                // llegue su turno, para no recargar encima de una app que ya
+                // está funcionando.
                 if (request.isForMainFrame) {
-                    view.postDelayed({ view.reload() }, 30_000L)
+                    pendingReloadRunnable?.let { view.removeCallbacks(it) }
+                    val reloadRunnable = Runnable { view.reload() }
+                    pendingReloadRunnable = reloadRunnable
+                    view.postDelayed(reloadRunnable, 30_000L)
                 }
             }
 
             override fun onPageFinished(view: WebView, url: String) {
+                pendingReloadRunnable?.let { view.removeCallbacks(it) }
+                pendingReloadRunnable = null
                 // Inject JS to make all interactive elements focusable for D-Pad
                 view.evaluateJavascript("""
                     (function() {
