@@ -1083,11 +1083,17 @@ function resultsWeekLabel(){
 // (EXPECTED_DOW) tengan ya todos sus sorteos. Usa los resultados que ya se han
 // traído (hasta 20 por juego) — sin llamadas de red extra. Si no encuentra
 // ninguna semana completa en el rango, se queda con la semana de partida.
-function findCompleteDemoWeek(byGameId,startRef){
+function findCompleteDemoWeek(byGameId,startRef,gameIdsToCheck){
   let ref=new Date(startRef);
+  // En un refresco completo se comprueban todos los juegos con calendario
+  // conocido (comportamiento de siempre). En un refresco parcial (p.ej. el
+  // que dispara un evento de WebSocket para un solo juego), byGameId solo
+  // trae ESE juego — comprobar el resto como si les faltaran datos hacía
+  // que nunca se encontrara ninguna semana "completa".
+  const checkIds=(gameIdsToCheck||Object.keys(EXPECTED_DOW)).filter(gid=>EXPECTED_DOW[gid]);
   for(let attempt=0;attempt<8;attempt++){
     let complete=true;
-    for(const gid of Object.keys(EXPECTED_DOW)){
+    for(const gid of checkIds){
       const expected=expectedDatesForGame(parseInt(gid),ref);
       if(!expected) continue;
       const have=new Set((byGameId[gid]||[]).map(r=>r.date));
@@ -1523,7 +1529,7 @@ async function fetchResults(id_game){
     results.forEach((gameResults,idx)=>{byGameId[gameIds[idx]]=gameResults;});
 
     let ref=getResultsWeekRef();
-    if(cfg.demoMode) ref=findCompleteDemoWeek(byGameId,ref);
+    if(cfg.demoMode) ref=findCompleteDemoWeek(byGameId,ref,gameIds);
     resolvedResultsWeekRef=ref;
     let {mon,sun}=getWeekBounds(ref);
     let monStr=toYMD(mon),sunStr=toYMD(sun);
