@@ -11,14 +11,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace 'es.infolot.tv'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "es.infolot.tv"
         minSdk 21
-        targetSdk 35
-        versionCode 4
-        versionName "1.5.1"
+        targetSdk 36
+        versionCode 5
+        versionName "1.5.2"
     }
 
     signingConfigs {
