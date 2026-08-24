@@ -1525,18 +1525,39 @@ async function fetchResults(id_game){
     let ref=getResultsWeekRef();
     if(cfg.demoMode) ref=findCompleteDemoWeek(byGameId,ref);
     resolvedResultsWeekRef=ref;
-    const {mon,sun}=getWeekBounds(ref);
-    const monStr=toYMD(mon),sunStr=toYMD(sun);
-    console.log('[Results] ref:',toYMD(ref),'mon:',monStr,'sun:',sunStr);
+    let {mon,sun}=getWeekBounds(ref);
+    let monStr=toYMD(mon),sunStr=toYMD(sun);
     const todayStr=toYMD(new Date());
-    const flat=[];
-    results.forEach((gameResults,idx)=>{
-      const id=parseInt(gameIds[idx]);
-      gameResults.forEach(r=>{
-        if(r.date&&((r.date>=monStr&&r.date<=sunStr)||(!cfg.demoMode&&r.date===todayStr)))
-          flat.push({...r,id_game:id});
+    const buildFlat=(mStr,sStr)=>{
+      const out=[];
+      results.forEach((gameResults,idx)=>{
+        const id=parseInt(gameIds[idx]);
+        gameResults.forEach(r=>{
+          if(r.date&&((r.date>=mStr&&r.date<=sStr)||(!cfg.demoMode&&r.date===todayStr)))
+            out.push({...r,id_game:id});
+        });
       });
-    });
+      return out;
+    };
+    let flat=buildFlat(monStr,sunStr);
+    // Si la semana "actual" todavía no tiene ningún sorteo (p.ej. lunes,
+    // antes de que se publiquen los resultados reales — la hora exacta
+    // varía según el juego, así que no nos fiamos de un reloj fijo), se
+    // retrocede una semana con los mismos datos ya descargados, en vez de
+    // dejar el panel vacío hasta que llegue el primero.
+    if(!cfg.demoMode&&!flat.length){
+      const prevRef=new Date(ref);prevRef.setDate(ref.getDate()-7);
+      const prevBounds=getWeekBounds(prevRef);
+      const prevMonStr=toYMD(prevBounds.mon),prevSunStr=toYMD(prevBounds.sun);
+      const prevFlat=buildFlat(prevMonStr,prevSunStr);
+      if(prevFlat.length){
+        ref=prevRef;resolvedResultsWeekRef=ref;
+        mon=prevBounds.mon;sun=prevBounds.sun;monStr=prevMonStr;sunStr=prevSunStr;
+        flat=prevFlat;
+        console.log('[Results] semana actual sin sorteos, usando la anterior');
+      }
+    }
+    console.log('[Results] ref:',toYMD(ref),'mon:',monStr,'sun:',sunStr);
     console.log('[Results] flat:',flat.length,'draws');
     if(id_game){
       // Solo se ha refrescado un juego: quitar sus entradas viejas del array
