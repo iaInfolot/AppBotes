@@ -515,7 +515,6 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
             </div>
           </div>
         </div>
-        <div class="form-group"><label>Refresco botes (min)</label><input type="number" id="cfg-refresh-jackpots" min="0" max="1440"></div>
         <div class="form-group"><label>Refresco PV+Juegos (horas)</label><input type="number" id="cfg-refresh-pvinfo" min="0" max="168"></div>
         <div class="form-group"><label>Rotación automática</label>
           <div class="cfg-dropdown">
@@ -660,8 +659,7 @@ const DEFAULTS = {
   color2:'#e05c2a',
   theme:'light',
   orient:null,
-  refreshJackpots:0,
-  refreshPvInfo:0,
+  refreshPvInfo:24,
   defaultView:'results',
   autoRotate:false,
   autoRotateInterval:30,
@@ -847,7 +845,6 @@ function saveConfig(){
     pvurl:fv('cfg-pvurl')||DEFAULTS.pvurl,
     tagline:fv('cfg-tagline')||DEFAULTS.tagline,
     theme:document.getElementById('cfg-theme-trigger').dataset.value||'light',
-    refreshJackpots:parseInt(document.getElementById('cfg-refresh-jackpots').value)||0,
     refreshPvInfo:parseInt(document.getElementById('cfg-refresh-pvinfo').value)||0,
     defaultView:document.getElementById('cfg-default-view-trigger').dataset.value||'jackpots',
     autoRotate:document.getElementById('cfg-autorotate-trigger').dataset.value==='true',
@@ -883,7 +880,6 @@ function fillConfigForm(cfg){
   document.getElementById('cfg-pvurl').value=cfg.pvurl||DEFAULTS.pvurl;
   document.getElementById('cfg-tagline').value=cfg.tagline||DEFAULTS.tagline;
   setDropdownValue('cfg-theme',cfg.theme||'light',{dark:'Oscuro',light:'Claro'});
-  document.getElementById('cfg-refresh-jackpots').value=cfg.refreshJackpots||0;
   document.getElementById('cfg-refresh-pvinfo').value=cfg.refreshPvInfo||0;
   setDropdownValue('cfg-default-view',cfg.defaultView||'jackpots',{jackpots:'Botes',results:'Resultados',mixed:'Mixta (Botes + Resultados)'});
   setDropdownValue('cfg-autorotate',cfg.autoRotate||false,{false:'No',true:'Sí'});
@@ -1206,6 +1202,29 @@ async function validateServiceCode(code){
 let socketInfo=null; // {http_host, ws_host, channel, api_key, uuid_user, auth_token, auth_token_ttl}
 let socket=null;
 let socketInfoFetchedAt = null; // Date.now() de la última vez que refrescamos el token
+let lastWsMessageAt = null; // Date.now() del último mensaje recibido (incluye los 'ka' cada 30s)
+let wsHealthCheckTimer = null;
+// Un socket puede quedarse "zombi" — abierto a nivel de navegador pero sin
+// recibir nada más (un intermediario de red lo corta en silencio, por
+// ejemplo) — sin que salte onclose ni socket_close(). Si pasan más de 3
+// keep-alives (90s) sin ningún mensaje, se fuerza el cierre y la
+// reconexión. Deliberadamente NO es un polling de datos — no pide nada al
+// backend salvo que detecte que la conexión está realmente muerta.
+const WS_STALE_MS = 90000;
+function startWsHealthCheck(){
+  if(wsHealthCheckTimer) return; // ya en marcha, no duplicar
+  wsHealthCheckTimer = setInterval(()=>{
+    if(!lastWsMessageAt) return; // todavía no ha llegado el primer mensaje, no juzgar aún
+    const idleMs = Date.now() - lastWsMessageAt;
+    if(idleMs > WS_STALE_MS){
+      console.warn('[WS] sin mensajes desde hace', Math.round(idleMs/1000)+'s — forzando reconexión');
+      lastWsMessageAt = Date.now(); // da margen a la reconexión antes de volver a sospechar
+      if(socket){ socket.onclose=null; socket.close(); } // evita que socket_close() también reconecte por su cuenta
+      socket = null;
+      reconnectLiveUpdates();
+    }
+  }, 30000);
+}
 
 async function fetchSocketInfo(){
   // TODO: wsCall('get-socket-info') y guardar el resultado en socketInfo.
@@ -1225,6 +1244,7 @@ function connectLiveUpdates(){
   socket.onopen = socket_open;
   socket.onmessage = manageMessageGlobal;
   socket.onclose = socket_close;
+  startWsHealthCheck();
 }
 
 async function ensureFreshAuthToken(){
@@ -1295,6 +1315,7 @@ async function reconnectLiveUpdates(){
 // como JSON en forma de string y hay que volver a parsearlo).
 function manageMessageGlobal(rawEvent){
   // TODO: switch(message.type) { ... }
+  lastWsMessageAt = Date.now();
   const message = JSON.parse(rawEvent.data);
   switch (message.type) {
     case 'ka':
@@ -2814,7 +2835,6 @@ function resetRotateBar(cfg){
 }
 function setupTimers(cfg){
   Object.values(timers).forEach(clearInterval);timers={};
-  if(cfg.refreshJackpots>0) timers.j=setInterval(()=>{fetchJackpots();fetchResults();},cfg.refreshJackpots*60000);
   if(cfg.refreshPvInfo>0) timers.p=setInterval(refreshPvAndGames,cfg.refreshPvInfo*3600000);
   startAutoRotate(cfg);
 }
