@@ -204,7 +204,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 .card-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0;}
 .card-header{display:flex;align-items:center;gap:clamp(6px,.8vw,12px);margin-bottom:clamp(4px,.5vh,8px);flex-shrink:0;}
 .card-logo{width:clamp(26px,3vh,38px);height:clamp(26px,3vh,38px);object-fit:contain;border-radius:6px;flex-shrink:0;}
-.card-name{font-family:var(--font-ui);font-size:var(--fs-lg);font-weight:700;letter-spacing:.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;line-height:1.1;}
+.card-name{font-family:var(--font-ui);font-size:var(--fs-lg);font-weight:700;letter-spacing:.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;line-height:1.1;text-transform:uppercase;}
 .card-amount-wrap{flex:1;display:flex;align-items:center;justify-content:flex-end;min-height:0;padding-right:4px;}
 .card-amount{font-family:var(--font-display);letter-spacing:1px;line-height:1;text-align:right;display:flex;flex-direction:column;align-items:flex-end;}
 .card-amount-number{display:block;line-height:1;}
@@ -231,7 +231,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 .result-block-header{display:flex;align-items:center;gap:6px;padding:clamp(4px,.5vh,6px) clamp(6px,.8vw,10px);border-bottom:1px solid var(--border);flex-shrink:0;}
 .result-block-bar{width:3px;height:clamp(18px,2.5vh,26px);border-radius:2px;flex-shrink:0;}
 .result-block-logo{width:clamp(16px,2.2vh,24px);height:clamp(16px,2.2vh,24px);object-fit:contain;flex-shrink:0;}
-.result-block-name{font-family:var(--font-ui);font-size:calc(var(--fs-base)*1);font-weight:700;letter-spacing:.5px;color:var(--text);flex:1;}
+.result-block-name{font-family:var(--font-ui);font-size:calc(var(--fs-base)*1);font-weight:700;letter-spacing:.5px;color:var(--text);flex:1;text-transform:uppercase;}
 /* Tablet horizontal: cabecera de cada recuadro (icono + nombre) más grande. */
 body.device-tablet.orient-h .result-block-header{padding:clamp(8px,1vh,12px) clamp(10px,1.2vw,16px);gap:10px;}
 body.device-tablet.orient-h .result-block-bar{width:4px;height:clamp(26px,3.4vh,34px);}
