@@ -1207,6 +1207,7 @@ async function validateServiceCode(code){
 
 let socketInfo=null; // {http_host, ws_host, channel, api_key, uuid_user, auth_token, auth_token_ttl}
 let socket=null;
+let socketConnectedUrl=null; // cfg.url contra la que se conectó el socket actual
 let socketInfoFetchedAt = null; // Date.now() de la última vez que refrescamos el token
 let lastWsMessageAt = null; // Date.now() del último mensaje recibido (incluye los 'ka' cada 30s)
 let wsHealthCheckTimer = null;
@@ -1246,6 +1247,7 @@ async function fetchSocketInfo(){
 
 function connectLiveUpdates(){
   // TODO: abrir el WebSocket contra socketInfo.ws_host con la autenticación que pide AWS AppSync Events
+  socketConnectedUrl=loadConfig().url;
   socket = new WebSocket(socketInfo.ws_host.concat('/event/realtime'), ['aws-appsync-event-ws', getAuthProtocol(socketInfo.auth_token, socketInfo.http_host, socketInfo.uuid_user)]);
   socket.onopen = socket_open;
   socket.onmessage = manageMessageGlobal;
@@ -2887,6 +2889,17 @@ async function loadAllData(){
     // "emparejado" para siempre — App ID/Token/Contraseña pasan a solo lectura.
     if(!cfg.paired){cfg.paired=true;persistConfig(cfg);}
 
+    // Si la URL del webservice ha cambiado desde que se conectó el socket
+    // actual (p.ej. se cambió de producción a dev en Ajustes, o tras un
+    // reemparejamiento que vuelve a dejar la URL en su valor por defecto),
+    // el socket viejo se queda escuchando el canal del entorno equivocado
+    // — hay que cerrarlo y reconectar contra el entorno correcto.
+    if (socket && socketConnectedUrl!==cfg.url) {
+      console.warn('[WS] la URL del webservice ha cambiado, reconectando...');
+      socket.onclose=null;
+      socket.close();
+      socket=null;
+    }
     if (!socket) {
       await fetchSocketInfo();
       if (socketInfo && socketInfo.ws_host) {
