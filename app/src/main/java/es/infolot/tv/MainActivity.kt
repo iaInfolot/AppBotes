@@ -15,6 +15,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.view.WindowManager
 import android.webkit.*
 import org.json.JSONObject
 import java.net.Inet4Address
@@ -130,6 +131,11 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // App de kiosco/cartelería: nadie toca el mando durante el uso normal,
+        // así que sin esto el sistema aplica su salvapantallas/bloqueo por
+        // inactividad como en cualquier otra app.
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         val isTv = isRunningOnTv()
         requestedOrientation = if (isTv) {
             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -198,11 +204,11 @@ class MainActivity : Activity() {
                                 el.setAttribute('tabindex', '0');
                             }
                         });
-                        
+
                         // Focus first interactive element
                         var first = document.querySelector('button, select, input');
                         if (first) first.focus();
-                        
+
                         // Add keyboard Enter key support for D-Pad center button
                         document.addEventListener('keydown', function(e) {
                             if (e.keyCode === 13 || e.keyCode === 23) { // Enter or D-Pad center
