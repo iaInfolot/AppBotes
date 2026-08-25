@@ -1152,27 +1152,40 @@ function isNotActivatedError(e){
   return e.message===SERVICE_NOT_ACTIVE_MSG || e.message.startsWith('Missing credentials');
 }
 
-async function wsCall(endpoint,extra={}){
-  const cfg=loadConfig();
-  if(!cfg.token||!cfg.appid||!cfg.pass){
-    throw new Error('Missing credentials — aborting '+endpoint);
+async function wsCall(endpoint,extra={},attempt=0){
+  try{
+    const cfg=loadConfig();
+    if(!cfg.token||!cfg.appid||!cfg.pass){
+      throw new Error('Missing credentials — aborting '+endpoint);
+    }
+    const useProxy=USE_LOCAL_PROXY_FOR_TESTING&&(cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL);
+    const target=cfg.url===DEV_WS_URL?'dev':'prod';
+    const url=useProxy?LOCAL_PROXY_URL:`${cfg.url}/ws/${endpoint}`;
+    const body=useProxy
+      ?{_endpoint:endpoint,_target:target,token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra}
+      :{token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
+    console.log('[wsCall]',endpoint,'appid:',cfg.appid.substring(0,8));
+    const resp=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json=await resp.json();
+    if(json.error) throw new Error(json.error);
+    return json.data;
+  }catch(e){
+    // Un primer intento fallido justo al arrancar (credenciales aún no
+    // listas, red inestabilizándose, la página recargándose a medio
+    // camino...) suele ser un hipo pasajero — un único reintento corto
+    // evita que se propague al usuario sin más, sin ocultar un fallo real
+    // y persistente (que seguirá lanzando tras el segundo intento).
+    if(attempt<1){
+      await new Promise(r=>setTimeout(r,800));
+      return wsCall(endpoint,extra,attempt+1);
+    }
+    throw e;
   }
-  const useProxy=USE_LOCAL_PROXY_FOR_TESTING&&(cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL);
-  const target=cfg.url===DEV_WS_URL?'dev':'prod';
-  const url=useProxy?LOCAL_PROXY_URL:`${cfg.url}/ws/${endpoint}`;
-  const body=useProxy
-    ?{_endpoint:endpoint,_target:target,token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra}
-    :{token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
-  console.log('[wsCall]',endpoint,'appid:',cfg.appid.substring(0,8));
-  const resp=await fetch(url,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
-  if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  const json=await resp.json();
-  if(json.error) throw new Error(json.error);
-  return json.data;
 }
 
 // ── VALIDATE-SERVICE-CODE (activación de dispositivo nuevo) ──
