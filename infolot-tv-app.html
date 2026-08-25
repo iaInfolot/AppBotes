@@ -1116,6 +1116,9 @@ const USE_LOCAL_PROXY_FOR_TESTING = false;
 const PROD_WS_URL = 'https://webservice.infolot.es';
 const DEV_WS_URL = 'https://dev-webservice.infolot.es';
 const LOCAL_PROXY_URL = '/proxy';
+// Ver el comentario junto a su uso en fetchResults(): valor "de escape" para
+// una caché de aplicación atascada en el backend, no un ajuste de producto.
+const RESULTS_LIMIT = 19;
 // Pantalla de activación (código de dispositivo) — ver checkPairingActivation()/
 // showPairingScreen() y validateServiceCode() para el emparejamiento real
 // contra el backend (validate-service-code).
@@ -1524,7 +1527,15 @@ async function fetchResults(id_game){
 
     if(!gameIds.length){setStatus('Sin juegos','error');return;}
     setLoadingStep(cfg.demoMode?'Cargando resultados (DEMO)...':'Cargando resultados semana...');
-    const calls=gameIds.map(id=>wsCall('last-game-results',{id_game:parseInt(id),limit:20})
+    // El valor de "limit" no es arbitrario: confirmado con el backend real
+    // (dev) que hay una caché de aplicación delante de last-game-results que
+    // guarda la respuesta por la combinación exacta de parámetros (incluido
+    // "limit") y no caduca ni respeta Cache-Control — si "limit:20" se quedó
+    // cacheado con datos viejos antes de un sorteo nuevo, se queda atascado
+    // para siempre. RESULTS_LIMIT en vez de un 20 fijo, para poder cambiarlo
+    // rápido en un sitio si vuelve a pasar (backend debe arreglar la caché
+    // de fondo, esto es solo un parche).
+    const calls=gameIds.map(id=>wsCall('last-game-results',{id_game:parseInt(id),limit:RESULTS_LIMIT})
       .then(d=>Array.isArray(d)?d:[]).catch(()=>[]));
     const results=await Promise.all(calls);
     const byGameId={};
