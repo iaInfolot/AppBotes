@@ -11,6 +11,10 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
+    <!-- Excluye teléfonos del catálogo de Google Play: solo tablets (>=600dp
+         de ancho mínimo) y TV (que no se filtra por este atributo). -->
+    <supports-screens android:requiresSmallestWidthDp="600" />
+
     <application
         android:allowBackup="false"
         android:banner="@drawable/tv_banner"
