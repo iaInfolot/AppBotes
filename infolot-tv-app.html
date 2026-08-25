@@ -631,6 +631,25 @@ const APP_VERSION  = '3';
 const APP_REVISION = '20260730-001';
 const STORAGE_KEY  = 'infolot_cfg_v23';
 const LOGO_BASE    = 'https://panel.infolot.es';
+// Logos de cada sorteo hardcodeados en local en vez de usar game.logo/
+// game.logo_official del webservice — así no dependen de lo que devuelva (o
+// deje de devolver) el backend. Archivos en la carpeta logos/, uno por
+// id_game, referenciados por getGameLogo(id) más abajo.
+const GAME_LOGOS = {
+  1:  'logos/1.png',  // Euromillón
+  2:  'logos/2.png',  // La Primitiva
+  4:  'logos/4.png',  // Bonoloto
+  5:  'logos/5.png',  // El Gordo de la Primitiva
+  7:  'logos/7.png',  // Lotería Nacional
+  21: 'logos/21.png', // LotoTurf
+  25: 'logos/25.png', // La Quiniela
+  26: 'logos/26.png', // QuiniGol
+  43: 'logos/43.png', // EuroDreams
+};
+function getGameLogo(id) {
+  const path = GAME_LOGOS[id];
+  return path ? path : '';
+}
 const DAY_SHORT    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 // MainActivity.kt manda ?device=tv|tablet en la URL, decidido en tiempo de
 // ejecución según UiModeManager (una sola app para los dos casos, ver
@@ -1632,9 +1651,7 @@ function renderJackpots(data){
     } else {
       amountHtml=`<span class="card-amount-number">${Math.floor(jackpot).toLocaleString('es-ES')}</span><span class="card-amount-label">EUROS</span>`;
     }
-    let logoSrc='';
-    if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
-    else if(game.logo) logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
+    const logoSrc=getGameLogo(item.id_game);
     const dateStr=item.date?new Date(item.date+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}):'';
     let addonsHtml='';
     if(item.addons&&item.addons.length){
@@ -1792,9 +1809,7 @@ function buildBlockHTML(gameId,draws,availW){
     const compShape=shapeFor(game.num_complementary_figure,'circle');
     const refBg=game.num_refund_bg_color||'#607080',refFg=game.num_refund_fg_color||'#fff';
     const refShape=shapeFor(game.num_refund_figure,'sq');
-    let logoSrc='';
-    if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
-    else if(game.logo) logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
+    const logoSrc=getGameLogo(gameId);
 
     let bodyHtml='';
     const expDatesTop=(!draws||!draws.length)?expectedDatesForGame(gameId,getResultsWeekRef()):null;
@@ -2432,9 +2447,7 @@ function makeQuinielaBlock(quiDraws){
   const dateFsQui=(isTabletHQui||isTvHQui)?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
   const gameQui=gamesMap[25]||{};
   const quiColor=gameQui.fg_color||gameQui.bg_color||'var(--pv-primary)';
-  let logoSrcQui='';
-  if(gameQui.logo_official) logoSrcQui=gameQui.logo_official.startsWith('http')?gameQui.logo_official:LOGO_BASE+gameQui.logo_official;
-  else if(gameQui.logo) logoSrcQui=gameQui.logo.startsWith('http')?gameQui.logo:LOGO_BASE+gameQui.logo;
+  const logoSrcQui=getGameLogo(25);
 
   const rQui=quiDraws[quiDraws.length-1]||{};
   const betQui=Array.isArray(rQui.bet)?rQui.bet:[];
@@ -2500,9 +2513,7 @@ function makeQuiniGolBlock(qgDraws){
   const isTvHQG=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
   const dateFsQG=(isTabletHQG||isTvHQG)?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
   const gameQG=gamesMap[26]||{};
-  let logoSrcQG='';
-  if(gameQG.logo_official) logoSrcQG=gameQG.logo_official.startsWith('http')?gameQG.logo_official:LOGO_BASE+gameQG.logo_official;
-  else if(gameQG.logo) logoSrcQG=gameQG.logo.startsWith('http')?gameQG.logo:LOGO_BASE+gameQG.logo;
+  const logoSrcQG=getGameLogo(26);
 
   const rQG=qgDraws[qgDraws.length-1]||{};
   const betQG=Array.isArray(rQG.bet)?rQG.bet:[];
@@ -2576,9 +2587,7 @@ function renderMixedJackpots(data){
     } else {
       amountHtml=`<span class="card-amount-number">${Math.floor(jackpot).toLocaleString('es-ES')}</span><span class="card-amount-label">EUROS</span>`;
     }
-    let logoSrc='';
-    if(game.logo_official) logoSrc=game.logo_official.startsWith('http')?game.logo_official:LOGO_BASE+game.logo_official;
-    else if(game.logo) logoSrc=game.logo.startsWith('http')?game.logo:LOGO_BASE+game.logo;
+    const logoSrc=getGameLogo(item.id_game);
     const card=document.createElement('div');
     card.className='jackpot-card'+(jackpot>0&&jackpot===maxJ?' is-highest':'')+(item.date&&item.date===minDate?' is-next':'');
     card.style.animationDelay=`${i*30}ms`;
