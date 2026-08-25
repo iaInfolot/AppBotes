@@ -492,6 +492,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
       <li id="menu-item-orient"><button onclick="cycleOrientation()"><span class="menu-icon">🔄</span><span id="menu-orient-label">Horizontal (0°)</span></button></li>
       <li><button onclick="showConfig()"><span class="menu-icon">⚙️</span>Configuración</button></li>
       <li><button onclick="manualRefresh()"><span class="menu-icon">🔄</span>Actualizar datos</button></li>
+      <li id="menu-item-exit"><button onclick="exitApp()"><span class="menu-icon">🚪</span>Salir</button></li>
     </ul>
     <div class="app-version" id="menu-version"></div>
   </div>
@@ -2829,6 +2830,9 @@ function showDiag(){
   document.getElementById('modal-manual-login').style.display='none';
 }
 function manualRefresh(){closeOverlay();_booted=false;_loadingInProgress=false;loadAllData();}
+function exitApp(){
+  if(window.AndroidBridge&&window.AndroidBridge.exitApp) window.AndroidBridge.exitApp();
+}
 // Modal mínimo para la vía de escape de la pantalla de activación: solo pide
 // token y contraseña (URL/App ID ya son los fijos de producción en
 // DEFAULTS), para no exponer todo Ajustes a quien solo necesita entrar con
@@ -3033,6 +3037,10 @@ async function diagRun(endpoint){
   // el sensor ya rota de verdad, ver updateRealOrientation() más abajo.
   const orientMenuItem=document.getElementById('menu-item-orient');
   if(orientMenuItem) orientMenuItem.style.display=IS_TV?'':'none';
+  // "Salir" solo tiene sentido en tablet — en TV la app es kiosco fijo y
+  // no debe poder cerrarse desde el menú.
+  const exitMenuItem=document.getElementById('menu-item-exit');
+  if(exitMenuItem) exitMenuItem.style.display=IS_TV?'none':'';
   // Vista Mixta no existe en tablet — se quita también del desplegable de
   // "Vista por defecto" en Ajustes, para que no se pueda ni seleccionar.
   const mixedOption=document.getElementById('cfg-default-view-mixed-option');

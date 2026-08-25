@@ -62,6 +62,13 @@ class MainActivity : Activity() {
             json.put("ip", localIpAddress())
             return json.toString()
         }
+
+        // Botón "Salir" del menú (solo tablet, ver infolot-tv-app.html) — un
+        // WebView no puede cerrar la app que lo aloja por sí mismo con JS.
+        @JavascriptInterface
+        fun exitApp() {
+            runOnUiThread { finishAndRemoveTask() }
+        }
     }
 
     private fun currentNetworkType(): String {
