@@ -602,6 +602,16 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     </div>
   </div>
 
+  <div class="modal" id="modal-set-home" style="display:none;">
+    <button class="close-btn" onclick="closeOverlay()">✕</button>
+    <h2>Un último paso</h2>
+    <div class="modal-sub">Configura esta app como pantalla de inicio para que se abra sola cada vez que se encienda el dispositivo — sin esto, habrá que entrar a mano después de cada apagado.</div>
+    <div class="cfg-actions">
+      <button class="btn btn-primary" onclick="requestSetAsHome();closeOverlay()">🏠 Configurar</button>
+      <button class="btn btn-secondary" onclick="closeOverlay()">Ahora no</button>
+    </div>
+  </div>
+
   <div class="modal" id="modal-manual-login" style="display:none;">
     <button class="close-btn" onclick="closeOverlay()">✕</button>
     <h2>Credenciales manuales</h2>
@@ -2853,6 +2863,7 @@ function showMenu(){
   document.getElementById('modal-config').style.display='none';
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
+  document.getElementById('modal-set-home').style.display='none';
   setTimeout(()=>{const first=document.querySelector('#modal-menu button');if(first)first.focus();},50);
 }
 // El mando (D-Pad) navega por los campos moviendo el foco, y WebView abre el
@@ -2885,6 +2896,7 @@ function showConfig(){
   document.getElementById('modal-config').style.display='flex';
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
+  document.getElementById('modal-set-home').style.display='none';
   setupDpadTextInputs();
   setTimeout(()=>{
     document.querySelectorAll('#modal-config input,#modal-config select,#modal-config button').forEach((el,i)=>el.setAttribute('tabindex',String(i+1)));
@@ -2897,8 +2909,21 @@ function showDiag(){
   document.getElementById('modal-config').style.display='none';
   document.getElementById('modal-diag').style.display='';
   document.getElementById('modal-manual-login').style.display='none';
+  document.getElementById('modal-set-home').style.display='none';
 }
 function manualRefresh(){closeOverlay();_booted=false;_loadingInProgress=false;loadAllData();}
+// Se muestra una sola vez, justo tras completar el emparejamiento por
+// primera vez — el momento en que más sentido tiene pedir este único paso
+// extra, en vez de dejarlo escondido en Ajustes esperando a que alguien lo
+// encuentre solo.
+function showSetHomePrompt(){
+  document.getElementById('modal-menu').style.display='none';
+  document.getElementById('modal-config').style.display='none';
+  document.getElementById('modal-diag').style.display='none';
+  document.getElementById('modal-manual-login').style.display='none';
+  document.getElementById('modal-set-home').style.display='';
+  document.getElementById('overlay').classList.add('visible');
+}
 function exitApp(){
   if(window.AndroidBridge&&window.AndroidBridge.exitApp) window.AndroidBridge.exitApp();
 }
@@ -2919,6 +2944,7 @@ function showManualLogin(){
   document.getElementById('modal-config').style.display='none';
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='';
+  document.getElementById('modal-set-home').style.display='none';
   document.getElementById('manual-token').value='';
   document.getElementById('manual-pass').value='';
   document.getElementById('manual-login-error').textContent='';
@@ -2989,6 +3015,7 @@ async function loadAllData(){
   _booted=true;_loadingInProgress=true;
   showLoading(true);
   const cfg=loadConfig();
+  let justPaired=false;
   try{
     setLoadingStep('Conectando pv-info...');
     await fetchPvInfo();
@@ -3000,6 +3027,7 @@ async function loadAllData(){
     setLoadingStep('Listo');
     // Primera carga con éxito real del webservice: el dispositivo queda
     // "emparejado" para siempre — App ID/Token/Contraseña pasan a solo lectura.
+    justPaired=!cfg.paired;
     if(!cfg.paired){cfg.paired=true;persistConfig(cfg);}
 
     // Si la URL del webservice ha cambiado desde que se conectó el socket
@@ -3035,6 +3063,13 @@ async function loadAllData(){
   _loadingInProgress=false;
   switchView(currentView||'jackpots');
   startAutoRotate(cfg);
+  if(justPaired){
+    try{
+      if(window.AndroidBridge&&window.AndroidBridge.isHomeRoleAvailable&&window.AndroidBridge.isHomeRoleAvailable()){
+        showSetHomePrompt();
+      }
+    }catch(e){}
+  }
 }
 async function refreshPvAndGames(){await fetchPvInfo();await fetchGames();await fetchServiceConfig();}
 
