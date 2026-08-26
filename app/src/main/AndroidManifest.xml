@@ -44,6 +44,18 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
 
+            <!-- Permite elegir esta app como pantalla de inicio (Home) —
+                 así el sistema la arranca solo tras el arranque sin las
+                 restricciones de "background activity start" que bloquean
+                 lanzarla desde BootReceiver (ver ese archivo). Requiere que
+                 el usuario la seleccione una vez, ver requestSetAsHome() en
+                 MainActivity.kt / botón en Ajustes. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
         </activity>
 
         <receiver

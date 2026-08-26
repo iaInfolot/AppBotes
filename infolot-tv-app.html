@@ -577,6 +577,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
       <button class="btn btn-primary" tabindex="0" onclick="saveConfig()">💾 Guardar</button>
       <button class="btn btn-secondary" tabindex="0" onclick="showMenu()">← Volver</button>
       <button class="btn btn-secondary" tabindex="0" onclick="showDiag()">🔍 Diagnóstico</button>
+      <button class="btn btn-secondary" id="cfg-set-home-btn" tabindex="0" onclick="requestSetAsHome()" style="display:none">🏠 Pantalla de inicio</button>
       <button class="btn btn-danger" tabindex="0" onclick="resetConfig()">Restablecer</button>
     </div>
   </div>
@@ -2901,6 +2902,13 @@ function manualRefresh(){closeOverlay();_booted=false;_loadingInProgress=false;l
 function exitApp(){
   if(window.AndroidBridge&&window.AndroidBridge.exitApp) window.AndroidBridge.exitApp();
 }
+// Hace que el sistema arranque esta app solo al encender el dispositivo,
+// sin las restricciones de Android que bloquean lanzarla desde el
+// BroadcastReceiver de arranque (ver BootReceiver.kt/requestSetAsHome en
+// MainActivity.kt). Un solo toque en el diálogo del sistema, una vez.
+function requestSetAsHome(){
+  if(window.AndroidBridge&&window.AndroidBridge.requestSetAsHome) window.AndroidBridge.requestSetAsHome();
+}
 // Modal mínimo para la vía de escape de la pantalla de activación: solo pide
 // token y contraseña (URL/App ID ya son los fijos de producción en
 // DEFAULTS), para no exponer todo Ajustes a quien solo necesita entrar con
@@ -3111,6 +3119,16 @@ async function diagRun(endpoint){
   if(exitMenuItem) exitMenuItem.style.display=IS_TV?'none':'';
   const pairingExitBtn=document.getElementById('pairing-exit-btn');
   if(pairingExitBtn) pairingExitBtn.style.display=IS_TV?'none':'';
+  // "Pantalla de inicio" solo tiene sentido donde Android deja cambiar el
+  // launcher — confirmado que en Fire TV no ofrece esa opción en absoluto
+  // (ver requestSetAsHome/isHomeRoleAvailable en MainActivity.kt), así que
+  // ahí se oculta en vez de mostrar un botón que no hace nada al pulsarlo.
+  try{
+    const setHomeBtn=document.getElementById('cfg-set-home-btn');
+    if(setHomeBtn&&window.AndroidBridge&&window.AndroidBridge.isHomeRoleAvailable){
+      setHomeBtn.style.display=window.AndroidBridge.isHomeRoleAvailable()?'':'none';
+    }
+  }catch(e){}
   // Vista Mixta no existe en tablet — se quita también del desplegable de
   // "Vista por defecto" en Ajustes, para que no se pueda ni seleccionar.
   const mixedOption=document.getElementById('cfg-default-view-mixed-option');
