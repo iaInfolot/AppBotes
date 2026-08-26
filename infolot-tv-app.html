@@ -2404,6 +2404,11 @@ function recalcBallsInBlock(block){
     // (ver "Col 3" más abajo) y con el tope de 38 se desbordaba — se reduce
     // solo para ese caso concreto, tablet y TV vertical quedan igual.
     const isTvH=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
+    // La vista mixta y la de Resultados comparten esta función pero tienen
+    // cabeceras/márgenes distintos (la mixta usa fecha más pequeña, ver
+    // #mixed-results-grid .rb-date en el CSS) — hay que distinguirlas o un
+    // ajuste pensado para una desborda o achica de más a la otra.
+    const inMixed=!!block.closest('#mixed-results-grid');
     const maxSzCap=rowCount>1?(gameId===1?38:gameId===43?32:gameId===2?27:44):(gameId===5?(isTvH?32:38):30); // Euromillón grande, EuroDreams igual que antes; Primitiva/Gordo más pequeños (necesitan compartir alto con QuiniGol); Bonoloto/LotoTurf: manda la altura real disponible. El Gordo en TV horizontal: techo subido de 24 a 28 — el chequeo de alto real (más abajo) sigue recortándolo si algún día no cabe.
     maxSz=maxSzCap;
     // Con varios sorteos apilados, el nº de filas puede variar (p.ej. Bonoloto suma el sorteo del domingo):
@@ -2438,11 +2443,11 @@ function recalcBallsInBlock(block){
       // LotoTurf) — sin comprobar también el alto real, la bola se puede
       // salir del bloque cuando ese día toca menos hueco del habitual.
       const availH=Math.max(30,body.clientHeight);
-      // -30 en vez de -24: medido en vivo que el hueco real que deja la
-      // cabecera (fecha) + márgenes/bordes del bloque es algo mayor de lo
-      // que parecía a primera vista — con -24 seguía desbordando unos
-      // pocos px en El Gordo.
-      const heightSz=availH-30;
+      // La cabecera de la vista mixta es más pequeña (fecha a *.7, ver CSS),
+      // así que deja más hueco real libre que la de Resultados — cada vista
+      // necesita su propio margen para no desbordar (Resultados) ni achicar
+      // de más (mixta) la bola.
+      const heightSz=availH-(inMixed?24:30);
       maxSz=Math.max(14,Math.min(maxSzCap,heightSz));
     }
   }
