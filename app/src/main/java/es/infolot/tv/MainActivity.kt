@@ -3,7 +3,6 @@ package es.infolot.tv
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.UiModeManager
-import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -96,12 +95,11 @@ class MainActivity : Activity() {
             runOnUiThread { finishAndRemoveTask() }
         }
 
-        // Consultado desde Ajustes para mostrar/ocultar el botón "Configurar
-        // como pantalla de inicio" — confirmado en dos plataformas TV
-        // distintas (Fire TV y un emulador Android TV / Leanback genérico)
-        // que el botón Home de una TV no usa ROLE_HOME en absoluto: en Fire
-        // TV el selector ni aparece, y en Android TV la app SÍ puede
-        // quedarse con el rol (roleManager.isRoleHeld pasa a true) pero
+        // Consultado desde Ajustes para mostrar/ocultar el botón de pantalla
+        // de inicio — confirmado en dos plataformas TV distintas (Fire TV y
+        // un emulador Android TV / Leanback genérico) que el botón Home de
+        // una TV no usa ROLE_HOME en absoluto: en Fire TV el selector ni
+        // aparece, y en Android TV la app SÍ puede quedarse con el rol pero
         // pulsar Home sigue yendo a com.google.android.tvlauncher de todas
         // formas — no existe ningún rol de sistema para "Home de TV" (se
         // comprobó la lista completa de dumpsys role). Es una limitación de
@@ -109,38 +107,22 @@ class MainActivity : Activity() {
         // cualquier TV, no solo Fire TV.
         @JavascriptInterface
         fun isHomeRoleAvailable(): Boolean {
-            if (isRunningOnTv()) return false
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
-            val roleManager = getSystemService(RoleManager::class.java) ?: return false
-            return roleManager.isRoleAvailable(RoleManager.ROLE_HOME) &&
-                !roleManager.isRoleHeld(RoleManager.ROLE_HOME)
+            return !isRunningOnTv()
         }
 
-        // Botón "Configurar como pantalla de inicio" en Ajustes — necesario
-        // para que el dispositivo arranque la app solo al encenderse (ver
-        // BootReceiver.kt: un BroadcastReceiver ya no puede lanzar una
-        // Activity directamente en Android reciente, pero las apps Home sí
-        // se lanzan automáticamente sin esa restricción). Un solo toque del
-        // usuario en el diálogo del sistema, una vez por dispositivo.
+        // Botón de pantalla de inicio en Ajustes — se deja visible siempre
+        // en tablet (nunca se oculta aunque ya esté configurada), para que
+        // se pueda volver al launcher normal de la tablet cuando se quiera.
+        // Se usa la pantalla de sistema "Apps predeterminadas > Inicio" en
+        // vez de RoleManager.createRequestRoleIntent(): esa API solo sirve
+        // para PEDIR el rol hacia esta app (si ya lo tiene, no ofrece volver
+        // a cambiarlo a otra), mientras que esta pantalla de Ajustes permite
+        // cambiarlo en cualquier dirección, en cualquier versión de Android.
         @JavascriptInterface
         fun requestSetAsHome() {
             runOnUiThread {
                 try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        val roleManager = getSystemService(RoleManager::class.java)
-                        if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_HOME) &&
-                            !roleManager.isRoleHeld(RoleManager.ROLE_HOME)
-                        ) {
-                            // startActivity() normal no vale aquí: RequestRoleActivity
-                            // necesita saber qué app llama (lo lee de la identidad del
-                            // caller que solo se establece con startActivityForResult),
-                            // si no falla en silencio con "Package name cannot be null
-                            // or empty" y se cierra sin mostrar nada (confirmado en logcat).
-                            startActivityForResult(roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME), REQUEST_CODE_SET_HOME)
-                        }
-                    } else {
-                        startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
-                    }
+                    startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
                 } catch (e: Exception) {
                 }
             }
@@ -197,7 +179,6 @@ class MainActivity : Activity() {
 
     companion object {
         const val APP_URL = "https://iainfolot.github.io/AppBotes/infolot-tv-app.html"
-        private const val REQUEST_CODE_SET_HOME = 1001
     }
 
     // Una sola app para TV y tablet — en vez de dos builds separados, se
