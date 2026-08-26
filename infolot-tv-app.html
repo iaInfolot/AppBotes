@@ -1201,15 +1201,31 @@ async function wsCall(endpoint,extra={},attempt=0){
 // ── VALIDATE-SERVICE-CODE (activación de dispositivo nuevo) ──
 // A diferencia de wsCall, aquí todavía no hay token/pass — es precisamente
 // lo que se consigue a cambio del código. Solo hacen falta code + app_id.
+function getDeviceInfoForBackend(){
+  // Pendiente de que backend implemente la recogida de estos campos (ver
+  // memoria del proyecto) — se mandan ya para no tener que tocar el cliente
+  // otra vez cuando lo hagan. Si algo falla (navegador de escritorio sin
+  // AndroidBridge, campo nativo no disponible en un Android viejo...), se
+  // manda lo que se pueda en vez de bloquear el emparejamiento por esto.
+  const info={app_version:APP_VERSION,app_revision:APP_REVISION,device_type:DEVICE_TYPE};
+  try{
+    if(window.AndroidBridge&&window.AndroidBridge.getDeviceInfo){
+      Object.assign(info,JSON.parse(window.AndroidBridge.getDeviceInfo()));
+    }
+  }catch(e){console.error('[validateServiceCode] getDeviceInfo error:',e);}
+  return info;
+}
+
 async function validateServiceCode(code){
   const cfg=loadConfig();
   const useProxy=USE_LOCAL_PROXY_FOR_TESTING&&(cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL);
   const target=cfg.url===DEV_WS_URL?'dev':'prod';
   const endpoint='validate-service-code';
   const url=useProxy?LOCAL_PROXY_URL:`${cfg.url}/ws/${endpoint}`;
+  const deviceInfo=getDeviceInfoForBackend();
   const body=useProxy
-    ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid}
-    :{code,app_id:DEFAULTS.appid};
+    ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid,device_info:deviceInfo}
+    :{code,app_id:DEFAULTS.appid,device_info:deviceInfo};
   // Sin esto, si el backend se queda colgado sin responder (en vez de dar
   // un error claro), el fetch nunca resuelve ni rechaza — el botón de
   // "Comprobar activación" se queda bloqueado en "Comprobando..." para

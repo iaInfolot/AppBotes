@@ -11,6 +11,7 @@ import android.net.NetworkCapabilities
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
@@ -60,6 +61,28 @@ class MainActivity : Activity() {
             json.put("signalLevel", wifi?.first ?: -1)
             if (wifi != null) json.put("signalDbm", wifi.second)
             json.put("ip", localIpAddress())
+            // Versión/antigüedad del APK instalado — para que backend pueda
+            // detectar PVs con la app desactualizada (ver validate-service-code
+            // en infolot-tv-app.html).
+            try {
+                val pkgInfo = packageManager.getPackageInfo(packageName, 0)
+                json.put("appVersionName", pkgInfo.versionName)
+                val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    pkgInfo.longVersionCode
+                } else {
+                    @Suppress("DEPRECATION") pkgInfo.versionCode.toLong()
+                }
+                json.put("appVersionCode", versionCode)
+                json.put("appLastUpdateMs", pkgInfo.lastUpdateTime)
+            } catch (e: Exception) {
+            }
+            // Identificador estable del dispositivo (no es MAC ni serial real,
+            // ver conversación con Gabi) — permite a backend correlacionar
+            // fallos repetidos del mismo aparato físico entre emparejamientos.
+            try {
+                json.put("androidId", Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID))
+            } catch (e: Exception) {
+            }
             return json.toString()
         }
 
