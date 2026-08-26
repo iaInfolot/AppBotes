@@ -421,6 +421,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     <button class="btn btn-primary" id="pairing-check-btn" onclick="checkPairingActivation()">Comprobar activación</button>
     <div id="pairing-error"></div>
     <button class="btn btn-secondary" id="pairing-settings-btn" onclick="openManualLoginFromPairing()">Introducir credenciales manualmente</button>
+    <button id="pairing-exit-btn" onclick="exitApp()" style="display:none;margin-top:10px;background:none;border:none;color:var(--muted);font-family:var(--font-ui);font-size:var(--fs-xs);text-decoration:underline;cursor:pointer;padding:4px;">Salir</button>
   </div>
 </div>
 
@@ -3058,6 +3059,8 @@ async function diagRun(endpoint){
   // no debe poder cerrarse desde el menú.
   const exitMenuItem=document.getElementById('menu-item-exit');
   if(exitMenuItem) exitMenuItem.style.display=IS_TV?'none':'';
+  const pairingExitBtn=document.getElementById('pairing-exit-btn');
+  if(pairingExitBtn) pairingExitBtn.style.display=IS_TV?'none':'';
   // Vista Mixta no existe en tablet — se quita también del desplegable de
   // "Vista por defecto" en Ajustes, para que no se pueda ni seleccionar.
   const mixedOption=document.getElementById('cfg-default-view-mixed-option');
