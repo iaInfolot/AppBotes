@@ -2438,7 +2438,11 @@ function recalcBallsInBlock(block){
       // LotoTurf) — sin comprobar también el alto real, la bola se puede
       // salir del bloque cuando ese día toca menos hueco del habitual.
       const availH=Math.max(30,body.clientHeight);
-      const heightSz=availH-24; // cabecera (fecha) + márgenes del bloque
+      // -30 en vez de -24: medido en vivo que el hueco real que deja la
+      // cabecera (fecha) + márgenes/bordes del bloque es algo mayor de lo
+      // que parecía a primera vista — con -24 seguía desbordando unos
+      // pocos px en El Gordo.
+      const heightSz=availH-30;
       maxSz=Math.max(14,Math.min(maxSzCap,heightSz));
     }
   }
