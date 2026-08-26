@@ -364,6 +364,11 @@ body.device-tablet #modal-config .cfg-actions .btn{font-size:calc(var(--fs-sm)*1
    un px fijo) para que siempre quede más pequeño que el original, sea cual
    sea el tamaño base calculado en cada pantalla. */
 #mixed-results-grid .rb-date{font-size:calc(var(--fs-sm)*.7)!important;}
+/* Mismo motivo que .rb-date arriba: "SUEÑO" (EuroDreams) y "ESTRELLAS"
+   (Euromillón) usan el mismo tamaño de fuente que la fecha (dateFs, inline),
+   y en la fila estrecha de la vista mixta competían por espacio con la
+   fecha en la misma línea, solapándose. */
+#mixed-results-grid .rb-extra-label{font-size:calc(var(--fs-sm)*.7)!important;}
 
 /* ══ AUTO-ROTATE BAR ══ */
 #rotate-bar{position:fixed;bottom:0;left:0;height:3px;background:var(--pv-secondary);width:100%;display:none;z-index:50;transform-origin:left;}
