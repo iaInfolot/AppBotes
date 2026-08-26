@@ -1804,7 +1804,17 @@ function pendingHtml(game){
 // Días de la semana (0=domingo..6=sábado) en que sortea cada juego. Se usa para
 // rellenar con un hueco "Pendiente" los sorteos de la semana que aún no han
 // salido, en vez de dejar el bloque con espacio vacío sin explicar por qué.
-const EXPECTED_DOW={1:[2,5],2:[1,4,6],4:[0,1,2,3,4,5,6],21:[4,0],25:[0],26:[0],43:[1,4],7:[4,6],5:[0]};
+// La Quiniela, QuiniGol y LotoTurf NO tienen día fijo (pueden variar a lo
+// largo de la semana, ver VARIABLE_DOW_SLOTS más abajo) — no llevan entrada
+// aquí a propósito.
+const EXPECTED_DOW={1:[2,5],2:[1,4,6],4:[0,1,2,3,4,5,6],43:[1,4],7:[4,6],5:[0]};
+// Juegos sin día de sorteo fijo: en vez de comprobar fechas concretas, se
+// muestran siempre los N sorteos más recientes que haya en la semana actual
+// (N = huecos del bloque), sea cual sea el día en que cayeron. Si hay menos
+// de N, el resto del bloque queda "Pendiente" sin fecha asociada — nunca se
+// rellena con datos de la semana anterior una vez ha aparecido ya el primer
+// sorteo de la semana actual (para cualquier juego).
+const VARIABLE_DOW_SLOTS={21:2,25:1,26:1};
 function expectedDatesForGame(gameId,anchorDate){
   const dows=EXPECTED_DOW[gameId];
   if(!dows) return null;
@@ -1826,14 +1836,22 @@ function buildBlockHTML(gameId,draws,availW){
     const logoSrc=getGameLogo(gameId);
 
     let bodyHtml='';
-    const expDatesTop=(!draws||!draws.length)?expectedDatesForGame(gameId,getResultsWeekRef()):null;
-    if((!draws||!draws.length)&&!expDatesTop){
+    const varSlots=VARIABLE_DOW_SLOTS[gameId];
+    const expDatesTop=(!draws||!draws.length)&&!varSlots?expectedDatesForGame(gameId,getResultsWeekRef()):null;
+    if((!draws||!draws.length)&&!expDatesTop&&!varSlots){
       bodyHtml=pendingHtml(game);
     } else if(gt==='loto'){
       const anchor=draws&&draws.length?new Date(draws[0].date+'T12:00:00'):getResultsWeekRef();
-      const expDates=expectedDatesForGame(gameId,anchor);
+      const expDates=varSlots?null:expectedDatesForGame(gameId,anchor);
       let entries;
-      if(expDates){
+      if(varSlots){
+        // Sin día fijo (LotoTurf): los N más recientes de la semana actual ya
+        // descargada, en orden cronológico — y relleno "Pendiente" sin fecha
+        // en los huecos que aún falten, nunca con datos de otra semana.
+        const sorted=[...(draws||[])].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+        entries=sorted.slice(-varSlots);
+        while(entries.length<varSlots) entries.push({pending:true});
+      } else if(expDates){
         const byDate={};(draws||[]).forEach(r=>{byDate[r.date]=r;});
         entries=expDates.map(dateStr=>byDate[dateStr]||{date:dateStr,pending:true});
       } else {
@@ -1880,8 +1898,7 @@ function buildBlockHTML(gameId,draws,availW){
       const sideBySide=entries.length>1&&(availW||200)>350;
       if(sideBySide) bodyHtml+=`<div style="display:flex;flex-direction:row;gap:8px;height:100%">`;
       entries.forEach((r,ri)=>{
-        const d=new Date(r.date+'T12:00:00');
-        const fdStr=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+        const fdStr=r.date?new Date(r.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
         const notLast=ri<entries.length-1;
         const ds=sideBySide
           ?(notLast?`flex:1;min-width:0;border-right:1px solid var(--border);padding-right:8px;`:'flex:1;min-width:0;')
@@ -1891,7 +1908,7 @@ function buildBlockHTML(gameId,draws,availW){
           if(hasE) rowPh+=bsep('+')+ballsArr(Array(nExtra).fill('·'),'var(--muted)','transparent',extShape,bsz);
           if(hasC) rowPh+=bsep('C')+mkBall('·','var(--muted)','transparent',compShape,bsz);
           if(hasR) rowPh+=bsep('R')+mkBall('·','var(--muted)','transparent',refShape,bsz);
-          bodyHtml+=`<div style="${ds}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${headerMB};gap:4px"><span class="rb-date" style="font-family:var(--font-ui);font-size:${dateFs};font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span><span style="font-family:var(--font-ui);font-size:${codeFs};color:var(--muted);font-style:italic">Pendiente</span></div><div style="opacity:.35">${brow(rowPh,nMain,nExtra,hasC?1:0,hasR?1:0)}</div></div>`;
+          bodyHtml+=`<div style="${ds}"><div style="display:flex;align-items:center;justify-content:${fdStr?'space-between':'flex-end'};margin-bottom:${headerMB};gap:4px">${fdStr?`<span class="rb-date" style="font-family:var(--font-ui);font-size:${dateFs};font-weight:600;color:var(--text2);white-space:nowrap">${esc(fdStr)}</span>`:''}<span style="font-family:var(--font-ui);font-size:${codeFs};color:var(--muted);font-style:italic">Pendiente</span></div><div style="opacity:.35">${brow(rowPh,nMain,nExtra,hasC?1:0,hasR?1:0)}</div></div>`;
           return;
         }
         let row=ballsArr(r.bet,numBg,numFg,numShape,bsz);
@@ -1992,7 +2009,7 @@ function buildBlockHTML(gameId,draws,availW){
 
   function makeBlock(gameId,draws,availW){
     const{barClr,logoSrc,name,bodyHtml}=buildBlockHTML(gameId,draws||[],availW||200);
-    const hasPending=(!draws||!draws.length)&&!EXPECTED_DOW[gameId];
+    const hasPending=(!draws||!draws.length)&&!EXPECTED_DOW[gameId]&&!VARIABLE_DOW_SLOTS[gameId];
     const block=document.createElement('div');
     block.className='result-block'+(hasPending?' result-pending':'');
     block.dataset.gameId=gameId;
