@@ -26,7 +26,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize|density|uiMode"
             android:exported="true"
             android:immersive="true"
             android:launchMode="singleInstance"
