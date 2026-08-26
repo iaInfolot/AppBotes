@@ -2404,7 +2404,7 @@ function recalcBallsInBlock(block){
     // (ver "Col 3" más abajo) y con el tope de 38 se desbordaba — se reduce
     // solo para ese caso concreto, tablet y TV vertical quedan igual.
     const isTvH=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
-    const maxSzCap=rowCount>1?(gameId===1?38:gameId===43?32:gameId===2?27:44):(gameId===5?(isTvH?24:38):30); // Euromillón grande, EuroDreams igual que antes; Primitiva/Gordo más pequeños (necesitan compartir alto con QuiniGol); Bonoloto/LotoTurf: manda la altura real disponible
+    const maxSzCap=rowCount>1?(gameId===1?38:gameId===43?32:gameId===2?27:44):(gameId===5?(isTvH?28:38):30); // Euromillón grande, EuroDreams igual que antes; Primitiva/Gordo más pequeños (necesitan compartir alto con QuiniGol); Bonoloto/LotoTurf: manda la altura real disponible. El Gordo en TV horizontal: techo subido de 24 a 28 — el chequeo de alto real (más abajo) sigue recortándolo si algún día no cabe.
     maxSz=maxSzCap;
     // Con varios sorteos apilados, el nº de filas puede variar (p.ej. Bonoloto suma el sorteo del domingo):
     // se limita también por el alto real disponible para que la última fila no quede cortada por el bloque.
