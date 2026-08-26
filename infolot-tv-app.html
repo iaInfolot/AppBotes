@@ -2738,7 +2738,14 @@ function renderMixedResults(data){
     const bonolotoBall=document.querySelector('#mixed-results-grid .result-block[data-game-id="4"] .ball-sized:not(.ball-star)');
     const gordoBlock=document.querySelector('#mixed-results-grid .result-block[data-game-id="5"]');
     if(!bonolotoBall||!gordoBlock) return;
-    const sz=Math.round(parseFloat(bonolotoBall.style.width)*GORDO_SIZE_FACTOR);
+    // Tope de seguridad: el tamaño "prestado" de Bonoloto no debe superar lo
+    // que el propio bloque de El Gordo puede contener sin desbordarse (ya
+    // calculado por recalcBallsInBlock justo antes de esta función) — sin
+    // esto, si Bonoloto sale grande pero El Gordo comparte columna con
+    // bloques más apretados, las bolas se salían del bloque.
+    const gordoBall=gordoBlock.querySelector('.ball-sized:not(.ball-star)');
+    const safeMax=gordoBall?parseFloat(gordoBall.style.width):Infinity;
+    const sz=Math.min(safeMax,Math.round(parseFloat(bonolotoBall.style.width)*GORDO_SIZE_FACTOR));
     const fs=Math.max(9,Math.round(sz*.55))+'px';
     gordoBlock.querySelectorAll('.ball-sized').forEach(el=>{
       const bsz=el.classList.contains('ball-star')?Math.round(sz*STAR_SCALE):sz;
