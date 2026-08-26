@@ -2430,6 +2430,16 @@ function recalcBallsInBlock(block){
       const perRowOverhead=isTabletDevice?(manyRows?30:40):24; // etiqueta de fecha + márgenes entre sorteos
       const heightSz=Math.floor(availH/rowCount)-perRowOverhead;
       maxSz=Math.max(14,Math.min(heightCapForTablet,heightSz));
+    } else {
+      // Bloques de una sola fila (Quiniela, QuiniGol, Gordo, LotoTurf...): el
+      // tope de arriba asume que siempre sobra alto, pero en la vista mixta
+      // el alto real de la columna varía según lo que ocupen los bloques
+      // vecinos (p.ej. El Gordo comparte columna con QuiniGol/Primitiva/
+      // LotoTurf) — sin comprobar también el alto real, la bola se puede
+      // salir del bloque cuando ese día toca menos hueco del habitual.
+      const availH=Math.max(30,body.clientHeight);
+      const heightSz=availH-24; // cabecera (fecha) + márgenes del bloque
+      maxSz=Math.max(14,Math.min(maxSzCap,heightSz));
     }
   }
   rows.forEach(row=>{
