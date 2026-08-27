@@ -941,7 +941,7 @@ function sparklesHtml(){
 // hasta la siguiente — así la mayor parte del tiempo no pasa nada, y de
 // vez en cuando brilla una tarjeta cualquiera.
 function scheduleCardShine(){
-  const waitMs=5000+Math.random()*9000;
+  const waitMs=1200+Math.random()*2600;
   setTimeout(()=>{
     const cards=[...document.querySelectorAll('.jackpot-card')];
     if(cards.length){
