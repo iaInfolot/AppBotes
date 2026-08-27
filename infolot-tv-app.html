@@ -2715,7 +2715,13 @@ function makeQuinielaBlock(quiDraws){
   const plenoRaw=Array.isArray(rQui.extra)?rQui.extra:(rQui.extra!=null?[rQui.extra]:[]);
   const plenoG1=plenoRaw.length>0?String(plenoRaw[0]):null;
   const plenoG2=plenoRaw.length>1?String(plenoRaw[1]):null;
-  const pending=!betQui.length;
+  // No basta con mirar si el array está vacío: el backend puede publicar ya
+  // los partidos de la jornada (nombres de equipo) antes de tener las
+  // apuestas/resultados listos, dejando el array del tamaño correcto pero
+  // con valores en blanco — sin esto se pintaban las filas con el nombre de
+  // los equipos pero el recuadro de resultado vacío, en vez del aviso
+  // "Pendiente" limpio.
+  const pending=!betQui.length||betQui.every(v=>v==null||v==='');
   const fdDateStr=rQui.date||(pending?(expectedDatesForGame(25,getResultsWeekRef())||[])[0]:null);
   const fd=fdDateStr?new Date(fdDateStr+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
 
@@ -2776,7 +2782,10 @@ function makeQuiniGolBlock(qgDraws){
   const rQG=qgDraws[qgDraws.length-1]||{};
   const betQG=Array.isArray(rQG.bet)?rQG.bet:[];
   const matchesQG=rQG.other?.matches||[];
-  const pending=!betQG.length;
+  // Mismo caso que en Quiniela (ver makeQuinielaBlock): el array puede venir
+  // con el tamaño correcto pero relleno de valores en blanco si el backend
+  // publica los partidos antes que las apuestas.
+  const pending=!betQG.length||betQG.every(v=>v==null||v==='');
   const fdDateStr=rQG.date||(pending?(expectedDatesForGame(26,getResultsWeekRef())||[])[0]:null);
   const fd=fdDateStr?new Date(fdDateStr+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
 
