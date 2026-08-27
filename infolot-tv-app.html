@@ -2116,7 +2116,7 @@ function buildBlockHTML(gameId,draws,availW){
         // (pensado para el ancho sin rotar) sugiere. Sin esto los números
         // de premio se salían del bloque por ese lado.
         const isTvRotatedV=document.body.classList.contains('device-tv')&&document.body.classList.contains('orient-v');
-        const narrow=effAvailW<220||isTvRotatedV;
+        const narrow=effAvailW<220;
         // TV horizontal: el bloque va a ancho completo (ver "Lotería Nacional
         // a ancho completo" en paintTvResultsCols/paintResultsCols12), así
         // que nunca cae en "narrow" y usaba el tamaño grande pensado para
@@ -2124,8 +2124,15 @@ function buildBlockHTML(gameId,draws,availW){
         const isTvH=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
         bodyHtml+=`<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;${ds}">`;
         bodyHtml+=`<div class="rb-date" style="font-family:var(--font-ui);font-size:${dateFsNat};font-weight:600;color:var(--text2)">${esc(fd)}</div>`;
-        // MARGENES Y TAMAÑO DEL CONTENIDO DEL BLOQUE
-        const rowGap=narrow?'2px':(crowded?'3px':'5px'), numPad=narrow?'1px 3px':(crowded?'2px 4px':isTvH?'2px 5px':'2px 7px'), numFs=narrow?'var(--fs-sm)':(isTvH?'calc(var(--fs-lg)*1.05)':'calc(var(--fs-lg)*1.3)'), numLs=narrow?'0':'2px', dividerH=narrow?'16px':(crowded?'20px':'28px'), refBallSz=narrow?13:(isTvH?16:(crowded?18:20));
+        // MARGENES Y TAMAÑO DEL CONTENIDO DEL BLOQUE — para ajustar a mano
+        // el tamaño de los números de premio en TV vertical, cambia los
+        // valores del bloque "isTvRotatedV" de aquí abajo.
+        const rowGap=narrow?'2px':(isTvRotatedV?'3px':(crowded?'3px':'5px'));
+        const numPad=narrow?'1px 3px':(isTvRotatedV?'2px 5px':(crowded?'2px 4px':isTvH?'2px 5px':'2px 7px'));
+        const numFs=narrow?'var(--fs-sm)':(isTvRotatedV?'calc(var(--fs-sm)*1.35)':(isTvH?'calc(var(--fs-lg)*1.05)':'calc(var(--fs-lg)*1.3)'));
+        const numLs=narrow?'0':(isTvRotatedV?'1px':'2px');
+        const dividerH=narrow?'16px':(isTvRotatedV?'18px':(crowded?'20px':'28px'));
+        const refBallSz=narrow?13:(isTvRotatedV?15:(isTvH?16:(crowded?18:20)));
         bodyHtml+=`<div style="display:flex;align-items:center;align-self:center;gap:${rowGap};flex-wrap:nowrap">`;
         numEntries.forEach(({ord,n},idx)=>{
           bodyHtml+=`<div style="text-align:center;flex-shrink:0"><div style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--text2);margin-bottom:1px;font-weight:600">${ord} Premio</div><div style="background:${numBg};color:${numFg};border-radius:5px;padding:${numPad};font-family:var(--font-display);font-size:${numFs};letter-spacing:${numLs};white-space:nowrap">${esc(n)}</div></div>`;
