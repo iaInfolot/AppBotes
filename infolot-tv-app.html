@@ -216,7 +216,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
    versión de WebView, no de este CSS — mientras que drop-shadow (que
    sigue la silueta real del elemento en vez de pintarse aparte) se ve
    limpio en el mismo dispositivo. */
-.jackpot-card{border-radius:var(--radius);position:relative;filter:drop-shadow(var(--shadow));will-change:filter;animation:fadeUpOpacity .35s ease both;transition:transform .2s,filter .2s;min-height:0;}
+/* min-width:0 es necesario porque las tarjetas son celdas de una
+   rejilla (1fr cada una, deberían medir todas igual) — sin él, una
+   celda con contenido que no puede encogerse (p.ej. el hueco reservado
+   para la cinta "MAYOR BOTE") fuerza esa columna entera a ensancharse,
+   y esa tarjeta acaba más grande que el resto. */
+.jackpot-card{border-radius:var(--radius);position:relative;filter:drop-shadow(var(--shadow));will-change:filter;animation:fadeUpOpacity .35s ease both;transition:transform .2s,filter .2s;min-width:0;min-height:0;}
 .jackpot-card:hover{transform:translateY(-2px);filter:drop-shadow(0 4px 14px rgba(0,0,0,.4));}
 .card-inner{background:var(--pv-primary);border-radius:inherit;padding:clamp(10px,1.2vh,16px) clamp(12px,1.2vw,18px);display:flex;flex-direction:column;position:relative;overflow:hidden;height:100%;}
 /* Brillo diagonal que recorre UNA tarjeta suelta de vez en cuando —
