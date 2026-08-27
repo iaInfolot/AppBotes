@@ -202,10 +202,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 #jackpots-grid{flex:1;display:grid;gap:clamp(6px,.8vw,12px);overflow:hidden;min-height:0;}
 .jackpot-card{background:var(--pv-primary);border:none;border-radius:var(--radius);padding:clamp(10px,1.2vh,16px) clamp(12px,1.2vw,18px);display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--shadow);animation:fadeUpOpacity .35s ease both;transition:transform .2s,box-shadow .2s;min-height:0;}
 .jackpot-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.35);}
-/* Brillo que recorre la tarjeta en diagonal cada pocos segundos —
-   le da presencia al color plano sin distraer en un panel que está
-   siempre encendido. Se pausa fuera de la tarjeta la mayor parte del
-   ciclo (ver keyframes), no es un barrido continuo. */
+/* Brillo diagonal que recorre UNA tarjeta suelta de vez en cuando —
+   se dispara desde JS (ver scheduleCardShine) en momentos e intervalos
+   aleatorios, no con un ciclo fijo por tarjeta, para que no se note un
+   patrón. Normalmente no pasa nada; de tarde en tarde brilla una. */
 .jackpot-card::before{
   content:'';
   position:absolute;
@@ -215,14 +215,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
   height:220%;
   background:linear-gradient(120deg,transparent,rgba(255,255,255,.28),transparent);
   transform:rotate(15deg);
-  animation:cardShine 7s ease-in-out infinite;
-  animation-delay:var(--shine-delay,0s);
   pointer-events:none;
 }
+.jackpot-card.shine-flash::before{
+  animation:cardShine 1.6s ease-in-out;
+}
 @keyframes cardShine{
-  0%{left:-40%;}
-  35%{left:130%;}
-  100%{left:130%;}
+  from{left:-40%;}
+  to{left:130%;}
 }
 .jackpot-card.is-highest::after{content:'★ MAYOR BOTE';position:absolute;top:8px;right:12px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:700;letter-spacing:2px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);animation:pulseLabel 2s ease-in-out infinite;}
 .jackpot-card.is-next:not(.is-highest)::after{content:'⚡ PRÓXIMO SORTEO';position:absolute;top:8px;right:12px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:700;letter-spacing:2px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);animation:pulseLabel 2s ease-in-out infinite;}
@@ -909,6 +909,25 @@ function cardGradient(color){
   return `radial-gradient(circle at 88% -15%,rgba(255,255,255,.32),transparent 55%),`
     +`linear-gradient(135deg,${light} 0%,${color} 50%,${dark} 100%)`;
 }
+
+// Brillo suelto en las tarjetas de Botes: en vez de un ciclo fijo por
+// tarjeta (que se nota como un barrido repetitivo), se dispara una sola
+// vez sobre UNA tarjeta al azar, esperando un tiempo también al azar
+// hasta la siguiente — así la mayor parte del tiempo no pasa nada, y de
+// vez en cuando brilla una tarjeta cualquiera.
+function scheduleCardShine(){
+  const waitMs=5000+Math.random()*9000;
+  setTimeout(()=>{
+    const cards=[...document.querySelectorAll('.jackpot-card')];
+    if(cards.length){
+      const card=cards[Math.floor(Math.random()*cards.length)];
+      card.classList.add('shine-flash');
+      setTimeout(()=>card.classList.remove('shine-flash'),1700);
+    }
+    scheduleCardShine();
+  },waitMs);
+}
+scheduleCardShine();
 
 // ── 3. CONFIG ─────────────────────────────────────────────────
 function loadConfig(){
@@ -1759,7 +1778,6 @@ function renderJackpots(data){
     card.className='jackpot-card'+(jackpot>0&&jackpot===maxJ?' is-highest':'')+(item.date&&item.date===minDate?' is-next':'');
     card.style.animationDelay=`${i*45}ms`;
     card.style.background=cardGradient(cardBg);
-    card.style.setProperty('--shine-delay',`${(Math.random()*7).toFixed(2)}s`);
     card.innerHTML=`
       <div class="card-header">
         ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this)">` :''}
@@ -2732,7 +2750,6 @@ function renderMixedJackpots(data){
     card.className='jackpot-card'+(jackpot>0&&jackpot===maxJ?' is-highest':'')+(item.date&&item.date===minDate?' is-next':'');
     card.style.animationDelay=`${i*30}ms`;
     card.style.background=cardGradient(cardBg);
-    card.style.setProperty('--shine-delay',`${(Math.random()*7).toFixed(2)}s`);
     card.innerHTML=`<div class="card-header">${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this)">`:''}<div class="card-name">${esc(item.name||game.name||'—')}</div></div><div class="card-amount-wrap"><div class="card-amount">${amountHtml}</div></div>`;
     grid.appendChild(card);
   });
