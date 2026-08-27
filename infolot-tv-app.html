@@ -203,7 +203,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
    recorta (ver .view/#main-content) y su sombra se cortaba en seco justo
    ahí — de ahí el "efecto pared". El padding le da margen a la sombra
    para desvanecerse antes de llegar al límite real. */
-#jackpots-grid{flex:1;display:grid;gap:clamp(6px,.8vw,12px);padding:10px;overflow:hidden;min-height:0;}
+#jackpots-grid{flex:1;display:grid;gap:clamp(6px,.8vw,12px);padding:18px;overflow:hidden;min-height:0;}
 /* La sombra/resplandor va en la tarjeta exterior (sin overflow:hidden);
    el recorte del contenido (brillo, cinta de esquina) va en .card-inner.
    Van separados porque varias versiones de Chromium/WebView recortan
@@ -216,7 +216,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
    versión de WebView, no de este CSS — mientras que drop-shadow (que
    sigue la silueta real del elemento en vez de pintarse aparte) se ve
    limpio en el mismo dispositivo. */
-.jackpot-card{border-radius:var(--radius);position:relative;filter:drop-shadow(var(--shadow));animation:fadeUpOpacity .35s ease both;transition:transform .2s,filter .2s;min-height:0;}
+.jackpot-card{border-radius:var(--radius);position:relative;filter:drop-shadow(var(--shadow));will-change:filter;animation:fadeUpOpacity .35s ease both;transition:transform .2s,filter .2s;min-height:0;}
 .jackpot-card:hover{transform:translateY(-2px);filter:drop-shadow(0 4px 14px rgba(0,0,0,.4));}
 .card-inner{background:var(--pv-primary);border-radius:inherit;padding:clamp(10px,1.2vh,16px) clamp(12px,1.2vw,18px);display:flex;flex-direction:column;position:relative;overflow:hidden;height:100%;}
 /* Brillo diagonal que recorre UNA tarjeta suelta de vez en cuando —
@@ -245,44 +245,34 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
   from{transform:rotate(15deg) translateX(0);}
   to{transform:rotate(15deg) translateX(486%);}
 }
-/* El bote con más premio se remarca con un resplandor dorado y una
-   cinta de esquina en vez del texto suelto de antes — y, solo en esta
-   tarjeta, unos destellos sueltos (ver .sparkle) para que destaque de
-   un vistazo entre el resto.
-   El resplandor en sí (filter:drop-shadow) se deja FIJO, sin animar:
-   antes "respiraba" animando filter en bucle infinito, pero eso iba a
-   tirones en hardware flojo (Fire TV Stick) — animar filter obliga a
-   recalcularlo en cada fotograma. will-change:filter, confirmado en
-   directo en un Fire TV Stick real, es necesario aparte: sin él este
-   WebView recorta el propio drop-shadow en línea recta contra algún
-   ancestro, aunque esté fuera de cualquier overflow:hidden — con
-   will-change (que promociona el elemento a su propia capa) no pasa.
-   El efecto de "respirar" se recupera aparte con .jackpot-card.is-highest
-   ::before: un halo idéntico pero borroso, detrás de la tarjeta, cuya
-   ÚNICA animación es opacity — barato hasta en hardware flojo, a
-   diferencia de animar filter directamente.
-   OJO con blur/inset del halo: un blur grande (probado con 10px) se
-   extiende visualmente mucho más de lo esperado y vuelve a salirse del
-   hueco disponible entre tarjetas (gap) y el margen de la rejilla
-   (#jackpots-grid), reproduciendo el mismo corte en seco. Confirmado
-   en directo que blur(3px) con inset:0 cabe de sobra en ambos. */
-.jackpot-card.is-highest{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 8px rgba(255,199,60,.65));will-change:filter;}
-.jackpot-card.is-highest::before{
-  content:'';
+/* El bote con más premio se remarca con un resplandor dorado que
+   parpadea, y una cinta de esquina en vez del texto suelto de antes —
+   y, solo en esta tarjeta, unos destellos sueltos (ver .sparkle) para
+   que destaque de un vistazo entre el resto.
+   Historial de esto (para no repetir el mismo error): se probó primero
+   un resplandor HACIA FUERA (box-shadow, luego filter:drop-shadow,
+   luego un halo aparte con blur) — en un Fire TV Stick real (WebView/
+   Chrome 118) TODO lo que se pinta fuera del propio recuadro de la
+   tarjeta puede acabar recortado en línea recta contra algún límite
+   (rejilla, tarjeta vecina...) según lo grande que sea, y ese límite
+   no es fijo ni predecible por hueco/padding — cualquier ajuste fino
+   volvía a romperse. La solución de verdad es no pintar nada fuera de
+   la tarjeta: .highest-blink (dentro de .card-inner, que ya recorta
+   con overflow:hidden) usa SOLO box-shadow con "inset", que por
+   definición se pinta hacia DENTRO del propio elemento — no hay nada
+   que recortar, así que no puede pasar este bug pase lo que pase. */
+.highest-blink{
   position:absolute;
   inset:0;
   border-radius:inherit;
-  background:rgba(255,199,60,.55);
-  filter:blur(3px);
-  z-index:-1;
-  opacity:.5;
-  animation:highestPulse 2.6s ease-in-out infinite;
-  will-change:opacity;
+  box-shadow:inset 0 0 0 3px rgba(255,199,60,.9),inset 0 0 36px 4px rgba(255,199,60,.6);
+  opacity:0;
+  animation:highestBlink 1.3s ease-in-out infinite;
   pointer-events:none;
 }
-@keyframes highestPulse{
-  0%,100%{opacity:.3;}
-  50%{opacity:.8;}
+@keyframes highestBlink{
+  0%,100%{opacity:.35;}
+  50%{opacity:1;}
 }
 .jackpot-card.is-highest .card-inner::after{
   content:'★ MAYOR BOTE';position:absolute;top:12px;right:-2px;
@@ -456,7 +446,7 @@ body.device-tablet #modal-set-home .cfg-actions .btn{font-size:calc(var(--fs-sm)
 #mixed-results{flex:1.2;}
 .mixed-label{font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:clamp(5px,.6vh,9px);flex-shrink:0;display:flex;align-items:center;gap:6px;}
 .mixed-label::before{content:'';display:inline-block;width:4px;height:4px;background:var(--pv-primary);border-radius:50%;}
-#mixed-jackpots-grid{flex:1;display:grid;gap:clamp(5px,.6vw,9px);padding:8px;overflow:hidden;min-height:0;}
+#mixed-jackpots-grid{flex:1;display:grid;gap:clamp(5px,.6vw,9px);padding:14px;overflow:hidden;min-height:0;}
 #mixed-results-scroll{flex:1;overflow:hidden;min-height:0;}
 #mixed-results-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,.6vw,9px);align-items:start;overflow:hidden;}
 /* !important porque la fecha lleva font-size inline (var(--fs-sm)) — un
@@ -1867,7 +1857,7 @@ function renderJackpots(data){
     card.style.animationDelay=`${i*45}ms`;
     card.innerHTML=`
       <div class="card-inner" style="background:${cardGradient(cardBg)}">
-        ${isHighest?sparklesHtml():''}
+        ${isHighest?'<div class="highest-blink"></div>'+sparklesHtml():''}
         <div class="card-header">
           ${logoSrc?`<div class="card-logo-wrap"><img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this.parentElement)"></div>` :''}
           <div class="card-name">${esc(item.name||game.name||'—')}</div>
@@ -2853,7 +2843,7 @@ function renderMixedJackpots(data){
     const card=document.createElement('div');
     card.className='jackpot-card'+(isHighest?' is-highest':'')+(item.date&&item.date===minDate?' is-next':'');
     card.style.animationDelay=`${i*30}ms`;
-    card.innerHTML=`<div class="card-inner" style="background:${cardGradient(cardBg)}">${isHighest?sparklesHtml():''}<div class="card-header">${logoSrc?`<div class="card-logo-wrap"><img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this.parentElement)"></div>`:''}<div class="card-name">${esc(item.name||game.name||'—')}</div></div><div class="card-amount-wrap"><div class="card-amount">${amountHtml}</div></div></div>`;
+    card.innerHTML=`<div class="card-inner" style="background:${cardGradient(cardBg)}">${isHighest?'<div class="highest-blink"></div>'+sparklesHtml():''}<div class="card-header">${logoSrc?`<div class="card-logo-wrap"><img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this.parentElement)"></div>`:''}<div class="card-name">${esc(item.name||game.name||'—')}</div></div><div class="card-amount-wrap"><div class="card-amount">${amountHtml}</div></div></div>`;
     grid.appendChild(card);
   });
   requestAnimationFrame(()=>{
