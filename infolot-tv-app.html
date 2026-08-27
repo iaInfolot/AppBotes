@@ -260,15 +260,20 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
    El efecto de "respirar" se recupera aparte con .jackpot-card.is-highest
    ::before: un halo idéntico pero borroso, detrás de la tarjeta, cuya
    ÚNICA animación es opacity — barato hasta en hardware flojo, a
-   diferencia de animar filter directamente. */
+   diferencia de animar filter directamente.
+   OJO con blur/inset del halo: un blur grande (probado con 10px) se
+   extiende visualmente mucho más de lo esperado y vuelve a salirse del
+   hueco disponible entre tarjetas (gap) y el margen de la rejilla
+   (#jackpots-grid), reproduciendo el mismo corte en seco. Confirmado
+   en directo que blur(3px) con inset:0 cabe de sobra en ambos. */
 .jackpot-card.is-highest{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 8px rgba(255,199,60,.65));will-change:filter;}
 .jackpot-card.is-highest::before{
   content:'';
   position:absolute;
-  inset:-6px;
+  inset:0;
   border-radius:inherit;
   background:rgba(255,199,60,.55);
-  filter:blur(10px);
+  filter:blur(3px);
   z-index:-1;
   opacity:.5;
   animation:highestPulse 2.6s ease-in-out infinite;
