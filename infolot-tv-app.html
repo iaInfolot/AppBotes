@@ -245,14 +245,40 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
   from{transform:rotate(15deg) translateX(0);}
   to{transform:rotate(15deg) translateX(486%);}
 }
-/* El bote con más premio se remarca con un resplandor dorado fijo y una
+/* El bote con más premio se remarca con un resplandor dorado y una
    cinta de esquina en vez del texto suelto de antes — y, solo en esta
    tarjeta, unos destellos sueltos (ver .sparkle) para que destaque de
-   un vistazo entre el resto. El resplandor "respiraba" (animando
-   filter en bucle infinito) pero eso iba a tirones en hardware flojo
-   (Fire TV Stick) — animar filter obliga a recalcularlo en cada
-   fotograma, a diferencia de transform/opacity. Se deja fijo.*/
-.jackpot-card.is-highest{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 8px rgba(255,199,60,.65));}
+   un vistazo entre el resto.
+   El resplandor en sí (filter:drop-shadow) se deja FIJO, sin animar:
+   antes "respiraba" animando filter en bucle infinito, pero eso iba a
+   tirones en hardware flojo (Fire TV Stick) — animar filter obliga a
+   recalcularlo en cada fotograma. will-change:filter, confirmado en
+   directo en un Fire TV Stick real, es necesario aparte: sin él este
+   WebView recorta el propio drop-shadow en línea recta contra algún
+   ancestro, aunque esté fuera de cualquier overflow:hidden — con
+   will-change (que promociona el elemento a su propia capa) no pasa.
+   El efecto de "respirar" se recupera aparte con .jackpot-card.is-highest
+   ::before: un halo idéntico pero borroso, detrás de la tarjeta, cuya
+   ÚNICA animación es opacity — barato hasta en hardware flojo, a
+   diferencia de animar filter directamente. */
+.jackpot-card.is-highest{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 8px rgba(255,199,60,.65));will-change:filter;}
+.jackpot-card.is-highest::before{
+  content:'';
+  position:absolute;
+  inset:-6px;
+  border-radius:inherit;
+  background:rgba(255,199,60,.55);
+  filter:blur(10px);
+  z-index:-1;
+  opacity:.5;
+  animation:highestPulse 2.6s ease-in-out infinite;
+  will-change:opacity;
+  pointer-events:none;
+}
+@keyframes highestPulse{
+  0%,100%{opacity:.3;}
+  50%{opacity:.8;}
+}
 .jackpot-card.is-highest .card-inner::after{
   content:'★ MAYOR BOTE';position:absolute;top:12px;right:-2px;
   padding:4px 16px 4px 12px;border-radius:20px 0 0 20px;
