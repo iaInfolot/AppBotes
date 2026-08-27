@@ -199,7 +199,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
 .view.active{display:flex;flex:1;min-height:0;animation:viewIn .2s ease both;}
 
 /* ══ JACKPOTS ══ */
-#jackpots-grid{flex:1;display:grid;gap:clamp(6px,.8vw,12px);overflow:hidden;min-height:0;}
+/* Sin padding propio, las tarjetas quedaban pegadas al borde exacto que
+   recorta (ver .view/#main-content) y su sombra se cortaba en seco justo
+   ahí — de ahí el "efecto pared". El padding le da margen a la sombra
+   para desvanecerse antes de llegar al límite real. */
+#jackpots-grid{flex:1;display:grid;gap:clamp(6px,.8vw,12px);padding:10px;overflow:hidden;min-height:0;}
 /* La sombra/resplandor va en la tarjeta exterior (sin overflow:hidden);
    el recorte del contenido (brillo, cinta de esquina) va en .card-inner.
    Van separados porque varias versiones de Chromium/WebView recortan
@@ -405,7 +409,7 @@ body.device-tablet #modal-config .cfg-actions .btn{font-size:calc(var(--fs-sm)*1
 #mixed-results{flex:1.2;}
 .mixed-label{font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:600;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:clamp(5px,.6vh,9px);flex-shrink:0;display:flex;align-items:center;gap:6px;}
 .mixed-label::before{content:'';display:inline-block;width:4px;height:4px;background:var(--pv-primary);border-radius:50%;}
-#mixed-jackpots-grid{flex:1;display:grid;gap:clamp(5px,.6vw,9px);overflow:hidden;min-height:0;}
+#mixed-jackpots-grid{flex:1;display:grid;gap:clamp(5px,.6vw,9px);padding:8px;overflow:hidden;min-height:0;}
 #mixed-results-scroll{flex:1;overflow:hidden;min-height:0;}
 #mixed-results-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,.6vw,9px);align-items:start;overflow:hidden;}
 /* !important porque la fecha lleva font-size inline (var(--fs-sm)) — un
