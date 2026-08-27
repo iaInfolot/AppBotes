@@ -1759,7 +1759,7 @@ function renderJackpots(data){
     card.className='jackpot-card'+(jackpot>0&&jackpot===maxJ?' is-highest':'')+(item.date&&item.date===minDate?' is-next':'');
     card.style.animationDelay=`${i*45}ms`;
     card.style.background=cardGradient(cardBg);
-    card.style.setProperty('--shine-delay',`${i*0.6}s`);
+    card.style.setProperty('--shine-delay',`${(Math.random()*7).toFixed(2)}s`);
     card.innerHTML=`
       <div class="card-header">
         ${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this)">` :''}
@@ -2732,7 +2732,7 @@ function renderMixedJackpots(data){
     card.className='jackpot-card'+(jackpot>0&&jackpot===maxJ?' is-highest':'')+(item.date&&item.date===minDate?' is-next':'');
     card.style.animationDelay=`${i*30}ms`;
     card.style.background=cardGradient(cardBg);
-    card.style.setProperty('--shine-delay',`${i*0.6}s`);
+    card.style.setProperty('--shine-delay',`${(Math.random()*7).toFixed(2)}s`);
     card.innerHTML=`<div class="card-header">${logoSrc?`<img class="card-logo" src="${esc(logoSrc)}" alt="" onerror="hideImg(this)">`:''}<div class="card-name">${esc(item.name||game.name||'—')}</div></div><div class="card-amount-wrap"><div class="card-amount">${amountHtml}</div></div>`;
     grid.appendChild(card);
   });
