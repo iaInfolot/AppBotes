@@ -2110,7 +2110,13 @@ function buildBlockHTML(gameId,draws,availW){
         // un bloque "lado a lado") — sin esto los números de premio
         // (letter-spacing incluido) se salían del bloque.
         const effAvailW=sideBySide?(availW||200)/entries.length:(availW||200);
-        const narrow=effAvailW<220;
+        // TV vertical rota todo el contenido 90° por CSS — el alto real del
+        // bloque (unos 85px medidos en el emulador) pasa a ser el ancho
+        // visual tras el giro, mucho más estrecho de lo que availW=500
+        // (pensado para el ancho sin rotar) sugiere. Sin esto los números
+        // de premio se salían del bloque por ese lado.
+        const isTvRotatedV=document.body.classList.contains('device-tv')&&document.body.classList.contains('orient-v');
+        const narrow=effAvailW<220||isTvRotatedV;
         // TV horizontal: el bloque va a ancho completo (ver "Lotería Nacional
         // a ancho completo" en paintTvResultsCols/paintResultsCols12), así
         // que nunca cae en "narrow" y usaba el tamaño grande pensado para
