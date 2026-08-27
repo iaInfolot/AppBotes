@@ -209,9 +209,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
    Van separados porque varias versiones de Chromium/WebView recortan
    también la sombra de un elemento cuando ese mismo elemento combina
    border-radius + overflow:hidden — con la sombra fuera de la caja que
-   recorta, no le afecta. */
-.jackpot-card{border-radius:var(--radius);position:relative;box-shadow:var(--shadow);animation:fadeUpOpacity .35s ease both;transition:transform .2s,box-shadow .2s;min-height:0;}
-.jackpot-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.4);}
+   recorta, no le afecta.
+   Además se usa filter:drop-shadow() en vez de box-shadow: confirmado
+   en un Fire TV Stick real (WebView/Chrome 118) que box-shadow se
+   recortaba en línea recta por dentro de la tarjeta — un bug de esa
+   versión de WebView, no de este CSS — mientras que drop-shadow (que
+   sigue la silueta real del elemento en vez de pintarse aparte) se ve
+   limpio en el mismo dispositivo. */
+.jackpot-card{border-radius:var(--radius);position:relative;filter:drop-shadow(var(--shadow));animation:fadeUpOpacity .35s ease both;transition:transform .2s,filter .2s;min-height:0;}
+.jackpot-card:hover{transform:translateY(-2px);filter:drop-shadow(0 4px 14px rgba(0,0,0,.4));}
 .card-inner{background:var(--pv-primary);border-radius:inherit;padding:clamp(10px,1.2vh,16px) clamp(12px,1.2vw,18px);display:flex;flex-direction:column;position:relative;overflow:hidden;height:100%;}
 /* Brillo diagonal que recorre UNA tarjeta suelta de vez en cuando —
    se dispara desde JS (ver scheduleCardShine) en momentos e intervalos
@@ -241,8 +247,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
    destaque de un vistazo entre el resto. */
 .jackpot-card.is-highest{animation:fadeUpOpacity .35s ease both,highestGlow 2.6s ease-in-out infinite;}
 @keyframes highestGlow{
-  0%,100%{box-shadow:var(--shadow),0 0 0 rgba(255,199,60,0);}
-  50%{box-shadow:var(--shadow),0 0 10px 2px rgba(255,199,60,.6);}
+  0%,100%{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 0 rgba(255,199,60,0));}
+  50%{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 10px rgba(255,199,60,.6));}
 }
 .jackpot-card.is-highest .card-inner::after{
   content:'★ MAYOR BOTE';position:absolute;top:12px;right:-2px;
