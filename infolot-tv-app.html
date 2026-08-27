@@ -231,25 +231,28 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
   width:35%;
   height:220%;
   background:linear-gradient(120deg,transparent,rgba(255,255,255,.28),transparent);
-  transform:rotate(15deg);
+  transform:rotate(15deg) translateX(0);
   pointer-events:none;
 }
 .jackpot-card.shine-flash .card-inner::before{
   animation:cardShine 1.6s ease-in-out;
 }
+/* translateX en vez de animar "left": lo primero es un simple cambio de
+   capa (barato hasta en hardware flojo como un Fire TV Stick), lo
+   segundo obliga a recalcular layout en cada fotograma — se notaba a
+   tirones en TV, no en tablet, por eso. */
 @keyframes cardShine{
-  from{left:-40%;}
-  to{left:130%;}
+  from{transform:rotate(15deg) translateX(0);}
+  to{transform:rotate(15deg) translateX(486%);}
 }
-/* El bote con más premio se remarca con un resplandor dorado que
-   respira y una cinta de esquina en vez del texto suelto de antes — y,
-   solo en esta tarjeta, unos destellos sueltos (ver .sparkle) para que
-   destaque de un vistazo entre el resto. */
-.jackpot-card.is-highest{animation:fadeUpOpacity .35s ease both,highestGlow 2.6s ease-in-out infinite;}
-@keyframes highestGlow{
-  0%,100%{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 0 rgba(255,199,60,0));}
-  50%{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 10px rgba(255,199,60,.6));}
-}
+/* El bote con más premio se remarca con un resplandor dorado fijo y una
+   cinta de esquina en vez del texto suelto de antes — y, solo en esta
+   tarjeta, unos destellos sueltos (ver .sparkle) para que destaque de
+   un vistazo entre el resto. El resplandor "respiraba" (animando
+   filter en bucle infinito) pero eso iba a tirones en hardware flojo
+   (Fire TV Stick) — animar filter obliga a recalcularlo en cada
+   fotograma, a diferencia de transform/opacity. Se deja fijo.*/
+.jackpot-card.is-highest{filter:drop-shadow(var(--shadow)) drop-shadow(0 0 8px rgba(255,199,60,.65));}
 .jackpot-card.is-highest .card-inner::after{
   content:'★ MAYOR BOTE';position:absolute;top:12px;right:-2px;
   padding:4px 16px 4px 12px;border-radius:20px 0 0 20px;
