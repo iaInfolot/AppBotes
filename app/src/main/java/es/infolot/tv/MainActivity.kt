@@ -13,7 +13,6 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
@@ -195,9 +194,6 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // TEMPORAL — diagnóstico del doble pv-info/get-games (ver conversación
-        // con Gabi 2026-08-26). Quitar en cuanto se confirme la causa.
-        Log.i("InfolotDiag", "onCreate hashCode=${this.hashCode()} t=${System.currentTimeMillis()}")
 
         // App de kiosco/cartelería: nadie toca el mando durante el uso normal,
         // así que sin esto el sistema aplica su salvapantallas/bloqueo por
@@ -243,19 +239,11 @@ class MainActivity : Activity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
-            // TEMPORAL — diagnóstico del doble pv-info/get-games (ver
-            // conversación con Gabi 2026-08-26). Quitar en cuanto se
-            // confirme la causa.
-            override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                Log.i("InfolotDiag", "onPageStarted url=$url t=${System.currentTimeMillis()}")
-            }
-
             override fun onReceivedError(
                 view: WebView,
                 request: WebResourceRequest,
                 error: WebResourceError
             ) {
-                Log.i("InfolotDiag", "onReceivedError isMainFrame=${request.isForMainFrame} url=${request.url} error=${error.description} errorCode=${error.errorCode} t=${System.currentTimeMillis()}")
                 // Retry after 30s on network error — se cancela en
                 // onPageFinished si la carga se recupera sola antes de que
                 // llegue su turno, para no recargar encima de una app que ya
@@ -263,7 +251,6 @@ class MainActivity : Activity() {
                 if (request.isForMainFrame) {
                     pendingReloadRunnable?.let { view.removeCallbacks(it) }
                     val reloadRunnable = Runnable {
-                        Log.i("InfolotDiag", "pendingReloadRunnable FIRING (reload tras 30s) t=${System.currentTimeMillis()}")
                         view.reload()
                     }
                     pendingReloadRunnable = reloadRunnable
@@ -272,7 +259,6 @@ class MainActivity : Activity() {
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                Log.i("InfolotDiag", "onPageFinished url=$url t=${System.currentTimeMillis()}")
                 pendingReloadRunnable?.let { view.removeCallbacks(it) }
                 pendingReloadRunnable = null
                 // Inject JS to make all interactive elements focusable for D-Pad
@@ -319,7 +305,6 @@ class MainActivity : Activity() {
         // gestiona el sensor de verdad, así que no debe aplicar el giro por
         // CSS pensado para TV.
         val bustUrl = APP_URL + "?v=" + System.currentTimeMillis() + "&device=" + (if (isTv) "tv" else "tablet")
-        Log.i("InfolotDiag", "loadUrl bustUrl=$bustUrl t=${System.currentTimeMillis()}")
         webView.loadUrl(bustUrl)
     }
 
@@ -353,7 +338,6 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        Log.i("InfolotDiag", "onResume hashCode=${this.hashCode()} t=${System.currentTimeMillis()}")
         webView.onResume()
         webView.requestFocus()
         hideSystemUI()
@@ -361,12 +345,10 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         super.onPause()
-        Log.i("InfolotDiag", "onPause hashCode=${this.hashCode()} t=${System.currentTimeMillis()}")
         webView.onPause()
     }
 
     override fun onDestroy() {
-        Log.i("InfolotDiag", "onDestroy hashCode=${this.hashCode()} t=${System.currentTimeMillis()}")
         webView.destroy()
         super.onDestroy()
     }

@@ -2526,6 +2526,13 @@ function syncBallSizesForGroup(gameIds){
 }
 
 // ── LA QUINIELA (bloque independiente, incluye Pleno al 15) ──
+// El backend manda los nombres de equipo con un sufijo de categoría
+// pegado al final (p.ej. "Athletic Club (m)") que no aporta nada en
+// pantalla — se recorta solo para mostrar, sin tocar el dato original.
+function cleanTeamName(name){
+  return String(name||'').replace(/\s*\([mf]\)\s*$/i,'');
+}
+
 function makeQuinielaBlock(quiDraws){
   // Mismo tamaño de fecha que el resto de sorteos en tablet horizontal.
   const isTabletHQui=document.body.classList.contains('device-tablet')&&!document.body.classList.contains('orient-v');
@@ -2541,8 +2548,8 @@ function makeQuinielaBlock(quiDraws){
 
   // Simplified Pleno al 15: position===15 directly
   const plenoMatch15=matchesQui.find(x=>parseInt(x.position)===15)||null;
-  const plenoT1=plenoMatch15?String(plenoMatch15.team_1_name||''):'';
-  const plenoT2=plenoMatch15?String(plenoMatch15.team_2_name||''):'';
+  const plenoT1=plenoMatch15?cleanTeamName(plenoMatch15.team_1_name):'';
+  const plenoT2=plenoMatch15?cleanTeamName(plenoMatch15.team_2_name):'';
   // Goals from r.extra array directly
   const plenoRaw=Array.isArray(rQui.extra)?rQui.extra:(rQui.extra!=null?[rQui.extra]:[]);
   const plenoG1=plenoRaw.length>0?String(plenoRaw[0]):null;
@@ -2573,10 +2580,14 @@ function makeQuinielaBlock(quiDraws){
     if(fd) bodyHtml+=`<div class="rb-date" style="font-family:var(--font-ui);font-size:${dateFsQui};font-weight:600;color:var(--text2);margin-bottom:3px">${esc(fd)}</div>`;
     betQui.forEach((resQui,idx)=>{
       const mQui=matchesQui.find(x=>parseInt(x.position)===idx+1)||{};
-      const t1=esc(mQui.team_1_name||('Eq'+(idx*2+1)));
-      const t2=esc(mQui.team_2_name||('Eq'+(idx*2+2)));
+      const t1=esc(cleanTeamName(mQui.team_1_name||('Eq'+(idx*2+1))));
+      const t2=esc(cleanTeamName(mQui.team_2_name||('Eq'+(idx*2+2))));
+      const scoreQui=mQui.result?String(mQui.result).replace(/\s+/g,''):'';
+      const scoreHtml=scoreQui
+        ?`<span class="qscore" style="font-family:var(--font-ui);font-size:var(--fs-sm);color:var(--muted);flex-shrink:0;min-width:30px;text-align:center">${esc(scoreQui)}</span>`
+        :'';
       const ds=idx<betQui.length-1?'border-bottom:1px solid var(--border)':'';
-      bodyHtml+=`<div class="qrow" style="display:flex;align-items:center;gap:3px;padding:${rowPad};flex:1;min-height:0;overflow:hidden;${ds}"><div class="qtext" style="flex:1;min-width:0;font-family:var(--font-ui);font-size:var(--fs-lg);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t1}<span style="color:var(--muted)"> - </span>${t2}</div>${quiBadge(resQui)}</div>`;
+      bodyHtml+=`<div class="qrow" style="display:flex;align-items:center;gap:3px;padding:${rowPad};flex:1;min-height:0;overflow:hidden;${ds}"><div class="qtext" style="flex:1;min-width:0;font-family:var(--font-ui);font-size:var(--fs-lg);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t1}<span style="color:var(--muted)"> - </span>${t2}</div>${scoreHtml}${quiBadge(resQui)}</div>`;
     });
     if(plenoG1!==null||plenoG2!==null){
       bodyHtml+=`<div class="qpleno" style="margin-top:4px;padding-top:4px;border-top:2px solid var(--border);flex-shrink:0"><div style="font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:700;color:var(--pv-primary);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">Pleno al 15</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div class="qtext" style="font-family:var(--font-ui);font-size:var(--fs-lg);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;text-align:center">${plenoT1?esc(plenoT1):'Equipo 1'}<span style="color:var(--muted);margin:0 4px">-</span>${plenoT2?esc(plenoT2):'Equipo 2'}</div><div style="display:flex;align-items:center;gap:3px;flex-shrink:0">${goalBadge(plenoG1)}<span style="font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted)">-</span>${goalBadge(plenoG2)}</div></div></div>`;
@@ -2629,8 +2640,8 @@ function makeQuiniGolBlock(qgDraws){
     if(fd) bodyHtml+=`<div class="rb-date" style="font-family:var(--font-ui);font-size:${dateFsQG};font-weight:600;color:var(--text2);margin-bottom:4px">${esc(fd)}</div>`;
     betQG.forEach((res,idx)=>{
       const mQG=matchesQG.find(x=>parseInt(x.position)===idx+1)||{};
-      const t1=esc(mQG.team_1_name||('Eq'+(idx*2+1)));
-      const t2=esc(mQG.team_2_name||('Eq'+(idx*2+2)));
+      const t1=esc(cleanTeamName(mQG.team_1_name||('Eq'+(idx*2+1))));
+      const t2=esc(cleanTeamName(mQG.team_2_name||('Eq'+(idx*2+2))));
       const ds=idx<betQG.length-1?'border-bottom:1px solid var(--border)':'';
       bodyHtml+=`<div class="qrow" style="display:flex;align-items:center;gap:4px;padding:${rowPad};line-height:1.2;flex:1;min-height:0;overflow:hidden;${ds}"><div class="qtext" style="flex:1;min-width:0;font-family:var(--font-ui);font-size:var(--fs-lg);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t1}<span style="color:var(--muted)"> - </span>${t2}</div>${qgBadge(res)}</div>`;
     });
