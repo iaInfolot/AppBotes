@@ -328,6 +328,11 @@ body.device-tv.orient-h .result-block[data-game-id="4"] .rb-body{justify-content
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:clamp(16px,2vh,28px) clamp(16px,2vw,32px);position:relative;box-shadow:0 24px 64px rgba(0,0,0,.5);}
 .modal h2{font-family:var(--font-display);font-size:clamp(1.3rem,2vw,1.8rem);letter-spacing:3px;color:var(--pv-primary);margin-bottom:3px;}
 .modal-sub{font-size:var(--fs-xs);color:var(--muted);margin-bottom:clamp(12px,1.5vh,20px);font-family:var(--font-ui);letter-spacing:3px;text-transform:uppercase;}
+/* Para texto explicativo normal dentro de un modal (frases completas,
+   no la etiqueta corta en mayúsculas de .modal-sub) — mismo estilo que
+   .pairing-msg, pensado para leerse bien de un vistazo en tablet. */
+.modal-msg{font-family:var(--font-ui);font-size:var(--fs-base);color:var(--text2);max-width:480px;line-height:1.6;margin-bottom:clamp(16px,2vh,24px);}
+body.device-tablet .modal-msg{font-size:calc(var(--fs-base)*1.5);max-width:560px;}
 .close-btn{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;transition:color .2s;line-height:1;}
 .close-btn:hover{color:var(--text);}
 body.device-tablet .close-btn{font-size:2.5rem;top:16px;right:18px;}
@@ -357,6 +362,7 @@ body.device-tablet #modal-menu .menu-list li button{font-size:calc(1rem*2.1);pad
 body.device-tablet #modal-menu .menu-icon{font-size:calc(1.1rem*2);width:36px;}
 body.device-tablet #modal-config{width:95vw;max-width:95vw;height:92vh;max-height:92vh;}
 body.device-tablet #modal-config h2{font-size:calc(var(--fs-lg)*3);}
+body.device-tablet #modal-set-home h2{font-size:calc(var(--fs-lg)*3);}
 body.device-tablet #modal-config .modal-sub{font-size:calc(var(--fs-sm)*2);margin-bottom:clamp(20px,3vh,32px);}
 body.device-tablet #modal-config .cfg-divider{font-size:calc(var(--fs-sm)*2.5);margin:clamp(16px,2vh,24px) 0 clamp(10px,1.2vh,16px);}
 body.device-tablet #modal-config .form-group{margin-bottom:clamp(14px,1.8vh,24px);}
@@ -376,7 +382,8 @@ body.device-tablet.orient-v #modal-config .form-group label{width:280px;flex-shr
 body.device-tablet.orient-v #modal-config .form-group input,
 body.device-tablet.orient-v #modal-config .form-group select,
 body.device-tablet.orient-v #modal-config .form-group .cfg-dropdown{flex:1;}
-body.device-tablet #modal-config .cfg-actions .btn{font-size:calc(var(--fs-sm)*1.7);padding:clamp(12px,1.6vh,20px) clamp(20px,2.4vw,32px);}
+body.device-tablet #modal-config .cfg-actions .btn,
+body.device-tablet #modal-set-home .cfg-actions .btn{font-size:calc(var(--fs-sm)*1.7);padding:clamp(12px,1.6vh,20px) clamp(20px,2.4vw,32px);}
 
 /* ══ CONFIG MODAL — 3-column no-scroll ══ */
 #modal-config{width:90vw;max-width:90vw;height:88vh;max-height:88vh;overflow:hidden;flex-direction:column;padding:clamp(14px,1.8vh,22px) clamp(16px,2vw,28px);}
@@ -664,7 +671,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
   <div class="modal" id="modal-set-home" style="display:none;">
     <button class="close-btn" onclick="closeOverlay()">✕</button>
     <h2>Un último paso</h2>
-    <div class="modal-sub">Configura esta app como pantalla de inicio para que se abra sola cada vez que se encienda el dispositivo — sin esto, habrá que entrar a mano después de cada apagado.</div>
+    <div class="modal-msg">Actívalo para que la app se abra sola al encender la tablet.</div>
     <div class="cfg-actions">
       <button class="btn btn-primary" onclick="requestSetAsHome();closeOverlay()">🏠 Configurar</button>
       <button class="btn btn-secondary" onclick="closeOverlay()">Ahora no</button>
