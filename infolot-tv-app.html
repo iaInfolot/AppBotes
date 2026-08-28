@@ -2204,6 +2204,7 @@ function buildBlockHTML(gameId,draws,availW){
     return{barClr,logoSrc,name:game.name||'Juego '+gameId,bodyHtml};
   }
 
+
   function makeBlock(gameId,draws,availW){
     const{barClr,logoSrc,name,bodyHtml}=buildBlockHTML(gameId,draws||[],availW||200);
     const hasPending=(!draws||!draws.length)&&!EXPECTED_DOW[gameId]&&!VARIABLE_DOW_SLOTS[gameId];
