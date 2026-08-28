@@ -2529,7 +2529,14 @@ function recalcMatchRows(block,body){
   // Quiniela (más aún si MATCH_ROW_SIZE_BOOST > 1). Se recorta aquí también
   // al hueco real de Quiniela, para que nunca se desborde por su cuenta.
   if(parseInt(block.dataset.gameId)===25 && document.body.classList.contains('orient-v')){
-    const qgBody=document.querySelector('.result-block[data-game-id="26"] .rb-body');
+    // Buscar el QuiniGol de la MISMA rejilla que este bloque de Quiniela
+    // (#results-grid o #mixed-results-grid), no el primero que haya en todo
+    // el documento — si ya se visitó la vista mixta antes, queda un bloque
+    // de QuiniGol oculto (0x0) en la otra rejilla, y una búsqueda sin
+    // acotar podía coger ese en vez del real, "prestando" un tamaño casi
+    // cero y dejando Quiniela con un montón de hueco sin aprovechar.
+    const scope=block.closest('#mixed-results-grid')||block.closest('#results-grid')||document;
+    const qgBody=scope.querySelector('.result-block[data-game-id="26"] .rb-body');
     const qgRows=qgBody?qgBody.querySelectorAll(':scope>.qrow'):null;
     const borrowed=(qgBody&&qgRows&&qgRows.length)?ownMatchSizing(qgBody,qgRows):ownMatchSizing(body,qrows);
     const ownMax=ownMatchSizing(body,qrows);
