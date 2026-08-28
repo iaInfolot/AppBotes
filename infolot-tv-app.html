@@ -1151,6 +1151,18 @@ function cycleOrientation(){
   persistConfig(cfg);
   applyOrientation(next);
   switchView(currentView);
+  // _renderResults ya mide y ajusta el alto de las filas de Quiniela/QuiniGol
+  // dos veces seguidas (ver su comentario "dos pasadas SÍNCRONAS"), porque a
+  // veces una sola no basta para que el diseño asiente su alto real. Cambiar
+  // de orientación aquí es un caso más exigente todavía (todo el árbol
+  // #app se re-mide con el ancho/alto intercambiados de golpe) y esas dos
+  // pasadas seguían sin ser suficientes — las filas se quedaban con una
+  // altura fija de más pequeña de la cuenta, sin volver a corregirse.
+  // Una pasada extra, ya dentro de un frame de verdad (el navegador ha
+  // terminado de recolocar el diseño para entonces), lo remedia.
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('#results-grid .result-block,#mixed-results-grid .result-block').forEach(recalcBallsInBlock);
+  });
 }
 function updateOrientButtonLabel(o){
   const labels={'0':'Horizontal (0°)','90':'Vertical (90°)','180':'Horizontal invertido (180°)','270':'Vertical invertido (270°)'};
