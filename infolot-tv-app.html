@@ -1409,6 +1409,7 @@ async function validateServiceCode(code){
   const endpoint='validate-service-code';
   const {url,useProxy,target}=resolveWsRoute(cfg,endpoint);
   const device=buildDeviceForBackend();
+  console.log('[validateServiceCode] device enviado:',JSON.stringify(device));
   const body=useProxy
     ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid,device}
     :{code,app_id:DEFAULTS.appid,device};
