@@ -179,12 +179,12 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        // La pantalla ya no se sirve desde GitHub Pages — vive empaquetada en
-        // el propio APK (app/src/main/assets/) y WebViewAssetLoader la expone
-        // bajo este origen https:// virtual. Se necesita un origen https real
-        // (en vez de file://) para que el fetch() al webservice desde el JS
-        // funcione con CORS igual que antes.
-        const val APP_URL = "https://appassets.androidplatform.net/assets/infolot-tv-app.html"
+        // TEMPORAL: de vuelta a GitHub Pages solo para validar el "device"
+        // nuevo de validate-service-code contra un origen que ya está
+        // permitido en CORS (ver conversación pendiente con backend).
+        // Revertir a "https://appassets.androidplatform.net/assets/infolot-tv-app.html"
+        // en cuanto quede confirmado.
+        const val APP_URL = "https://iainfolot.github.io/AppBotes/infolot-tv-app.html"
     }
 
     private lateinit var assetLoader: WebViewAssetLoader
