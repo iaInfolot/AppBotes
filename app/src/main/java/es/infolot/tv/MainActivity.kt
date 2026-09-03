@@ -19,6 +19,7 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.*
+import androidx.webkit.WebViewAssetLoader
 import org.json.JSONObject
 import java.net.Inet4Address
 import java.net.NetworkInterface
@@ -54,7 +55,8 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun getDeviceInfo(): String {
             val json = JSONObject()
-            json.put("model", "${Build.MANUFACTURER} ${Build.MODEL}")
+            json.put("brand", Build.MANUFACTURER)
+            json.put("model", Build.MODEL)
             json.put("androidVersion", Build.VERSION.RELEASE)
             json.put("sdkInt", Build.VERSION.SDK_INT)
             json.put("network", currentNetworkType())
@@ -177,8 +179,15 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        const val APP_URL = "https://iainfolot.github.io/AppBotes/infolot-tv-app.html"
+        // La pantalla ya no se sirve desde GitHub Pages — vive empaquetada en
+        // el propio APK (app/src/main/assets/) y WebViewAssetLoader la expone
+        // bajo este origen https:// virtual. Se necesita un origen https real
+        // (en vez de file://) para que el fetch() al webservice desde el JS
+        // funcione con CORS igual que antes.
+        const val APP_URL = "https://appassets.androidplatform.net/assets/infolot-tv-app.html"
     }
+
+    private lateinit var assetLoader: WebViewAssetLoader
 
     // Una sola app para TV y tablet — en vez de dos builds separados, se
     // detecta el tipo de dispositivo en tiempo de ejecución (UiModeManager
@@ -214,6 +223,9 @@ class MainActivity : Activity() {
             requestFocus()
         }
         webView.addJavascriptInterface(OrientationBridge(), "AndroidBridge")
+        assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
         setContentView(webView)
         // Tiene que ir después de setContentView(): antes de attachar la
         // decor view a la ventana, window.insetsController puede lanzar NPE
@@ -239,6 +251,13 @@ class MainActivity : Activity() {
         }
 
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest
+            ): WebResourceResponse? {
+                return assetLoader.shouldInterceptRequest(request.url)
+            }
+
             override fun onReceivedError(
                 view: WebView,
                 request: WebResourceRequest,
@@ -295,17 +314,15 @@ class MainActivity : Activity() {
 
         webView.webChromeClient = WebChromeClient()
 
-        // Restore state or load fresh
-        // Clear cache to ensure latest HTML from GitHub Pages is always loaded
         webView.clearCache(true)
         webView.clearHistory()
-        // Add timestamp to bust CDN/proxy cache
         // device=tv|tablet le dice a infolot-tv-app.html en qué tipo de
         // dispositivo corre (ver IS_TV ahí) — fuera de TV la orientación la
         // gestiona el sensor de verdad, así que no debe aplicar el giro por
-        // CSS pensado para TV.
-        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis() + "&device=" + (if (isTv) "tv" else "tablet")
-        webView.loadUrl(bustUrl)
+        // CSS pensado para TV. Ya no hace falta cache-busting por timestamp:
+        // la pantalla viaja empaquetada en el propio APK, así que una versión
+        // nueva de la app ya trae el HTML actualizado sin más.
+        webView.loadUrl(APP_URL + "?device=" + (if (isTv) "tv" else "tablet"))
     }
 
     private fun hideSystemUI() {

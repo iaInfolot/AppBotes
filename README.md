@@ -10,29 +10,38 @@ Pleno al 15...), con actualización automática y arranque al encender el TV.
 ## 🧩 Arquitectura
 
 La app es un **cascarón nativo mínimo (WebView en modo kiosco) que carga una página
-web remota**. Toda la lógica de negocio, estilos y datos viven fuera del APK:
+web empaquetada dentro del propio APK**. Toda la lógica de negocio y estilos viven
+en un único HTML, pero ya no se sirven por red — solo los datos siguen viniendo de
+fuera:
 
 ```
-┌─────────────────────────┐        ┌──────────────────────────────┐        ┌───────────────────────┐
-│   APK Android (kiosco)  │  HTTP  │  infolot-tv-app.html          │  HTTP  │  webservice.infolot.es│
-│   WebView a pantalla    │───────▶│  (GitHub Pages)               │───────▶│  /ws/...  (vía proxy) │
-│   completa              │        │  HTML + CSS + JS, un archivo  │        │  proxy.php            │
-└─────────────────────────┘        └──────────────────────────────┘        └───────────────────────┘
+┌───────────────────────────────────────────────┐        ┌───────────────────────┐
+│  APK Android (kiosco)                          │  HTTP  │  webservice.infolot.es│
+│  WebView a pantalla completa                   │───────▶│  /ws/...  (vía proxy) │
+│  ├─ assets/infolot-tv-app.html  ─┐              │        │  proxy.php            │
+│  ├─ assets/logos/*.png           ├─ WebViewAssetLoader   └───────────────────────┘
+│  └─ (servidos como https://appassets.androidplatform.net/assets/...)             │
+└───────────────────────────────────────────────┘
 ```
 
 - **La app Android NO contiene lógica de negocio.** Solo abre un `WebView` en modo
   kiosco (sin barra de sistema, botón atrás bloqueado, navegación con mando D-Pad)
-  y carga siempre la misma URL fija:
-  `https://iainfolot.github.io/AppBotes/infolot-tv-app.html`
-- **Actualizar la pantalla para todos los TVs desplegados = editar y publicar
-  `infolot-tv-app.html`** en GitHub Pages. No hace falta recompilar ni
-  redistribuir el APK salvo que cambie algo del propio shell nativo (permisos,
-  arranque, WebView...).
+  y carga siempre la misma URL fija, servida localmente por `WebViewAssetLoader`
+  (librería `androidx.webkit`) desde `app/src/main/assets/`:
+  `https://appassets.androidplatform.net/assets/infolot-tv-app.html`
+- **Hasta la versión 1.5.3, `infolot-tv-app.html` se servía remoto desde GitHub
+  Pages** — así se podía actualizar la pantalla de todos los TVs desplegados sin
+  recompilar el APK. Se abandonó porque mantener el repo público en GitHub Pages
+  dejó de ser viable; ahora **cualquier cambio en `infolot-tv-app.html` o
+  `logos/` requiere generar y publicar una versión nueva del APK** (ver
+  "Compilar el APK" más abajo).
 - El HTML se autentica contra el webservice con `token` + `pass` + `app_id`
   (valores por defecto embebidos en el propio HTML, ver `DEFAULTS`).
 - `proxy.php` es un proxy servidor (alojado aparte, en `app.gesloto.es`) que
   reenvía las peticiones al webservice real para esquivar las restricciones CORS
-  del WebView/navegador.
+  del WebView/navegador. `WebViewAssetLoader` sirve la pantalla bajo un origen
+  `https://` real (no `file://`) precisamente para que este `fetch()` al
+  webservice se siga comportando igual que cuando la pantalla era remota.
 
 ---
 
@@ -41,22 +50,23 @@ web remota**. Toda la lógica de negocio, estilos y datos viven fuera del APK:
 ```
 AppBotes/
 ├── app/
-│   ├── build.gradle                        # Dependencias del módulo (mínimas: core-ktx, appcompat)
+│   ├── build.gradle                        # Dependencias del módulo (core-ktx, appcompat, androidx.webkit)
 │   └── src/main/
 │       ├── AndroidManifest.xml              # Permisos, receiver de arranque, launcher TV
+│       ├── assets/
+│       │   ├── infolot-tv-app.html          # ★ TODA la lógica y estilo de la pantalla ★
+│       │   └── logos/*.png                  #   (empaquetados en el APK, servidos por WebViewAssetLoader)
 │       ├── java/es/infolot/tv/
 │       │   ├── MainActivity.kt              # WebView en modo kiosco, carga APP_URL fija
 │       │   └── BootReceiver.kt              # Arranca la app al encender el TV
 │       └── res/
-│           ├── drawable/tv_banner.png       # Banner del launcher de Android TV
+│           ├── drawable/, drawable-xhdpi/tv_banner.png  # Banner del launcher de Android TV
 │           ├── mipmap-*/ic_launcher.png     # Icono de la app
 │           ├── values/strings.xml           # Nombre de la app
 │           ├── values/themes.xml            # Tema (pantalla completa)
 │           └── xml/network_security_config.xml
-├── infolot-tv-app.html                      # ★ TODA la lógica y estilo de la pantalla ★
-│                                             #   (publicado en GitHub Pages, se carga por URL)
 ├── proxy.php                                # Proxy CORS hacia webservice.infolot.es (se aloja aparte)
-├── privacidad.html                          # Política de privacidad (requerida por Google Play)
+├── privacidad.html                          # Política de privacidad — se aloja en infolot.es, no en este repo
 ├── build.gradle                             # Build raíz
 ├── settings.gradle
 └── gradle.properties
@@ -101,11 +111,12 @@ claro/oscuro, orientación, intervalos de refresco, modo demo...) se gestiona:
 
 ---
 
-## 🔨 Compilar el APK (shell nativo)
+## 🔨 Compilar el APK
 
-Solo hace falta si cambia algo del propio wrapper Android (permisos, URL de
-arranque, comportamiento del WebView, icono, nombre de la app...). Un cambio en
-`infolot-tv-app.html` **no requiere recompilar**.
+Como `infolot-tv-app.html` y `logos/` viven dentro de `app/src/main/assets/`,
+**cualquier cambio en la pantalla también requiere generar un APK/AAB nuevo y
+publicarlo** — ya no hay forma de actualizar los TVs desplegados sin pasar por
+Play Store.
 
 ### Requisitos previos
 - Android Studio o JDK 17 + Android SDK (compileSdk/targetSdk 35)
@@ -148,7 +159,7 @@ Desinstalación: `adb uninstall es.infolot.tv`
 | Evento | Comportamiento |
 |--------|---------------|
 | TV encendido | App arranca automáticamente (`BootReceiver`) |
-| Carga de la Activity | El WebView limpia caché y carga `infolot-tv-app.html?v=timestamp` (evita servir una versión cacheada vieja) |
+| Carga de la Activity | El WebView carga `infolot-tv-app.html` empaquetado en el APK vía `WebViewAssetLoader` |
 | Error de red | Reintenta recargar la página cada 30s |
 | Datos del webservice | Refresco periódico según `DEFAULTS`/config guardada |
 
@@ -164,11 +175,16 @@ Desinstalación: `adb uninstall es.infolot.tv`
 
 ## ⚠️ Notas importantes
 
-1. **Un solo HTML publicado sirve a todos los TVs.** No hay credenciales
+1. **Un solo HTML, el mismo para todos los TVs.** No hay credenciales
    "por cliente" hardcodeadas en el APK como en versiones antiguas de este
-   proyecto — la fuente de verdad es `infolot-tv-app.html` en GitHub Pages
-   (más lo que cada TV tenga guardado en su `localStorage`).
+   proyecto — la fuente de verdad es `app/src/main/assets/infolot-tv-app.html`
+   (más lo que cada TV tenga guardado en su `localStorage`). Al ir empaquetado
+   en el APK, todos los TVs con la misma versión instalada llevan exactamente
+   el mismo HTML.
 2. **`proxy.php` se despliega aparte** (actualmente en `app.gesloto.es`), no
-   forma parte del build de Android ni se publica junto al HTML.
-3. **`versionCode`/`versionName`** del APK están en `app/build.gradle` — solo
-   hace falta subirlos si se publica una nueva versión en Google Play.
+   forma parte del build de Android.
+3. **`privacidad.html` se despliega aparte, en infolot.es** — tampoco forma
+   parte del build de Android; solo vive en este repo como referencia/histórico.
+4. **`versionCode`/`versionName`** del APK están en `app/build.gradle` — hace
+   falta subirlos en **todos** los envíos ahora, incluidos los que antes solo
+   habrían sido un cambio de HTML sin recompilar.

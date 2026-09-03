@@ -896,7 +896,7 @@ async function populatePairingInfo(){
   try{
     if(window.AndroidBridge&&window.AndroidBridge.getDeviceInfo){
       const info=JSON.parse(window.AndroidBridge.getDeviceInfo());
-      document.getElementById('pi-device').textContent=info.model||'—';
+      document.getElementById('pi-device').textContent=[info.brand,info.model].filter(Boolean).join(' ')||'—';
       document.getElementById('pi-android').textContent=info.androidVersion?`${info.androidVersion} (API ${info.sdkInt})`:'—';
       document.getElementById('pi-network').textContent=info.network||'—';
       const sigEl=document.getElementById('pi-signal');
@@ -1300,9 +1300,17 @@ function getISOWeek(d){
 
 // ── 7. LLAMADAS AL WEBSERVICE ─────────────────────────────────
 const USE_LOCAL_PROXY_FOR_TESTING = false;
+// TEMPORAL: desde que la pantalla se sirve empaquetada en el APK (WebViewAssetLoader,
+// origen https://appassets.androidplatform.net), webservice.infolot.es bloquea las
+// llamadas por CORS porque ese origen todavía no está en su lista de permitidos.
+// Mientras se arregla en el backend, se enruta a través de proxy.php (ya desplegado
+// en app.gesloto.es), que sí tiene el origen abierto. Quitar en cuanto el backend
+// confirme el arreglo de CORS — ver conversación pendiente con el equipo de backend.
+const USE_PROD_CORS_PROXY_TEMP = true;
 const PROD_WS_URL = 'https://webservice.infolot.es';
 const DEV_WS_URL = 'https://dev-webservice.infolot.es';
 const LOCAL_PROXY_URL = '/proxy';
+const PROD_CORS_PROXY_URL = 'https://app.gesloto.es/proxy.php';
 // Ver el comentario junto a su uso en fetchResults(): valor "de escape" para
 // una caché de aplicación atascada en el backend, no un ajuste de producto.
 const RESULTS_LIMIT = 19;
@@ -1320,15 +1328,24 @@ function isNotActivatedError(e){
   return e.message===SERVICE_NOT_ACTIVE_MSG || e.message.startsWith('Missing credentials');
 }
 
+// Decide si esta llamada sale directa a cfg.url o pasa por alguno de los dos
+// proxies (ver constantes arriba) — misma resolución para wsCall() y
+// validateServiceCode() para no duplicarla en los dos sitios.
+function resolveWsRoute(cfg,endpoint){
+  const isWsUrl=cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL;
+  const target=cfg.url===DEV_WS_URL?'dev':'prod';
+  if(USE_LOCAL_PROXY_FOR_TESTING&&isWsUrl) return {url:LOCAL_PROXY_URL,useProxy:true,target};
+  if(USE_PROD_CORS_PROXY_TEMP&&isWsUrl) return {url:PROD_CORS_PROXY_URL,useProxy:true,target};
+  return {url:`${cfg.url}/ws/${endpoint}`,useProxy:false,target};
+}
+
 async function wsCall(endpoint,extra={},attempt=0){
   try{
     const cfg=loadConfig();
     if(!cfg.token||!cfg.appid||!cfg.pass){
       throw new Error('Missing credentials — aborting '+endpoint);
     }
-    const useProxy=USE_LOCAL_PROXY_FOR_TESTING&&(cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL);
-    const target=cfg.url===DEV_WS_URL?'dev':'prod';
-    const url=useProxy?LOCAL_PROXY_URL:`${cfg.url}/ws/${endpoint}`;
+    const {url,useProxy,target}=resolveWsRoute(cfg,endpoint);
     const body=useProxy
       ?{_endpoint:endpoint,_target:target,token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra}
       :{token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
@@ -1359,31 +1376,42 @@ async function wsCall(endpoint,extra={},attempt=0){
 // ── VALIDATE-SERVICE-CODE (activación de dispositivo nuevo) ──
 // A diferencia de wsCall, aquí todavía no hay token/pass — es precisamente
 // lo que se consigue a cambio del código. Solo hacen falta code + app_id.
-function getDeviceInfoForBackend(){
-  // Pendiente de que backend implemente la recogida de estos campos (ver
-  // memoria del proyecto) — se mandan ya para no tener que tocar el cliente
-  // otra vez cuando lo hagan. Si algo falla (navegador de escritorio sin
-  // AndroidBridge, campo nativo no disponible en un Android viejo...), se
-  // manda lo que se pueda en vez de bloquear el emparejamiento por esto.
-  const info={app_version:APP_VERSION,app_revision:APP_REVISION,device_type:DEVICE_TYPE};
+// Forma acordada con backend para el parámetro "device" (dev, pendiente de
+// pasar a producción): {id, type, branch, model, android, ...resto}.
+function buildDeviceForBackend(){
+  const device={type:DEVICE_TYPE,app_version:APP_VERSION,app_revision:APP_REVISION};
   try{
     if(window.AndroidBridge&&window.AndroidBridge.getDeviceInfo){
-      Object.assign(info,JSON.parse(window.AndroidBridge.getDeviceInfo()));
+      const native=JSON.parse(window.AndroidBridge.getDeviceInfo());
+      device.id=native.androidId;
+      device.branch=native.brand;
+      device.model=native.model;
+      device.android=native.androidVersion;
+      // Resto de datos nativos (sdkInt, red, señal, IP, versión de APK...) —
+      // no forman parte de la forma acordada pero se mandan igual como
+      // información adicional, sin tocar el cliente otra vez si backend
+      // decide aprovecharlos más adelante.
+      device.sdkInt=native.sdkInt;
+      device.network=native.network;
+      device.signalLevel=native.signalLevel;
+      if(native.signalDbm!==undefined) device.signalDbm=native.signalDbm;
+      device.ip=native.ip;
+      device.appVersionName=native.appVersionName;
+      device.appVersionCode=native.appVersionCode;
+      device.appLastUpdateMs=native.appLastUpdateMs;
     }
   }catch(e){console.error('[validateServiceCode] getDeviceInfo error:',e);}
-  return info;
+  return device;
 }
 
 async function validateServiceCode(code){
   const cfg=loadConfig();
-  const useProxy=USE_LOCAL_PROXY_FOR_TESTING&&(cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL);
-  const target=cfg.url===DEV_WS_URL?'dev':'prod';
   const endpoint='validate-service-code';
-  const url=useProxy?LOCAL_PROXY_URL:`${cfg.url}/ws/${endpoint}`;
-  const deviceInfo=getDeviceInfoForBackend();
+  const {url,useProxy,target}=resolveWsRoute(cfg,endpoint);
+  const device=buildDeviceForBackend();
   const body=useProxy
-    ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid,device_info:deviceInfo}
-    :{code,app_id:DEFAULTS.appid,device_info:deviceInfo};
+    ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid,device}
+    :{code,app_id:DEFAULTS.appid,device};
   // Sin esto, si el backend se queda colgado sin responder (en vez de dar
   // un error claro), el fetch nunca resuelve ni rechaza — el botón de
   // "Comprobar activación" se queda bloqueado en "Comprobando..." para
@@ -3281,15 +3309,14 @@ async function diagRunGameResults(){
   diagClear();const cfg=loadConfig();const gameIds=Object.keys(gamesMap);
   if(!gameIds.length){diagLog('ERROR: gamesMap vacío — ejecuta get-games primero','#e05c2a');return;}
   diagLog(`► last-game-results para ${gameIds.length} juegos LAE`,'#f0b429');
-  const useProxyDiag=USE_LOCAL_PROXY_FOR_TESTING&&(cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL);
-  const targetDiag=cfg.url===DEV_WS_URL?'dev':'prod';
-  diagLog(`  URL: ${useProxyDiag?LOCAL_PROXY_URL+' (proxy local, target='+targetDiag+')':cfg.url+'/ws/last-game-results'}`,'#5a7a8e');
+  const {url:diagBaseUrl,useProxy:useProxyDiag,target:targetDiag}=resolveWsRoute(cfg,'last-game-results');
+  diagLog(`  URL: ${useProxyDiag?diagBaseUrl+' (proxy, target='+targetDiag+')':diagBaseUrl}`,'#5a7a8e');
   for(const id of gameIds){
     const game=gamesMap[id]||{};
     diagLog(`\n── Juego ${id}: ${game.name||'?'}`,'#f0b429');
     try{
       const t0=Date.now();
-      const url=useProxyDiag?LOCAL_PROXY_URL:`${cfg.url}/ws/last-game-results`;
+      const url=diagBaseUrl;
       const body=useProxyDiag
         ?{_endpoint:'last-game-results',_target:targetDiag,token:cfg.token,pass:cfg.pass,app_id:cfg.appid,id_game:parseInt(id),limit:7}
         :{token:cfg.token,pass:cfg.pass,app_id:cfg.appid,id_game:parseInt(id),limit:7};
@@ -3315,15 +3342,13 @@ function diagLog(m,c){const el=document.getElementById('diag-output'),l=document
 function diagClear(){document.getElementById('diag-output').innerHTML='';}
 async function diagRun(endpoint){
   diagClear();const cfg=loadConfig();
-  const useProxyDiag=USE_LOCAL_PROXY_FOR_TESTING&&(cfg.url===PROD_WS_URL||cfg.url===DEV_WS_URL);
-  const targetDiag=cfg.url===DEV_WS_URL?'dev':'prod';
-  diagLog(`► Llamada: ${useProxyDiag?LOCAL_PROXY_URL+' (proxy local, target='+targetDiag+') → '+endpoint:cfg.url+'/ws/'+endpoint}`,'#f0b429');
+  const {url,useProxy:useProxyDiag,target:targetDiag}=resolveWsRoute(cfg,endpoint);
+  diagLog(`► Llamada: ${useProxyDiag?url+' (proxy, target='+targetDiag+') → '+endpoint:url}`,'#f0b429');
   diagLog(`  token:  ${cfg.token}`,'#5a7a8e');
   diagLog(`  pass:   ${'•'.repeat(cfg.pass.length)}`,'#5a7a8e');
   diagLog(`  app_id: ${cfg.appid}`,'#5a7a8e');
   diagLog('Enviando petición...','#3a5a6e');
   try{
-    const url=useProxyDiag?LOCAL_PROXY_URL:`${cfg.url}/ws/${endpoint}`;
     const body=useProxyDiag
       ?{_endpoint:endpoint,_target:targetDiag,token:cfg.token,pass:cfg.pass,app_id:cfg.appid}
       :{token:cfg.token,pass:cfg.pass,app_id:cfg.appid};

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Allow all HTTPS traffic — WebView needs to reach GitHub Pages, WS, CDN fonts -->
+    <!-- Allow all HTTPS traffic — WebView needs to reach el webservice, fuentes CDN, etc.
+         (la pantalla en sí ya no sale a red: se sirve desde assets/ vía WebViewAssetLoader) -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />

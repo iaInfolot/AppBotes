@@ -35,10 +35,14 @@ if (!$data || !isset($data['_endpoint'])) {
     exit;
 }
 
-$endpoint  = preg_replace('/[^a-zA-Z0-9\-]/', '', $data['_endpoint']);
-$targetUrl = 'https://webservice.infolot.es/ws/' . $endpoint;
+$endpoint = preg_replace('/[^a-zA-Z0-9\-]/', '', $data['_endpoint']);
+$host     = (isset($data['_target']) && $data['_target'] === 'dev')
+    ? 'dev-webservice.infolot.es'
+    : 'webservice.infolot.es';
+$targetUrl = 'https://' . $host . '/ws/' . $endpoint;
 
 unset($data['_endpoint']);
+unset($data['_target']);
 $forwardBody = json_encode($data);
 
 $ch = curl_init($targetUrl);
