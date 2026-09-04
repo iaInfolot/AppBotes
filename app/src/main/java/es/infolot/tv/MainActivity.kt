@@ -179,11 +179,10 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        // TEMPORAL: de vuelta a GitHub Pages solo para validar el "device"
-        // nuevo de validate-service-code contra un origen que ya está
-        // permitido en CORS (ver conversación pendiente con backend).
-        // Revertir a "https://appassets.androidplatform.net/assets/infolot-tv-app.html"
-        // en cuanto quede confirmado.
+        // TEMPORAL: build para enviar a una clienta ya, de vuelta a GitHub
+        // Pages (arquitectura probada y estable). El empaquetado en el APK
+        // (WebViewAssetLoader, ver historial) se retoma cuando esté cerrado
+        // lo de CORS con backend — ver [[project_webview_assets_migration]].
         const val APP_URL = "https://iainfolot.github.io/AppBotes/infolot-tv-app.html"
     }
 
@@ -203,6 +202,13 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Permite inspeccionar el WebView desde chrome://inspect en el PC
+        // (USB + "adb". Solo en debug: en release no tiene sentido dejar
+        // esto abierto en dispositivos ya desplegados en puntos de venta.
+        if (BuildConfig.DEBUG) {
+            WebView.setWebContentsDebuggingEnabled(true)
+        }
 
         // App de kiosco/cartelería: nadie toca el mando durante el uso normal,
         // así que sin esto el sistema aplica su salvapantallas/bloqueo por

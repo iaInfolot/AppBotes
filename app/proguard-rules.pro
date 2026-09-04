@@ -1,16 +1,9 @@
 # proguard-rules.pro
 
-# Mantener modelos de datos para Gson
--keep class com.selae.signage.model.** { *; }
-
-# OkHttp
--dontwarn okhttp3.**
--keep class okhttp3.** { *; }
-
-# Glide
--keep public class * implements com.bumptech.glide.module.GlideModule
--keep class * extends com.bumptech.glide.AppGlideModule { *; }
--keep public enum com.bumptech.glide.load.ImageHeaderParser$** {
-  **[] $VALUES;
-  public *;
+# Puente JS↔Kotlin del WebView (AndroidBridge en MainActivity.kt) — R8 no ve
+# las llamadas que le hace el JS a estos métodos (son solo por nombre, en
+# tiempo de ejecución), así que sin este keep los elimina o renombra por no
+# tener referencias estáticas, rompiendo window.AndroidBridge.* en el HTML.
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
 }
