@@ -11,9 +11,18 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
-    <!-- Excluye teléfonos del catálogo de Google Play: solo tablets (>=600dp
-         de ancho mínimo) y TV (que no se filtra por este atributo). -->
-    <supports-screens android:requiresSmallestWidthDp="600" />
+    <!-- Excluye teléfonos del catálogo de Google Play: solo tablets y TV.
+         requiresSmallestWidthDp NO filtra el catálogo de Play (comprobado:
+         con él puesto seguían apareciendo ~14.000 teléfonos como compatibles)
+         — solo sirve para elegir recursos en tiempo de ejecución. Las banderas
+         small/normal/large/xlargeScreens sí son las que Play usa para filtrar.
+         Ojo: no usar requiresSmallestWidthDp aquí — algunos TV 1080p reportan
+         sw540dp y quedarían excluidos igual que los teléfonos. -->
+    <supports-screens
+        android:smallScreens="false"
+        android:normalScreens="false"
+        android:largeScreens="true"
+        android:xlargeScreens="true" />
 
     <application
         android:allowBackup="false"

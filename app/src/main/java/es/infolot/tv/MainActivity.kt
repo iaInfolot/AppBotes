@@ -322,13 +322,15 @@ class MainActivity : Activity() {
 
         webView.clearCache(true)
         webView.clearHistory()
-        // device=tv|tablet le dice a infolot-tv-app.html en qué tipo de
-        // dispositivo corre (ver IS_TV ahí) — fuera de TV la orientación la
-        // gestiona el sensor de verdad, así que no debe aplicar el giro por
-        // CSS pensado para TV. Ya no hace falta cache-busting por timestamp:
-        // la pantalla viaja empaquetada en el propio APK, así que una versión
-        // nueva de la app ya trae el HTML actualizado sin más.
-        webView.loadUrl(APP_URL + "?device=" + (if (isTv) "tv" else "tablet"))
+        // TEMPORAL: build de GitHub Pages para clienta — timestamp para
+        // evitar que la CDN de GitHub Pages sirva una versión en caché tras
+        // el arranque (clearCache(true) solo limpia la caché del propio
+        // WebView, no la de la CDN). device=tv|tablet le dice a
+        // infolot-tv-app.html en qué tipo de dispositivo corre (ver IS_TV
+        // ahí) — fuera de TV la orientación la gestiona el sensor de verdad,
+        // así que no debe aplicar el giro por CSS pensado para TV.
+        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis() + "&device=" + (if (isTv) "tv" else "tablet")
+        webView.loadUrl(bustUrl)
     }
 
     private fun hideSystemUI() {
