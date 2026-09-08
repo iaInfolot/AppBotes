@@ -179,11 +179,11 @@ class MainActivity : Activity() {
     }
 
     companion object {
-        // TEMPORAL: build para enviar a una clienta ya, de vuelta a GitHub
-        // Pages (arquitectura probada y estable). El empaquetado en el APK
-        // (WebViewAssetLoader, ver historial) se retoma cuando esté cerrado
-        // lo de CORS con backend — ver [[project_webview_assets_migration]].
-        const val APP_URL = "https://iainfolot.github.io/AppBotes/infolot-tv-app.html"
+        // La pantalla se sirve empaquetada en el propio APK (app/src/main/assets/)
+        // y WebViewAssetLoader la expone bajo este origen https:// virtual. Se
+        // necesita un origen https real (en vez de file://) para que el fetch()
+        // al webservice desde el JS funcione con CORS igual que antes.
+        const val APP_URL = "https://appassets.androidplatform.net/assets/infolot-tv-app.html"
     }
 
     private lateinit var assetLoader: WebViewAssetLoader

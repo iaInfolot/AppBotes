@@ -1300,13 +1300,15 @@ function getISOWeek(d){
 
 // ── 7. LLAMADAS AL WEBSERVICE ─────────────────────────────────
 const USE_LOCAL_PROXY_FOR_TESTING = false;
-// TEMPORAL: desde que la pantalla se sirve empaquetada en el APK (WebViewAssetLoader,
-// origen https://appassets.androidplatform.net), webservice.infolot.es bloquea las
-// llamadas por CORS porque ese origen todavía no está en su lista de permitidos.
-// Mientras se arregla en el backend, se enruta a través de proxy.php (ya desplegado
-// en app.gesloto.es), que sí tiene el origen abierto. Quitar en cuanto el backend
-// confirme el arreglo de CORS — ver conversación pendiente con el equipo de backend.
-const USE_PROD_CORS_PROXY_TEMP = true;
+// La pantalla se sirve empaquetada en el APK (WebViewAssetLoader, origen
+// https://appassets.androidplatform.net). webservice.infolot.es bloqueaba esas
+// llamadas por CORS al no tener ese origen permitido; backend lo añadió a su
+// lista y quedó confirmado en producción el 2026-09-08 (curl -X OPTIONS con
+// Origin: https://appassets.androidplatform.net devuelve Access-Control-Allow-Origin
+// correcto) — ya no hace falta el proxy de esquiva. PROD_CORS_PROXY_URL se deja
+// como red de seguridad por si backend rompe el CORS otra vez, pero
+// USE_PROD_CORS_PROXY_TEMP debe seguir en false salvo que vuelva a pasar.
+const USE_PROD_CORS_PROXY_TEMP = false;
 const PROD_WS_URL = 'https://webservice.infolot.es';
 const DEV_WS_URL = 'https://dev-webservice.infolot.es';
 const LOCAL_PROXY_URL = '/proxy';
