@@ -1751,7 +1751,12 @@ async function fetchJackpots(){
   setStatus('Actualizando botes...','');
   try{
     const data=await wsCall('next-jackpots');
-    lastJackpotsData=Array.isArray(data)?data:[];
+    // El backend sirve esto como array JSON normal casi siempre, pero si al
+    // filtrar juegos sin bote próximo deja un hueco en los índices (p.ej.
+    // 0,1,2,4,5... sin el 3), PHP serializa esa lista como objeto en vez de
+    // array — Array.isArray() la descartaría por completo aunque traiga
+    // datos válidos. Object.values() cubre ambas formas sin más cambios.
+    lastJackpotsData=Array.isArray(data)?data:(data&&typeof data==='object'?Object.values(data):[]);
     renderJackpots(lastJackpotsData);
     if(currentView==='mixed') renderMixedJackpots(lastJackpotsData);
     document.getElementById('last-update').textContent='Act: '+new Date().toLocaleTimeString('es-ES');
