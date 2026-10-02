@@ -2270,6 +2270,15 @@ async function fetchResults(id_game){
   try{
     const cfg=loadConfig();
 
+    // El aviso por socket "results" manda el id del juego como string
+    // ("7", no 7) — Number.isInteger() lo rechaza, así que sin esto
+    // gameIds caía siempre a "todos los juegos" en vez del que tocaba, Y
+    // la comparación id_game!==id_game de más abajo (al reemplazar el
+    // resultado viejo) nunca se cumplía al comparar number!==string,
+    // dejando la entrada antigua sin borrar: el mismo sorteo acababa
+    // duplicado al añadir la nueva encima sin quitar la vieja.
+    if(id_game!=null) id_game=parseInt(id_game);
+
     const gameIds = (Number.isInteger(id_game) && gamesMap[id_game])
       ? [String(id_game)]
       : Object.keys(gamesMap);
@@ -2298,20 +2307,25 @@ async function fetchResults(id_game){
     const todayStr=toYMD(new Date());
     const buildFlat=(mStr,sStr)=>{
       // Se ha visto el mismo sorteo duplicado dos veces para un mismo juego
-      // (p.ej. LotoTurf mostrando el martes en sus dos huecos) — encaja con
-      // la caché atascada de last-game-results de arriba, sirviendo alguna
-      // vez una fila repetida. Se deduplica aquí por (id_game, fecha) para
-      // que nunca llegue un duplicado a pintarse, sea cual sea la causa
-      // exacta del lado del backend.
+      // (p.ej. LotoTurf o Lotería Nacional mostrando el mismo día en sus dos
+      // huecos, normalmente justo tras un aviso "results" por socket que
+      // repite un fetchResults()) — encaja con la caché atascada de
+      // last-game-results de arriba, sirviendo alguna vez una fila repetida,
+      // a veces con un sufijo de hora distinto en r.date ("2026-09-30" vs
+      // "2026-09-30 00:00:00"). Se normaliza la fecha a solo YYYY-MM-DD
+      // antes de comparar rango Y deduplicar, para que ese sufijo no cuele
+      // un duplicado ni, al revés, descarte una fila válida por quedarse
+      // fuera del rango por culpa de la comparación de strings.
       const seen=new Set(),out=[];
       results.forEach((gameResults,idx)=>{
         const id=parseInt(gameIds[idx]);
         gameResults.forEach(r=>{
-          if(r.date&&((r.date>=mStr&&r.date<=sStr)||(!cfg.demoMode&&r.date===todayStr))){
-            const key=id+'_'+r.date;
+          const dateNorm=r.date?r.date.slice(0,10):r.date;
+          if(dateNorm&&((dateNorm>=mStr&&dateNorm<=sStr)||(!cfg.demoMode&&dateNorm===todayStr))){
+            const key=id+'_'+dateNorm;
             if(seen.has(key)) return;
             seen.add(key);
-            out.push({...r,id_game:id});
+            out.push({...r,date:dateNorm,id_game:id});
           }
         });
       });
