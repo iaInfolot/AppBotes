@@ -96,6 +96,36 @@ class MainActivity : Activity() {
             runOnUiThread { finishAndRemoveTask() }
         }
 
+        // Aviso remoto "app-restart" por WebSocket (ver manageMessage() en
+        // infolot-tv-app.html) — a diferencia de exitApp(), esto tiene que
+        // dejar la app otra vez abierta y funcionando, como si el PV la
+        // hubiera cerrado de recientes y reabierto a mano.
+        //
+        // Se probó primero matar el proceso y relanzarlo con AlarmManager
+        // (el patrón "estándar" para un reinicio real): funcionaba en la TV
+        // (Android 7.1.2, API 25) pero la app se quedaba cerrada sin volver
+        // a abrirse en tablet real (Android 13, API 33) y en el emulador —
+        // Android 10+ bloquea lanzar una Activity desde un PendingIntent de
+        // una app que ya no tiene ningún proceso vivo (restricción de
+        // "background activity launch"), y un permiso de alarma exacta para
+        // esquivarlo (SCHEDULE_EXACT_ALARM) ya no se concede solo en
+        // targetSdk 36 — necesitaría que el usuario lo active a mano en
+        // Ajustes del sistema, sin garantía de funcionar igual en todos los
+        // fabricantes.
+        //
+        // En vez de eso, reinicio "desde dentro": se recarga la página en
+        // el mismo WebView (loadAppUrl(), la misma llamada que ya hace
+        // onCreate() al arrancar) — nunca se mata el proceso, así que no
+        // hay ninguna restricción de sistema que pueda bloquearlo, y
+        // funciona igual en cualquier versión de Android. Todo el estado
+        // JS (sockets, temporizadores, memoria acumulada) queda tan limpio
+        // como con un cierre y reapertura real; lo único que no ocurre es
+        // que el proceso Android en sí muera.
+        @JavascriptInterface
+        fun restartApp() {
+            runOnUiThread { loadAppUrl() }
+        }
+
         // Consultado desde Ajustes para mostrar/ocultar el botón de pantalla
         // de inicio — confirmado en dos plataformas TV distintas (Fire TV y
         // un emulador Android TV / Leanback genérico) que el botón Home de
@@ -320,16 +350,22 @@ class MainActivity : Activity() {
 
         webView.webChromeClient = WebChromeClient()
 
+        loadAppUrl()
+    }
+
+    // Extraído de onCreate() para poder reutilizarlo desde restartApp() —
+    // vuelve a cargar la página desde cero (nuevo timestamp, misma
+    // instancia de WebView) sin tocar el proceso ni la Activity.
+    private fun loadAppUrl() {
         webView.clearCache(true)
         webView.clearHistory()
-        // TEMPORAL: build de GitHub Pages para clienta — timestamp para
-        // evitar que la CDN de GitHub Pages sirva una versión en caché tras
-        // el arranque (clearCache(true) solo limpia la caché del propio
-        // WebView, no la de la CDN). device=tv|tablet le dice a
-        // infolot-tv-app.html en qué tipo de dispositivo corre (ver IS_TV
-        // ahí) — fuera de TV la orientación la gestiona el sensor de verdad,
-        // así que no debe aplicar el giro por CSS pensado para TV.
-        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis() + "&device=" + (if (isTv) "tv" else "tablet")
+        // Timestamp para evitar cachés intermedias (proxy, CDN si algún día
+        // vuelve a servirse remoto) — clearCache(true) solo limpia la caché
+        // propia del WebView. device=tv|tablet le dice a infolot-tv-app.html
+        // en qué tipo de dispositivo corre (ver IS_TV ahí) — fuera de TV la
+        // orientación la gestiona el sensor de verdad, así que no debe
+        // aplicar el giro por CSS pensado para TV.
+        val bustUrl = APP_URL + "?v=" + System.currentTimeMillis() + "&device=" + (if (isRunningOnTv()) "tv" else "tablet")
         webView.loadUrl(bustUrl)
     }
 
@@ -366,10 +402,22 @@ class MainActivity : Activity() {
         webView.onResume()
         webView.requestFocus()
         hideSystemUI()
+        // Reconexión única y deliberada del WebSocket al volver — ver
+        // pauseLiveUpdates()/resumeLiveUpdates() en infolot-tv-app.html.
+        // Antes, al reanudar tras una pantalla suspendida un rato, varias
+        // rutas disparaban la reconexión a la vez (temporizadores
+        // congelados que se despertaban de golpe) y dejaban sockets
+        // "zombis" recibiendo cada aviso por duplicado — de ahí el
+        // parpadeo al volver.
+        webView.evaluateJavascript("if(typeof resumeLiveUpdates==='function') resumeLiveUpdates();", null)
     }
 
     override fun onPause() {
         super.onPause()
+        // Cierre limpio del WebSocket ANTES de que webView.onPause() congele
+        // los temporizadores JS — evita que la conexión quede en un estado
+        // raro durante la pausa (ver comentario en onResume()).
+        webView.evaluateJavascript("if(typeof pauseLiveUpdates==='function') pauseLiveUpdates();", null)
         webView.onPause()
     }
 

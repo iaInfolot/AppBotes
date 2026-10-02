@@ -126,7 +126,30 @@ body.device-tablet #modal-manual-login .btn{font-size:calc(var(--fs-lg)*1.2);pad
 #pairing-info-grid{display:grid;grid-template-columns:auto 1fr;column-gap:16px;row-gap:7px;font-size:var(--fs-base);}
 #pairing-info-grid span:nth-child(odd){color:var(--text2);}
 #pairing-info-grid span:nth-child(even){color:var(--text);text-align:right;word-break:break-all;}
+/* Modal "Info del dispositivo" en Ajustes — mismo contenido y estilo que
+   #pairing-info-grid de la pantalla de activación, ver showDeviceInfo(). */
+.device-info-grid{font-family:var(--font-ui);display:grid;grid-template-columns:auto 1fr;column-gap:16px;row-gap:7px;font-size:var(--fs-base);}
+.device-info-grid span:nth-child(odd){color:var(--text2);}
+.device-info-grid span:nth-child(even){color:var(--text);text-align:right;word-break:break-all;}
 .spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--pv-primary);border-radius:50%;animation:spin .7s linear infinite;}
+
+/* MANTENIMIENTO — aviso remoto por WebSocket ("maintenance-mode", ver
+   manageMessage()/setMaintenanceMode()). z-index por encima de #pairing-
+   screen a propósito: si llega estando en la pantalla de activación,
+   también debe tapar eso. */
+#maintenance-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:220;padding:20px;text-align:center;}
+#maintenance-icon{display:block;width:clamp(2.4rem,6vw,4rem);height:clamp(2.4rem,6vw,4rem);color:var(--text);}
+#maintenance-screen .pairing-title{font-family:var(--font-ui);font-size:var(--fs-lg);letter-spacing:3px;text-transform:uppercase;color:var(--text);font-weight:700;}
+#maintenance-msg{font-family:var(--font-ui);font-size:var(--fs-base);color:var(--text2);max-width:560px;line-height:1.7;}
+body.device-tablet #maintenance-screen .pairing-title{font-size:calc(var(--fs-lg)*1.4);}
+body.device-tablet #maintenance-msg{font-size:calc(var(--fs-base)*1.3);max-width:680px;}
+/* Franjas diagonales sutiles arriba/abajo, con el color de marca del PV —
+   guiño al típico cartel de "obra"/mantenimiento sin caer en el amarillo/
+   negro fijo, para que siga encajando con el tema y la marca de cada PV. */
+.maintenance-stripe{position:absolute;left:0;right:0;height:22px;background:repeating-linear-gradient(45deg,var(--pv-primary) 0 20px,var(--border) 20px 40px);opacity:.85;}
+.maintenance-stripe.top{top:0;}
+.maintenance-stripe.bottom{bottom:0;}
+body.device-tablet .maintenance-stripe{height:32px;background:repeating-linear-gradient(45deg,var(--pv-primary) 0 28px,var(--border) 28px 56px);}
 
 /* APP SHELL */
 #app{display:none;width:100vw;height:100vh;flex-direction:column;}
@@ -143,8 +166,8 @@ body.device-tablet #modal-manual-login .btn{font-size:calc(var(--fs-lg)*1.2);pad
    90°/270° intercambian ancho/alto (100vh/100vw) porque pasan a ocupar el
    hueco vertical de la pantalla; 180° no los intercambia, porque sigue
    siendo el mismo hueco horizontal, solo boca abajo. */
-body.rot-90 #app, body.rot-90 #overlay, body.rot-90 #loading, body.rot-90 #pairing-screen,
-body.rot-270 #app, body.rot-270 #overlay, body.rot-270 #loading, body.rot-270 #pairing-screen{
+body.rot-90 #app, body.rot-90 #overlay, body.rot-90 #loading, body.rot-90 #pairing-screen, body.rot-90 #maintenance-screen,
+body.rot-270 #app, body.rot-270 #overlay, body.rot-270 #loading, body.rot-270 #pairing-screen, body.rot-270 #maintenance-screen{
   position:fixed;
   inset:auto;
   top:50%;
@@ -153,13 +176,13 @@ body.rot-270 #app, body.rot-270 #overlay, body.rot-270 #loading, body.rot-270 #p
   height:100vw;
   transform-origin:center center;
 }
-body.rot-90 #app, body.rot-90 #overlay, body.rot-90 #loading, body.rot-90 #pairing-screen{
+body.rot-90 #app, body.rot-90 #overlay, body.rot-90 #loading, body.rot-90 #pairing-screen, body.rot-90 #maintenance-screen{
   transform:translate(-50%,-50%) rotate(90deg);
 }
-body.rot-270 #app, body.rot-270 #overlay, body.rot-270 #loading, body.rot-270 #pairing-screen{
+body.rot-270 #app, body.rot-270 #overlay, body.rot-270 #loading, body.rot-270 #pairing-screen, body.rot-270 #maintenance-screen{
   transform:translate(-50%,-50%) rotate(270deg);
 }
-body.rot-180 #app, body.rot-180 #overlay, body.rot-180 #loading, body.rot-180 #pairing-screen{
+body.rot-180 #app, body.rot-180 #overlay, body.rot-180 #loading, body.rot-180 #pairing-screen, body.rot-180 #maintenance-screen{
   position:fixed;
   inset:auto;
   top:50%;
@@ -280,10 +303,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:cla
   50%{opacity:1;}
 }
 .jackpot-card.is-highest .card-inner::after{
-  content:'★ MAYOR BOTE';position:absolute;top:12px;right:-2px;
-  padding:3px 10px 3px 8px;border-radius:16px 0 0 16px;
+  content:'★ MAYOR BOTE';position:absolute;top:8px;right:-44px;
+  width:150px;box-sizing:border-box;padding:4px 4px 4px 18px;text-align:center;
+  transform:rotate(45deg);transform-origin:center;
   background:linear-gradient(135deg,#ffe08a,#f0a500);color:#3a2600;
-  font-family:var(--font-ui);font-size:calc(var(--fs-xs)*.8);font-weight:800;letter-spacing:1px;
+  font-family:var(--font-ui);font-size:calc(var(--fs-xs)*.75);font-weight:800;letter-spacing:1px;
   box-shadow:0 2px 8px rgba(0,0,0,.35);
 }
 .jackpot-card.is-next:not(.is-highest) .card-inner::after{content:'⚡ PRÓXIMO SORTEO';position:absolute;top:8px;right:12px;font-family:var(--font-ui);font-size:var(--fs-xs);font-weight:700;letter-spacing:2px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);animation:pulseLabel 2s ease-in-out infinite;}
@@ -365,11 +389,12 @@ body.device-tablet .modal-msg{font-size:calc(var(--fs-base)*1.5);max-width:560px
 .close-btn{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;transition:color .2s;line-height:1;}
 .close-btn:hover{color:var(--text);}
 body.device-tablet .close-btn{font-size:2.5rem;top:16px;right:18px;}
-.btn{font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:8px;padding:clamp(7px,.8vh,10px) clamp(12px,1.2vw,20px);cursor:pointer;transition:opacity .2s,transform .1s;white-space:nowrap;}
-.btn:hover{opacity:.85;} .btn:active{transform:scale(.97);}
-.btn-primary{background:var(--pv-primary);color:var(--pv-primary-text);}
-.btn-secondary{background:var(--card);border:1px solid var(--border);color:var(--text);}
-.btn-danger{background:#b03020;color:#fff;margin-left:auto;}
+.btn{font-family:var(--font-ui);font-size:var(--fs-sm);font-weight:600;letter-spacing:2px;text-transform:uppercase;border:none;border-radius:8px;padding:clamp(7px,.8vh,10px) clamp(12px,1.2vw,20px);cursor:pointer;transition:opacity .2s,transform .1s,box-shadow .1s;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn:hover{opacity:.85;} .btn:active{transform:scale(.97);box-shadow:0 1px 2px rgba(0,0,0,.2),inset 0 1px 2px rgba(0,0,0,.15);}
+.btn-primary{background:linear-gradient(180deg,rgba(255,255,255,.25),rgba(255,255,255,0) 55%),var(--pv-primary);color:var(--pv-primary-text);}
+.btn-secondary{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0) 55%),var(--card);border:1px solid var(--border);color:var(--text);}
+.btn-danger{background:linear-gradient(180deg,rgba(255,255,255,.25),rgba(255,255,255,0) 55%),#b03020;color:#fff;margin-left:auto;}
+.btn-warning{background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0) 55%),#f5a94e;color:#1a1200;margin-left:auto;}
 .menu-list{list-style:none;display:flex;flex-direction:column;gap:7px;margin-bottom:20px;}
 .menu-list li button{width:100%;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:12px 16px;font-family:var(--font-ui);font-size:1rem;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color .2s,color .2s;}
 .menu-list li button:hover{border-color:var(--pv-primary);color:var(--pv-primary);}
@@ -439,6 +464,9 @@ body.device-tablet #modal-set-home .cfg-actions .btn{font-size:calc(var(--fs-sm)
 .dd-option:last-child{border-bottom:none;border-bottom-left-radius:7px;border-bottom-right-radius:7px;}
 .cfg-dropdown .dd-option:hover,.cfg-dropdown .dd-option:focus,.cfg-dropdown .dd-option:focus-visible{background:var(--card2);color:var(--pv-primary);outline:none!important;box-shadow:none!important;}
 .cfg-actions{display:flex;gap:8px;padding-top:clamp(8px,1vh,14px);border-top:1px solid var(--border);flex-shrink:0;align-items:center;}
+/* En vertical se desbordaban los botones de esta barra — quitamos
+   Diagnóstico (el menos usado en el día a día) para que quepan el resto. */
+body.orient-v #cfg-diag-btn{display:none;}
 
 /* ══ DIAGNOSTIC ══ */
 #diag-output{background:#050709;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'Courier New',monospace;font-size:var(--fs-xs);line-height:1.6;color:#8ab4c8;max-height:50vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;}
@@ -526,6 +554,16 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     <button class="btn btn-secondary" id="pairing-settings-btn" onclick="openManualLoginFromPairing()">Introducir credenciales manualmente</button>
     <button class="btn btn-danger" id="pairing-exit-btn" onclick="exitApp()" style="display:none;margin-top:10px;margin-left:0;">Salir</button>
   </div>
+</div>
+
+<div id="maintenance-screen">
+  <div class="maintenance-stripe top"></div>
+  <svg id="maintenance-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+  </svg>
+  <div class="pairing-title"><strong>Mantenimiento</strong></div>
+  <div id="maintenance-msg">El servicio no está disponible temporalmente. Volverá enseguida.</div>
+  <div class="maintenance-stripe bottom"></div>
 </div>
 
 <div id="app">
@@ -656,6 +694,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
             </div>
           </div>
         </div>
+        <div class="form-group"><button type="button" class="dd-trigger" tabindex="0" onclick="showDeviceInfo()">📱 Info del dispositivo</button></div>
       </div>
 
       <!-- COL 3: WebService -->
@@ -671,9 +710,10 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     <div class="cfg-actions">
       <button class="btn btn-primary" tabindex="0" onclick="saveConfig()">💾 Guardar</button>
       <button class="btn btn-secondary" tabindex="0" onclick="showMenu()">← Volver</button>
-      <button class="btn btn-secondary" tabindex="0" onclick="showDiag()">🔍 Diagnóstico</button>
+      <button class="btn btn-secondary" id="cfg-diag-btn" tabindex="0" onclick="showDiag()">🔍 Diagnóstico</button>
       <button class="btn btn-secondary" id="cfg-set-home-btn" tabindex="0" onclick="requestSetAsHome()" style="display:none" title="Pantalla de inicio" aria-label="Pantalla de inicio">🏠</button>
-      <button class="btn btn-danger" tabindex="0" onclick="resetConfig()">Restablecer</button>
+      <button class="btn btn-warning" tabindex="0" onclick="resetConfig()">Restablecer</button>
+      <button class="btn btn-danger" id="cfg-logout-btn" tabindex="0" onclick="logoutPairing()" style="display:none;margin-left:0">Cerrar sesión</button>
     </div>
   </div>
 
@@ -704,6 +744,24 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     <div class="cfg-actions">
       <button class="btn btn-primary" onclick="requestSetAsHome();closeOverlay()">🏠 Configurar</button>
       <button class="btn btn-secondary" onclick="closeOverlay()">Ahora no</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-device-info" style="display:none;width:480px;max-width:95vw;">
+    <button class="close-btn" onclick="closeOverlay()">✕</button>
+    <h2>Info del dispositivo</h2>
+    <div class="modal-sub">Datos técnicos y de red</div>
+    <div class="device-info-grid">
+      <span>Dispositivo</span><span id="di-device">—</span>
+      <span>Android</span><span id="di-android">—</span>
+      <span>Fecha local</span><span id="di-datetime">—</span>
+      <span>Red</span><span id="di-network">—</span>
+      <span>Señal</span><span id="di-signal">—</span>
+      <span>IP local</span><span id="di-ip">—</span>
+      <span>Webservice</span><span id="di-ws">—</span>
+      <span>Conexión WS</span><span id="di-wscheck">—</span>
+      <span>App ID</span><span id="di-appid">—</span>
+      <span>Versión app</span><span id="di-appver">—</span>
     </div>
   </div>
 
@@ -743,8 +801,8 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
 // ════════════════════════════════════════════════════════════
 
 // ── 1. CONSTANTES Y ESTADO GLOBAL ────────────────────────────
-const APP_VERSION  = '3';
-const APP_REVISION = '20260730-001';
+const APP_VERSION  = '4';
+const APP_REVISION = '20260921-001';
 const STORAGE_KEY  = 'infolot_cfg_v23';
 const LOGO_BASE    = 'https://panel.infolot.es';
 // Logos de cada sorteo hardcodeados en local en vez de usar game.logo/
@@ -784,6 +842,12 @@ document.body.classList.add(IS_TV?'device-tv':'device-tablet');
 
 const DEFAULTS = {
   url:'https://webservice.infolot.es',
+  // token/pass vacíos a propósito: cualquier instalación nueva debe pedir
+  // siempre la activación por código/teléfono, nunca arrancar sola con una
+  // cuenta de demo cargada de fábrica.
+  // (appid NO se vacía: validateServiceCode() lo manda siempre fijo desde
+  // DEFAULTS.appid para identificar de qué cliente es el código, así que
+  // tiene que quedarse con un valor real aunque token/pass estén vacíos)
   //appid:'a5de640e-7149-4b31-b296-7b1e9cc191f4',
   appid:'41461407-985d-4834-973f-1a672edb74e2',
   token:'',
@@ -864,30 +928,32 @@ function showPairingScreen(message){
   if(errEl) errEl.textContent=message||'';
   populatePairingInfo();
 }
-// Fecha/hora local del dispositivo en la pantalla de emparejamiento — útil
-// para que soporte detecte un reloj mal ajustado como causa de fallos raros
-// de autenticación. Se actualiza cada segundo mientras la pantalla esté
-// visible; hidePairingScreen() para el intervalo para no dejarlo de fondo.
-let pairingDatetimeTimer=null;
-function updatePairingDateTime(){
-  const n=new Date(),el=document.getElementById('pi-datetime');
+// Fecha/hora local del dispositivo — útil para detectar un reloj mal
+// ajustado como causa de fallos raros de autenticación. Se actualiza cada
+// segundo mientras el panel (activación o el nuevo modal de Ajustes) esté
+// visible; quien lo cierre debe limpiar deviceInfoDatetimeTimer para no
+// dejarlo de fondo. prefix es 'pi' (pantalla de activación) o 'di' (modal
+// de Ajustes, ver showDeviceInfo()) — mismos campos, distinto contenedor.
+let deviceInfoDatetimeTimer=null;
+function updateDeviceInfoDateTime(prefix){
+  const n=new Date(),el=document.getElementById(prefix+'-datetime');
   if(!el) return;
   const day=DAY_SHORT[n.getDay()];
   const date=n.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
   const time=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
   el.textContent=`${day}, ${date} · ${time}`;
 }
-// Panel de diagnóstico de la pantalla de emparejamiento: datos de red,
-// dispositivo y configuración que soporte puede necesitar si un PV no
-// consigue activar su código (antes de asumir que el código está mal).
-async function populatePairingInfo(){
+// Info técnica y de red: datos que soporte puede necesitar si un PV no
+// consigue activar su código, o que Gabi puede querer consultar desde
+// Ajustes sin desemparejar el dispositivo (ver showDeviceInfo()).
+async function populateDeviceInfoGrid(prefix){
   const cfg=loadConfig();
-  updatePairingDateTime();
-  if(pairingDatetimeTimer) clearInterval(pairingDatetimeTimer);
-  pairingDatetimeTimer=setInterval(updatePairingDateTime,1000);
-  document.getElementById('pi-ws').textContent=cfg.url||'—';
-  document.getElementById('pi-appid').textContent=(cfg.appid||DEFAULTS.appid).substring(0,8)+'…';
-  document.getElementById('pi-appver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
+  updateDeviceInfoDateTime(prefix);
+  if(deviceInfoDatetimeTimer) clearInterval(deviceInfoDatetimeTimer);
+  deviceInfoDatetimeTimer=setInterval(()=>updateDeviceInfoDateTime(prefix),1000);
+  document.getElementById(prefix+'-ws').textContent=cfg.url||'—';
+  document.getElementById(prefix+'-appid').textContent=(cfg.appid||DEFAULTS.appid).substring(0,8)+'…';
+  document.getElementById(prefix+'-appver').textContent=`v${APP_VERSION} · r${APP_REVISION}`;
 
   // Modelo, Android e IP/red vienen del bridge nativo (MainActivity.kt) —
   // un WebView no puede leerlos por sí mismo con JS puro. Si no existe
@@ -896,25 +962,25 @@ async function populatePairingInfo(){
   try{
     if(window.AndroidBridge&&window.AndroidBridge.getDeviceInfo){
       const info=JSON.parse(window.AndroidBridge.getDeviceInfo());
-      document.getElementById('pi-device').textContent=[info.brand,info.model].filter(Boolean).join(' ')||'—';
-      document.getElementById('pi-android').textContent=info.androidVersion?`${info.androidVersion} (API ${info.sdkInt})`:'—';
-      document.getElementById('pi-network').textContent=info.network||'—';
-      const sigEl=document.getElementById('pi-signal');
+      document.getElementById(prefix+'-device').textContent=[info.brand,info.model].filter(Boolean).join(' ')||'—';
+      document.getElementById(prefix+'-android').textContent=info.androidVersion?`${info.androidVersion} (API ${info.sdkInt})`:'—';
+      document.getElementById(prefix+'-network').textContent=info.network||'—';
+      const sigEl=document.getElementById(prefix+'-signal');
       if(info.signalLevel>=0){
         sigEl.innerHTML=wifiSignalIconSVG(info.signalLevel)+`<span style="margin-left:8px">${info.signalDbm} dBm</span>`;
       }else{
         sigEl.textContent='—'; // Ethernet o sin conexión: no hay "señal" que mostrar
       }
-      document.getElementById('pi-ip').textContent=info.ip||'—';
+      document.getElementById(prefix+'-ip').textContent=info.ip||'—';
     }
-  }catch(e){console.error('[pairing-info] getDeviceInfo error:',e);}
+  }catch(e){console.error('[device-info] getDeviceInfo error:',e);}
 
   // Comprobación rápida de si el webservice configurado responde — así
   // soporte sabe si el problema es de red/URL antes de mirar el código.
   // mode:'no-cors' porque solo nos interesa si la petición llega a completarse
   // a nivel de red (DNS/TCP/TLS); con el modo normal, un servidor sin
   // cabeceras CORS hace que fetch() rechace aunque la red funcione bien.
-  const wsEl=document.getElementById('pi-wscheck');
+  const wsEl=document.getElementById(prefix+'-wscheck');
   wsEl.textContent='Comprobando…';
   try{
     const t0=Date.now();
@@ -927,9 +993,35 @@ async function populatePairingInfo(){
     wsEl.textContent='Sin respuesta';
   }
 }
+function populatePairingInfo(){ return populateDeviceInfoGrid('pi'); }
 function hidePairingScreen(){
   document.getElementById('pairing-screen').style.display='none';
-  if(pairingDatetimeTimer){clearInterval(pairingDatetimeTimer);pairingDatetimeTimer=null;}
+  if(deviceInfoDatetimeTimer){clearInterval(deviceInfoDatetimeTimer);deviceInfoDatetimeTimer=null;}
+}
+
+// Aviso remoto "maintenance-mode" por WebSocket (ver manageMessage()) —
+// persistido en cfg a propósito: si el PV sufre un corte de luz o se
+// reinicia el dispositivo mientras está en mantenimiento, debe seguir
+// mostrándose hasta que llegue el aviso de desactivarlo, no solo mientras
+// la app esté abierta en memoria. No detiene loadAllData() ni el
+// WebSocket — solo tapa la pantalla encima, para poder seguir escuchando
+// el aviso que lo desactive.
+function setMaintenanceMode(enabled, message){
+  const cfg=loadConfig();
+  cfg.maintenance={enabled:!!enabled, message:message||''};
+  persistConfig(cfg);
+  applyMaintenanceMode(cfg.maintenance);
+}
+function applyMaintenanceMode(maintenance){
+  const el=document.getElementById('maintenance-screen');
+  if(!el) return;
+  if(maintenance&&maintenance.enabled){
+    const msgEl=document.getElementById('maintenance-msg');
+    if(msgEl) msgEl.textContent=maintenance.message||'El servicio no está disponible temporalmente. Volverá enseguida.';
+    el.style.display='flex';
+  }else{
+    el.style.display='none';
+  }
 }
 async function checkPairingActivation(){
   const btn=document.getElementById('pairing-check-btn');
@@ -945,6 +1037,9 @@ async function checkPairingActivation(){
     cfg.appid=DEFAULTS.appid;
     cfg.token=data.token;
     cfg.pass=data.pass;
+    // Guardamos qué dispositivo se emparejó (independiente de lo que
+    // compruebe el backend) — ver wsCall() para el uso de esto.
+    cfg.pairedDeviceId=buildDeviceForBackend().id||null;
     persistConfig(cfg);
     loadAllData();
   }catch(e){
@@ -1012,16 +1107,57 @@ function scheduleCardShine(){
 scheduleCardShine();
 
 // ── 3. CONFIG ─────────────────────────────────────────────────
+// Cifrado ligero de token/pass dentro de localStorage, con una clave
+// derivada del propio android_id del dispositivo. No protege frente a
+// alguien con acceso total y en marcha al dispositivo (podría derivar la
+// misma clave desde el propio puente nativo), pero sí frente a un
+// volcado/backup de la app abierto sin el dispositivo físico delante — ahí
+// las credenciales ya no están en texto plano dentro del JSON guardado.
+// Deliberadamente síncrono (XOR, no Web Crypto) porque loadConfig()/
+// persistConfig() se llaman desde decenas de sitios no-async del código;
+// convertirlas a async obligaría a tocar todos esos sitios.
+function deviceCipherKey(){
+  try{
+    if(window.AndroidBridge&&window.AndroidBridge.getDeviceInfo){
+      const id=JSON.parse(window.AndroidBridge.getDeviceInfo()).androidId;
+      if(id) return id;
+    }
+  }catch(e){}
+  return 'infolot-fallback-key';
+}
+function xorCipher(str,key){
+  let out='';
+  for(let i=0;i<str.length;i++){
+    out+=String.fromCharCode(str.charCodeAt(i)^key.charCodeAt(i%key.length));
+  }
+  return out;
+}
+function encryptField(str){
+  if(!str) return str;
+  try{ return btoa(xorCipher(str,deviceCipherKey())); }catch(e){ return str; }
+}
+function decryptField(str){
+  if(!str) return str;
+  try{ return xorCipher(atob(str),deviceCipherKey()); }catch(e){ return str; }
+}
+
 function loadConfig(){
   try{
     const s=localStorage.getItem(STORAGE_KEY);
     if(!s) return {...DEFAULTS};
     const saved=JSON.parse(s);
+    if(saved.token) saved.token=decryptField(saved.token);
+    if(saved.pass) saved.pass=decryptField(saved.pass);
     return {...DEFAULTS,...saved};
   }catch{return{...DEFAULTS};}
 }
 
-function persistConfig(cfg){localStorage.setItem(STORAGE_KEY,JSON.stringify(cfg));}
+function persistConfig(cfg){
+  const toStore={...cfg};
+  if(toStore.token) toStore.token=encryptField(toStore.token);
+  if(toStore.pass) toStore.pass=encryptField(toStore.pass);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(toStore));
+}
 
 function saveConfig(){
   const cfg={
@@ -1064,6 +1200,8 @@ function fillConfigForm(cfg){
     el.dataset.locked=cfg.paired?'1':'';
     el.classList.toggle('locked-field',!!cfg.paired);
   });
+  const logoutBtn=document.getElementById('cfg-logout-btn');
+  if(logoutBtn) logoutBtn.style.display=(PAIRING_FLOW_ENABLED&&cfg.paired)?'':'none';
   document.getElementById('cfg-pvurl').value=cfg.pvurl||DEFAULTS.pvurl;
   document.getElementById('cfg-tagline').value=cfg.tagline||DEFAULTS.tagline;
   setDropdownValue('cfg-theme',cfg.theme||'light',{dark:'Oscuro',light:'Claro'});
@@ -1081,6 +1219,43 @@ function resetConfig(){
   fillConfigForm(f);applyTheme(f.theme);applyBrandColors(f.color1,f.color2);applyPvUrl(f.pvurl);
   updateDemoBadge(f);
   setStatus('Configuración restablecida','ok');
+}
+
+// "Cerrar sesión": a diferencia de Restablecer (que también borra tema,
+// vista por defecto, autorrotación, etc.), esto solo desvincula el
+// dispositivo de la cuenta (credenciales + paired) y lo manda de vuelta a
+// la pantalla de activación — el resto de ajustes se queda como estaba,
+// para no tener que reconfigurar la tablet/TV entera tras volver a activar.
+// El código de dispositivo (DEVICE_CODE_KEY) no se toca: identifica el
+// hardware, no la sesión, y debe seguir siendo el mismo tras el cierre.
+// Desvincula el dispositivo (limpia credenciales, cfg.paired=false) y
+// muestra la pantalla de activación. Compartido por el botón manual "Cerrar
+// sesión" de Ajustes y por el aviso remoto "device-unpaired" (ver
+// manageMessage()) — el webservice NO invalida el token/pass por sí mismo
+// al borrar el código/la vinculación en el panel, confirmado con Gabi: esas
+// credenciales seguirían funcionando para siempre si no fuera por este
+// aviso explícito.
+function unpairDevice(resetDeviceCode){
+  const cfg=loadConfig();
+  cfg.appid=DEFAULTS.appid;
+  cfg.token=DEFAULTS.token;
+  cfg.pass=DEFAULTS.pass;
+  cfg.paired=false;
+  persistConfig(cfg);
+  // Solo cuando backend borra la vinculación de verdad (device-unpaired):
+  // el código viejo ya no significa nada para ellos, así que se descarta
+  // para que la próxima activación genere uno nuevo (getDeviceCode() lo
+  // regenera solo en cuanto no encuentra nada guardado) — evita reutilizar
+  // un código que el panel ya vio como "Validado" en un alta anterior.
+  if(resetDeviceCode) localStorage.removeItem(DEVICE_CODE_KEY);
+  const overlay=document.getElementById('overlay');
+  if(overlay&&overlay.classList.contains('visible')) closeOverlay();
+  _booted=false;_loadingInProgress=false;
+  showPairingScreen();
+}
+function logoutPairing(){
+  if(!confirm('¿Cerrar sesión? El dispositivo quedará desvinculado y volverá a la pantalla de activación.')) return;
+  unpairDevice();
 }
 
 function fv(id){return document.getElementById(id).value.trim();}
@@ -1325,6 +1500,11 @@ const PAIRING_FLOW_ENABLED = true;
 // activo", para poder ver la app con normalidad. Debe estar en `false` salvo
 // durante esas pruebas puntuales.
 const FORCE_PAIRED_FOR_TESTING = false;
+// Salta las comprobaciones de dispositivo de wsCall() (puente nativo /
+// android_id) — solo para poder probar la app desde un navegador de
+// escritorio, donde no existe AndroidBridge. Debe estar en `false` salvo
+// durante esas pruebas puntuales.
+const SKIP_DEVICE_CHECKS_FOR_TESTING = false;
 const SERVICE_NOT_ACTIVE_MSG = 'El usuario no tiene este servicio activo';
 function isNotActivatedError(e){
   return e.message===SERVICE_NOT_ACTIVE_MSG || e.message.startsWith('Missing credentials');
@@ -1347,10 +1527,43 @@ async function wsCall(endpoint,extra={},attempt=0){
     if(!cfg.token||!cfg.appid||!cfg.pass){
       throw new Error('Missing credentials — aborting '+endpoint);
     }
+    const hasNativeBridge=!!(window.AndroidBridge&&window.AndroidBridge.getDeviceInfo);
+    const device=buildDeviceForBackend();
+    // Comprobación propia de la app, independiente de lo que valide el
+    // backend: no sustituye esa comprobación, es una segunda barrera por si
+    // alguien la salta. Dos casos:
+    // 1) Sin puente nativo o sin device.id — p.ej. alguien coge el HTML/JS
+    //    de la app y lo sirve fuera del WebView de Android (un navegador de
+    //    escritorio normal, sin AndroidBridge). Antes esto se colaba porque
+    //    el && de la comprobación se cortaba en cuanto device.id venía
+    //    vacío — un dispositivo "emparejado" sin forma de identificarse es
+    //    tan sospechoso como uno que no coincide, así que también bloquea.
+    // 2) El dispositivo emparejado (guardado al activar, ver
+    //    checkPairingActivation()) no coincide con el actual — p.ej.
+    //    alguien copió la configuración guardada a otro aparato.
+    if(cfg.paired&&!SKIP_DEVICE_CHECKS_FOR_TESTING){
+      if(!hasNativeBridge||!device.id){
+        console.error('[Security] Sin puente nativo o sin device.id — desvinculando');
+        unpairDevice(true);
+        throw new Error('Dispositivo no autorizado');
+      }
+      if(cfg.pairedDeviceId&&cfg.pairedDeviceId!==device.id){
+        console.error('[Security] Dispositivo actual no coincide con el emparejado — desvinculando');
+        unpairDevice(true);
+        throw new Error('Dispositivo no autorizado');
+      }
+    }
     const {url,useProxy,target}=resolveWsRoute(cfg,endpoint);
+    // El backend valida (o validará) en cada llamada que este device.id
+    // coincida con el que se guardó al emparejar — así un token/pass
+    // filtrado no sirve desde otro dispositivo.
+    // device_id suelto (además del objeto device completo): lo exige el
+    // backend en los métodos de servicios con código de activación
+    // (get-games, next-jackpots, last-game-results...) para comprobar el
+    // dispositivo contra el ServiceCode validado.
     const body=useProxy
-      ?{_endpoint:endpoint,_target:target,token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra}
-      :{token:cfg.token,pass:cfg.pass,app_id:cfg.appid,...extra};
+      ?{_endpoint:endpoint,_target:target,token:cfg.token,pass:cfg.pass,app_id:cfg.appid,device,device_id:device.id,...extra}
+      :{token:cfg.token,pass:cfg.pass,app_id:cfg.appid,device,device_id:device.id,...extra};
     console.log('[wsCall]',endpoint,'appid:',cfg.appid.substring(0,8));
     const resp=await fetch(url,{
       method:'POST',
@@ -1371,9 +1584,78 @@ async function wsCall(endpoint,extra={},attempt=0){
       await new Promise(r=>setTimeout(r,800));
       return wsCall(endpoint,extra,attempt+1);
     }
+    logService(1,'wscall-failed',{endpoint,error:e.message});
     throw e;
   }
 }
+
+// ── SET-LOG-SERVICE (registro remoto de eventos para diagnóstico) ──
+// URL distinta al resto de llamadas — panel.infolot.es, no webservice.
+// Fire-and-forget a propósito: nunca debe reintentar ni propagar un error
+// hacia quien la llama, porque perder un log es mucho menos grave que
+// bloquear o romper el flujo normal de la app por culpa del logging.
+const LOG_SERVICE_URL = 'https://panel.infolot.es/ws/set-log-service';
+function logService(isError, op, txt){
+  try{
+    const cfg=loadConfig();
+    if(!cfg.token||!cfg.appid||!cfg.pass) return;
+    // El carácter "·" en "version" hace que set-log-service devuelva
+    // 403 "Faltan datos de acceso" — confirmado a base de probar en real
+    // contra panel.infolot.es. Con espacio en vez de punto medio, la misma
+    // petición funciona (backend debe tener algún problema de codificación
+    // con ese carácter concreto al firmar/validar el body).
+    const body={
+      token:cfg.token, pass:cfg.pass, app_id:cfg.appid,
+      is_error:isError, op, version:`v${APP_VERSION} r${APP_REVISION}`
+    };
+    if(txt!==undefined) body.txt=txt;
+    fetch(LOG_SERVICE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>{});
+  }catch(e){}
+}
+
+// Buffer circular con los últimos console.warn()/console.error() — para
+// cuando un PV llama por algo raro: da el "historial" de los minutos
+// previos al fallo (aviso "error-history"), no solo el instante en que
+// se pregunta. No sustituye a console.warn/error, los envuelve — sigue
+// saliendo todo por la consola normal igual que antes.
+const CONSOLE_LOG_BUFFER_MAX = 40;
+let consoleLogBuffer = [];
+(function wrapConsoleForBuffer(){
+  const origWarn = console.warn.bind(console);
+  const origError = console.error.bind(console);
+  function pushEntry(level, args){
+    try{
+      const msg = args.map(a => {
+        try{ return typeof a==='string' ? a : JSON.stringify(a); }catch(e){ return String(a); }
+      }).join(' ');
+      consoleLogBuffer.push({ t: new Date().toISOString(), level, msg });
+      if(consoleLogBuffer.length > CONSOLE_LOG_BUFFER_MAX) consoleLogBuffer.shift();
+    }catch(e){}
+  }
+  console.warn = function(...args){ pushEntry('warn', args); origWarn(...args); };
+  console.error = function(...args){ pushEntry('error', args); origError(...args); };
+})();
+
+// Captura global de errores JS no controlados — la pieza que de verdad
+// cambia las reglas del juego para "el PV llama por algo raro": sin esto,
+// una excepción no capturada se pierde en la consola local del dispositivo
+// sin dejar rastro. Se manda sola, en el momento en que ocurre, sin
+// depender de que nadie la pida por WebSocket ni de que el WS siga vivo en
+// ese instante.
+window.onerror = function(msg, url, line, col, error){
+  logService(1, 'js-error', {
+    msg: String(msg), url, line, col,
+    stack: error && error.stack ? String(error.stack).substring(0,2000) : undefined
+  });
+  return false; // no suprime el log normal en consola del navegador
+};
+window.addEventListener('unhandledrejection', function(event){
+  const reason = event.reason;
+  logService(1, 'js-unhandled-rejection', {
+    msg: reason && reason.message ? String(reason.message) : String(reason),
+    stack: reason && reason.stack ? String(reason.stack).substring(0,2000) : undefined
+  });
+});
 
 // ── VALIDATE-SERVICE-CODE (activación de dispositivo nuevo) ──
 // A diferencia de wsCall, aquí todavía no hay token/pass — es precisamente
@@ -1388,7 +1670,13 @@ function buildDeviceForBackend(){
       device.id=native.androidId;
       device.branch=native.brand;
       device.model=native.model;
-      device.android=native.androidVersion;
+      // so_type/so_version en vez de un campo "android" suelto — pedido
+      // por backend: así, si algún día llega un dispositivo que no sea
+      // Android (iOS, Windows Phone...), siempre miran estas dos mismas
+      // claves en vez de tener que comprobar una etiqueta distinta por
+      // cada sistema operativo posible.
+      device.so_type='Android';
+      device.so_version=native.androidVersion;
       // Resto de datos nativos (sdkInt, red, señal, IP, versión de APK...) —
       // no forman parte de la forma acordada pero se mandan igual como
       // información adicional, sin tocar el cliente otra vez si backend
@@ -1412,8 +1700,8 @@ async function validateServiceCode(code){
   const {url,useProxy,target}=resolveWsRoute(cfg,endpoint);
   const device=buildDeviceForBackend();
   const body=useProxy
-    ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid,device}
-    :{code,app_id:DEFAULTS.appid,device};
+    ?{_endpoint:endpoint,_target:target,code,app_id:DEFAULTS.appid,device,device_id:device.id}
+    :{code,app_id:DEFAULTS.appid,device,device_id:device.id};
   // Sin esto, si el backend se queda colgado sin responder (en vez de dar
   // un error claro), el fetch nunca resuelve ni rechaza — el botón de
   // "Comprobar activación" se queda bloqueado en "Comprobando..." para
@@ -1495,13 +1783,43 @@ async function fetchSocketInfo(){
 }
 
 function connectLiveUpdates(){
-  // TODO: abrir el WebSocket contra socketInfo.ws_host con la autenticación que pide AWS AppSync Events
+  // Si ya había un socket vivo, hay que cerrarlo y desenganchar sus
+  // listeners ANTES de pisar la variable `socket` — si no, ese socket
+  // viejo se queda "zombi": nadie lo referencia ya, pero sigue conectado y
+  // sigue recibiendo mensajes, así que cada aviso se procesaba dos veces
+  // (confirmado hoy: era la causa de que app-status/error-history llegaran
+  // duplicados, y del parpadeo al volver de una pantalla suspendida rato).
+  if(socket){
+    socket.onopen=null; socket.onmessage=null; socket.onclose=null;
+    try{ socket.close(); }catch(e){}
+  }
   socketConnectedUrl=loadConfig().url;
   socket = new WebSocket(socketInfo.ws_host.concat('/event/realtime'), ['aws-appsync-event-ws', getAuthProtocol(socketInfo.auth_token, socketInfo.http_host, socketInfo.uuid_user)]);
   socket.onopen = socket_open;
   socket.onmessage = manageMessageGlobal;
   socket.onclose = socket_close;
   startWsHealthCheck();
+}
+
+// Cierre deliberado del WebSocket justo antes de que Android congele los
+// temporizadores JS (ver pauseLiveUpdates() en MainActivity.kt onPause) —
+// mejor que dejarlo colgado sin más: sin esto, cuando la pantalla se
+// suspende un rato, la conexión puede quedar en un estado raro (medio
+// cerrada por el sistema, sin que el 'onclose' llegue a procesarse hasta
+// que se reanuda) y disparar varias reconexiones a la vez al volver.
+function pauseLiveUpdates(){
+  if(wsHealthCheckTimer){ clearInterval(wsHealthCheckTimer); wsHealthCheckTimer=null; }
+  if(socket){
+    socket.onopen=null; socket.onmessage=null; socket.onclose=null;
+    try{ socket.close(); }catch(e){}
+    socket=null;
+  }
+}
+// Reconexión limpia y única al volver de pausa — reemplaza a las varias
+// reconexiones que antes se disparaban solas (chequeo de salud + onclose
+// + posible refresco), que eran las que dejaban sockets zombis.
+function resumeLiveUpdates(){
+  if(!socket) reconnectLiveUpdates();
 }
 
 async function ensureFreshAuthToken(){
@@ -1561,9 +1879,21 @@ function socket_close(){
   setTimeout(reconnectLiveUpdates, 5000);
 }
 
+let _wsReconnecting = false;
 async function reconnectLiveUpdates(){
-  await ensureFreshAuthToken();
-  connectLiveUpdates();
+  // Evita que dos rutas (el chequeo de salud, el onclose del socket, un
+  // resumeLiveUpdates()...) disparen la reconexión a la vez — connectLiveUpdates()
+  // ya cierra el socket viejo antes de crear uno nuevo, pero dos llamadas
+  // async solapadas a ensureFreshAuthToken() podían acabar creando dos
+  // sockets casi a la vez igualmente.
+  if(_wsReconnecting) return;
+  _wsReconnecting = true;
+  try{
+    await ensureFreshAuthToken();
+    connectLiveUpdates();
+  } finally {
+    _wsReconnecting = false;
+  }
 }
 
 // Mensajes "en crudo" de AppSync: {id, type, event}. type puede ser
@@ -1620,8 +1950,152 @@ function manageMessage(message){
       (message.ids || []).forEach(id => fetchResults(id));
       break;
 
+    // Avisos creados a mano desde el panel (formulario "Avisos" con Nombre/
+    // Tipo de Urgencia/Fechas/Texto) — llegan siempre con esta action fija,
+    // y la acción real que queremos viaja como texto libre dentro de
+    // message.message.txt (message.message.title es solo la etiqueta
+    // humana del aviso, "Cerrar app" en el ejemplo). Se traduce aquí a la
+    // action real y se reenvía al mismo switch, para no duplicar cada caso.
+    case 'app-message': {
+      const inner = message.message || {};
+      const txt = (inner.txt || '').trim();
+      console.log('[WS] app-message:', inner.title, '→', txt);
+      if (txt === 'maintenance-on' || txt.startsWith('maintenance-on ')) {
+        manageMessage({ action: 'maintenance-mode', enabled: true, message: txt.slice('maintenance-on'.length).trim() || undefined });
+      } else if (txt === 'maintenance-off') {
+        manageMessage({ action: 'maintenance-mode', enabled: false });
+      } else if (txt === 'log-request' || txt.startsWith('log-request ')) {
+        const op = txt.slice('log-request'.length).trim();
+        manageMessage({ action: 'log-request', op: op || 'panel-log-request', is_error: 0, txt: { title: inner.title } });
+      } else {
+        // El resto (app-close, app-restart, device-info-request,
+        // device-unpaired, pv-config-changed, results...) coincide 1:1 con
+        // el nombre de action ya soportado más abajo — se reenvía tal cual.
+        manageMessage({ action: txt });
+      }
+      break;
+    }
+
+    // Cambios de configuración del PV (colores, logo, juegos activados/
+    // desactivados...) — nada de esto llegaba antes por WebSocket, solo se
+    // recogía al arrancar la app o en el refresco periódico de
+    // refreshPvInfo. "pv-config-updated" es un nombre acordado con backend
+    // para esta sesión, pendiente de que ellos lo manden de verdad — sigue
+    // el mismo patrón que "pv-orders-changed" que ya usan.
+    case 'pv-config-updated':
+      console.log('[WS] pv-config-updated');
+      // refreshPvAndGames() actualiza gamesMap (get-games/get-service-config)
+      // antes de volver a pedir botes/resultados — si se activó/desactivó un
+      // juego, fetchJackpots()/fetchResults() necesitan el gamesMap nuevo
+      // para que renderJackpots()/renderResults() no sigan filtrándolo.
+      refreshPvAndGames().then(() => { fetchJackpots(); fetchResults(); });
+      break;
+
+    // Backend ha borrado el código/vinculación de este dispositivo en el
+    // panel. El webservice no invalida el token/pass por sí mismo en ese
+    // caso (sigue funcionando para siempre sin este aviso) — así que sin
+    // esto la app nunca se enteraría y seguiría funcionando como si nada.
+    case 'device-unpaired':
+      // El canal es del PV entero (todos sus dispositivos lo comparten), así
+      // que el aviso indica a qué device_id se refiere — si no coincide con
+      // el nuestro, es que se ha desvinculado OTRO dispositivo del mismo PV
+      // y no nos afecta.
+      if (message.device_id && message.device_id !== buildDeviceForBackend().id) {
+        console.log('[WS] device-unpaired (otro dispositivo, ignorado)');
+        break;
+      }
+      console.log('[WS] device-unpaired');
+      unpairDevice(true);
+      break;
+
+    // Reinicio real de la app (matar y relanzar el proceso, no un simple
+    // location.reload()) — requiere el puente nativo restartApp() añadido
+    // en MainActivity.kt. Sin el puente (p.ej. probando en un navegador de
+    // escritorio) se cae a un reload normal, que al menos deja la app en un
+    // estado limpio aunque no sea un reinicio de proceso de verdad.
+    case 'app-restart':
+      // El canal es del PV entero (todos sus dispositivos lo comparten) —
+      // igual que en device-unpaired, si el mensaje trae device_id hay que
+      // comprobar que es el nuestro antes de reiniciar, o reiniciaríamos
+      // TODOS los dispositivos del PV a la vez con un solo clic pensado
+      // para uno solo.
+      if (message.device_id && message.device_id !== buildDeviceForBackend().id) {
+        console.log('[WS] app-restart (otro dispositivo, ignorado)');
+        break;
+      }
+      console.log('[WS] app-restart');
+      if(window.AndroidBridge&&window.AndroidBridge.restartApp) window.AndroidBridge.restartApp();
+      else location.reload();
+      break;
+
+    // Cierre total de la app — mismo puente que ya usa el botón "Salir" del
+    // menú en tablet (exitApp()).
+    case 'app-close':
+      console.log('[WS] app-close');
+      exitApp();
+      break;
+
+    // Activa/desactiva la pantalla de mantenimiento. Payload esperado:
+    // {action:'maintenance-mode', enabled:true|false, message?:'texto'}.
+    case 'maintenance-mode':
+      console.log('[WS] maintenance-mode', message.enabled, message.message);
+      setMaintenanceMode(message.enabled, message.message);
+      break;
+
+    // Backend pide la info técnica del dispositivo (la misma que se ve en
+    // la pantalla de activación, junto al código) para diagnóstico remoto —
+    // se manda vía logService() en vez de por una respuesta directa del
+    // WebSocket, así queda guardada como un log consultable después.
+    case 'device-info':
+      console.log('[WS] device-info');
+      logService(0,'device-info',{...buildDeviceForBackend(),url:loadConfig().url,appid:loadConfig().appid});
+      break;
+
+    // Log genérico a demanda: backend decide qué registrar cada vez sin que
+    // haga falta tocar el código de la app para cada caso nuevo. Payload
+    // esperado: {action:'log-request', op:'texto libre', is_error?:0|1|2,
+    // txt?:cualquier dato}. La app solo reenvía tal cual a logService().
+    case 'log-request':
+      console.log('[WS] log-request', message.op);
+      logService(message.is_error!=null?message.is_error:0, message.op||'log-request', message.txt);
+      break;
+
+    // "El PV llama por algo raro" — antes de pedirle que describa lo que
+    // ve, esto vuelca una foto del estado en memoria (qué vista tiene
+    // activa, cuántos botes/resultados cargados, si el WebSocket está
+    // vivo y desde cuándo no recibe nada, modo demo/mantenimiento...) sin
+    // que nadie tenga que adivinar qué preguntar.
+    case 'app-status':
+      console.log('[WS] app-status');
+      logService(0,'app-status',{
+        currentView,
+        jackpots: lastJackpotsData.length,
+        results: lastResultsData.length,
+        games: Object.keys(gamesMap).length,
+        socket: socket ? (socket.readyState===1?'open':'readyState:'+socket.readyState) : 'null',
+        msSinceLastWs: lastWsMessageAt ? (Date.now()-lastWsMessageAt) : null,
+        demoMode: loadConfig().demoMode,
+        autoRotate: loadConfig().autoRotate,
+        url: loadConfig().url,
+        resultsWeekRef: resolvedResultsWeekRef ? toYMD(resolvedResultsWeekRef) : null,
+        maintenance: loadConfig().maintenance || null
+      });
+      break;
+
+    // Vuelca el buffer de los últimos console.warn()/console.error()
+    // (ver wrapConsoleForBuffer() más arriba) — el "historial" de los
+    // minutos previos al fallo, no solo el instante en que se pregunta.
+    case 'error-history':
+      console.log('[WS] error-history');
+      logService(0,'error-history',{entries:consoleLogBuffer});
+      break;
+
     default:
-      console.warn('[WS] unknown action:', message.action);
+      // El mensaje completo, no solo message.action — para poder ver en
+      // qué campo concreto viaja el aviso real cuando el panel envuelve
+      // varias cosas bajo una action genérica (p.ej. "app-message").
+      console.warn('[WS] unknown action:', message.action, JSON.stringify(message));
+      logService(2,'ws-unknown-action',{action:message.action,message});
   }
 }
 
@@ -1656,41 +2130,17 @@ function applyPvInfo(pv){
   const cfg=loadConfig();
   const name=(pv?.company?.name_comercial||pv?.company?.name_social||'').trim()||'Mi Lotería';
   const nameEl=document.getElementById('pv-name');
-  const logoEl=document.getElementById('pv-logo');
   const loadingLogoEl=document.getElementById('loading-logo');
-  const loadingLogoImgEl=document.getElementById('loading-logo-img');
   loadingLogoEl.textContent=name;
   document.title=name+' · Botes';
   if(nameEl){nameEl.textContent=name;nameEl.style.display='';}
-  const css=pv?.css||{};
-  applyBrandColors(css.color_tema||cfg.color1||DEFAULTS.color1,css.secondary_color_tema||cfg.color2||DEFAULTS.color2,css.color_texto,css.secondary_color_texto);
-  const media=pv?.media||{};
-  const logoPath=media.logo||media.logo_oficial||media.logo_small||'';
-  if(logoEl&&logoPath){
-    const logoUrl=logoPath.startsWith('http')?logoPath:LOGO_BASE+logoPath;
-    logoEl.style.display='none';
-    if(loadingLogoImgEl) loadingLogoImgEl.style.display='none';
-    console.log('[Logo] Attempting:',logoUrl);
-    let settled=false;
-    const logoTimer=setTimeout(()=>{
-      if(!settled){settled=true;console.warn('[Logo] Timeout:',logoUrl);logoEl.style.display='none';if(nameEl)nameEl.style.display='';}
-    },3000);
-    logoEl.onload=()=>{
-      if(settled) return;settled=true;clearTimeout(logoTimer);
-      console.log('[Logo] Loaded OK:',logoUrl);
-      logoEl.style.display='block';if(nameEl)nameEl.style.display='none';
-      if(loadingLogoImgEl){loadingLogoImgEl.src=logoUrl;loadingLogoImgEl.style.display='block';loadingLogoEl.style.display='none';}
-    };
-    logoEl.onerror=()=>{
-      if(settled) return;settled=true;clearTimeout(logoTimer);
-      console.warn('[Logo] Failed:',logoUrl);logoEl.style.display='none';if(nameEl)nameEl.style.display='';
-    };
-    logoEl.src=logoUrl;
-  } else if(logoEl){
-    logoEl.style.display='none';
-    if(loadingLogoImgEl) loadingLogoImgEl.style.display='none';
-    loadingLogoEl.style.display='';
-  }
+  // Los colores de marca son personalizables por PV y se leen solo de
+  // get-service-config (ver applyServiceConfig). El logo definitivo también
+  // viene de ahí (es el logo específico de Botes y Resultados, no el logo
+  // general de la web); aquí solo se aplica como adelanto rápido mientras
+  // llega get-service-config, para no dejar el loading sin logo.
+  applyBrandColors(cfg.color1||DEFAULTS.color1,cfg.color2||DEFAULTS.color2);
+  applyPvLogo(pv?.media||{});
   applyPvUrl((pv?.url?.main||pv?.url?.web||cfg.pvurl||'').trim());
 }
 
@@ -1746,6 +2196,49 @@ function applyServiceConfig(sc){
     st.color_texto,
     st.secondary_color_texto
   );
+  // Logo definitivo: el específico de Botes y Resultados. Sustituye al
+  // adelanto rápido aplicado en applyPvInfo() con el logo general de la web.
+  applyPvLogo(sc.media||{});
+}
+
+// El logo del punto de venta — fuente definitiva: get-service-config (ver
+// applyServiceConfig). applyPvInfo() también la llama, pero solo como
+// adelanto rápido mientras llega get-service-config.
+function applyPvLogo(media){
+  const nameEl=document.getElementById('pv-name');
+  const logoEl=document.getElementById('pv-logo');
+  const loadingLogoEl=document.getElementById('loading-logo');
+  const loadingLogoImgEl=document.getElementById('loading-logo-img');
+  const logoPath=media.logo||media.logo_oficial||media.logo_small||'';
+  if(logoEl&&logoPath){
+    const logoUrl=logoPath.startsWith('http')?logoPath:LOGO_BASE+logoPath;
+    logoEl.style.display='none';
+    if(loadingLogoImgEl) loadingLogoImgEl.style.display='none';
+    console.log('[Logo] Attempting:',logoUrl);
+    let settled=false;
+    // 8s en vez de los 3s de antes: el logo ya no viene de panel.infolot.es
+    // (misma infra que el webservice, ya "caliente") sino de un bucket S3/
+    // Wasabi aparte — un host nuevo para el WebView puede tardar más en el
+    // primer handshake TLS, sobre todo en redes de TV más lentas.
+    const logoTimer=setTimeout(()=>{
+      if(!settled){settled=true;console.warn('[Logo] Timeout:',logoUrl);logService(1,'pv-logo-load-failed',{url:logoUrl,reason:'timeout'});logoEl.style.display='none';if(nameEl)nameEl.style.display='';}
+    },8000);
+    logoEl.onload=()=>{
+      if(settled) return;settled=true;clearTimeout(logoTimer);
+      console.log('[Logo] Loaded OK:',logoUrl);
+      logoEl.style.display='block';if(nameEl)nameEl.style.display='none';
+      if(loadingLogoImgEl){loadingLogoImgEl.src=logoUrl;loadingLogoImgEl.style.display='block';loadingLogoEl.style.display='none';}
+    };
+    logoEl.onerror=()=>{
+      if(settled) return;settled=true;clearTimeout(logoTimer);
+      console.warn('[Logo] Failed:',logoUrl);logService(1,'pv-logo-load-failed',{url:logoUrl,reason:'onerror'});logoEl.style.display='none';if(nameEl)nameEl.style.display='';
+    };
+    logoEl.src=logoUrl;
+  } else if(logoEl){
+    logoEl.style.display='none';
+    if(loadingLogoImgEl) loadingLogoImgEl.style.display='none';
+    loadingLogoEl.style.display='';
+  }
 }
 
 // ── NEXT-JACKPOTS ────────────────────────────────────────────
@@ -1753,7 +2246,17 @@ async function fetchJackpots(){
   setStatus('Actualizando botes...','');
   try{
     const data=await wsCall('next-jackpots');
-    lastJackpotsData=Array.isArray(data)?data:[];
+    // Confirmado con backend: si excluyen de la lista un juego sin bote
+    // próximo y no es el último, el array PHP queda con un hueco en los
+    // índices y json_encode lo serializa como objeto en vez de array —
+    // Array.isArray() lo descartaría entero pese a traer datos válidos.
+    // Object.values() cubre ambas formas. Se deja constancia del caso raro
+    // (objeto) vía logService para poder ver con qué cuenta/cuándo pasa.
+    if(!Array.isArray(data)&&data&&typeof data==='object'){
+      console.warn('[Jackpots] next-jackpots devolvió objeto en vez de array (hueco de índices en backend)');
+      logService(2,'next-jackpots-non-array',{keys:Object.keys(data)});
+    }
+    lastJackpotsData=Array.isArray(data)?data:(data&&typeof data==='object'?Object.values(data):[]);
     renderJackpots(lastJackpotsData);
     if(currentView==='mixed') renderMixedJackpots(lastJackpotsData);
     document.getElementById('last-update').textContent='Act: '+new Date().toLocaleTimeString('es-ES');
@@ -1794,12 +2297,22 @@ async function fetchResults(id_game){
     let monStr=toYMD(mon),sunStr=toYMD(sun);
     const todayStr=toYMD(new Date());
     const buildFlat=(mStr,sStr)=>{
-      const out=[];
+      // Se ha visto el mismo sorteo duplicado dos veces para un mismo juego
+      // (p.ej. LotoTurf mostrando el martes en sus dos huecos) — encaja con
+      // la caché atascada de last-game-results de arriba, sirviendo alguna
+      // vez una fila repetida. Se deduplica aquí por (id_game, fecha) para
+      // que nunca llegue un duplicado a pintarse, sea cual sea la causa
+      // exacta del lado del backend.
+      const seen=new Set(),out=[];
       results.forEach((gameResults,idx)=>{
         const id=parseInt(gameIds[idx]);
         gameResults.forEach(r=>{
-          if(r.date&&((r.date>=mStr&&r.date<=sStr)||(!cfg.demoMode&&r.date===todayStr)))
+          if(r.date&&((r.date>=mStr&&r.date<=sStr)||(!cfg.demoMode&&r.date===todayStr))){
+            const key=id+'_'+r.date;
+            if(seen.has(key)) return;
+            seen.add(key);
             out.push({...r,id_game:id});
+          }
         });
       });
       return out;
@@ -2018,17 +2531,20 @@ function pendingHtml(game){
 // Días de la semana (0=domingo..6=sábado) en que sortea cada juego. Se usa para
 // rellenar con un hueco "Pendiente" los sorteos de la semana que aún no han
 // salido, en vez de dejar el bloque con espacio vacío sin explicar por qué.
-// La Quiniela, QuiniGol y LotoTurf NO tienen día fijo (pueden variar a lo
-// largo de la semana, ver VARIABLE_DOW_SLOTS más abajo) — no llevan entrada
-// aquí a propósito.
-const EXPECTED_DOW={1:[2,5],2:[1,4,6],4:[0,1,2,3,4,5,6],43:[1,4],7:[4,6],5:[0]};
+// La Quiniela, QuiniGol, LotoTurf y Lotería Nacional NO tienen día fijo
+// (pueden variar a lo largo de la semana, ver VARIABLE_DOW_SLOTS más abajo)
+// — no llevan entrada aquí a propósito. Lotería Nacional sortea normalmente
+// jueves y sábado, pero en Navidad y otras fechas especiales puede caer en
+// días distintos, una sola vez a la semana o hasta 3 veces — por eso va por
+// slots variables igual que LotoTurf en vez de días fijos.
+const EXPECTED_DOW={1:[2,5],2:[1,4,6],4:[0,1,2,3,4,5,6],43:[1,4],5:[0]};
 // Juegos sin día de sorteo fijo: en vez de comprobar fechas concretas, se
 // muestran siempre los N sorteos más recientes que haya en la semana actual
 // (N = huecos del bloque), sea cual sea el día en que cayeron. Si hay menos
 // de N, el resto del bloque queda "Pendiente" sin fecha asociada — nunca se
 // rellena con datos de la semana anterior una vez ha aparecido ya el primer
 // sorteo de la semana actual (para cualquier juego).
-const VARIABLE_DOW_SLOTS={21:2,25:1,26:1};
+const VARIABLE_DOW_SLOTS={21:2,25:1,26:1,7:2};
 function expectedDatesForGame(gameId,anchorDate){
   const dows=EXPECTED_DOW[gameId];
   if(!dows) return null;
@@ -2158,14 +2674,19 @@ function buildBlockHTML(gameId,draws,availW){
       // Mismo tamaño de fecha que el resto de sorteos en tablet horizontal.
       const isTvHNat=document.body.classList.contains('device-tv')&&!document.body.classList.contains('orient-v');
       const dateFsNat=(document.body.classList.contains('device-tablet')&&!document.body.classList.contains('orient-v'))||isTvHNat?'calc(var(--fs-sm)*1.25)':'var(--fs-sm)';
-      // Lotería Nacional sortea los jueves y los sábados. Si a la semana aún
-      // le falta uno de los dos, se añade un hueco "Pendiente" en su sitio
-      // (mismo día de la semana) en vez de dejar el bloque con espacio vacío.
-      const anchor=draws&&draws.length?new Date(draws[0].date+'T12:00:00'):getResultsWeekRef();
-      const {mon}=getWeekBounds(anchor);
-      const expected=[4,6].map(dow=>{const d=new Date(mon);d.setDate(mon.getDate()+(dow-1));return toYMD(d);});
-      const byDate={};draws.forEach(r=>{byDate[r.date]=r;});
-      const entries=expected.map(dateStr=>byDate[dateStr]||{date:dateStr,pending:true});
+      // Lotería Nacional no tiene día fijo (igual que LotoTurf, ver
+      // VARIABLE_DOW_SLOTS): normalmente sortea jueves y sábado, pero en
+      // Navidad y otras fechas especiales puede caer en días distintos, una
+      // sola vez a la semana o hasta 3 veces. Se muestran los 2 sorteos más
+      // recientes de la semana actual (draws ya viene filtrado a esa
+      // semana), en orden cronológico; si aparece un tercero, el primero
+      // desaparece para que el segundo y el tercero ocupen su lugar. Los
+      // huecos sin sorteo todavía quedan "Pendiente" sin fecha asociada —
+      // no se puede saber de antemano qué día caerá.
+      const varSlotsNat=VARIABLE_DOW_SLOTS[7];
+      const sortedNat=[...(draws||[])].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+      const entries=sortedNat.slice(-varSlotsNat);
+      while(entries.length<varSlotsNat) entries.push({pending:true});
       // Con el bloque a ancho completo (modo vertical, o el bloque ancho de
       // la vista mixta vía availW) aprovechamos ese ancho poniendo las
       // fechas lado a lado en vez de apiladas — si el bloque es estrecho
@@ -2173,11 +2694,11 @@ function buildBlockHTML(gameId,draws,availW){
       const sideBySide=document.body.classList.contains('orient-v')||(availW||200)>350;
       bodyHtml+=`<div style="display:flex;flex-direction:${sideBySide?'row':'column'};gap:6px;height:100%">`;
       entries.forEach((r,ri)=>{
-        const fd=new Date(r.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+        const fd=r.date?new Date(r.date+'T12:00:00').toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}):'';
         const ds=ri<entries.length-1?(sideBySide?'border-right:1px solid var(--border);padding-right:8px;':'border-bottom:1px solid var(--border);padding-bottom:4px;'):'';
         if(r.pending){
           bodyHtml+=`<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;${ds}">`;
-          bodyHtml+=`<div class="rb-date" style="font-family:var(--font-ui);font-size:${dateFsNat};font-weight:600;color:var(--text2)">${esc(fd)}</div>`;
+          if(fd) bodyHtml+=`<div class="rb-date" style="font-family:var(--font-ui);font-size:${dateFsNat};font-weight:600;color:var(--text2)">${esc(fd)}</div>`;
           bodyHtml+=`<div style="flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui);font-size:var(--fs-xs);color:var(--muted);font-style:italic;opacity:.6">Pendiente</div>`;
           bodyHtml+=`</div>`;
           return;
@@ -2740,13 +3261,6 @@ function syncBallSizesForGroup(gameIds){
 }
 
 // ── LA QUINIELA (bloque independiente, incluye Pleno al 15) ──
-// El backend manda los nombres de equipo con un sufijo de categoría
-// pegado al final (p.ej. "Athletic Club (m)") que no aporta nada en
-// pantalla — se recorta solo para mostrar, sin tocar el dato original.
-function cleanTeamName(name){
-  return String(name||'').replace(/\s*\([mf]\)\s*$/i,'');
-}
-
 function makeQuinielaBlock(quiDraws){
   // Mismo tamaño de fecha que el resto de sorteos en tablet horizontal.
   const isTabletHQui=document.body.classList.contains('device-tablet')&&!document.body.classList.contains('orient-v');
@@ -2762,8 +3276,8 @@ function makeQuinielaBlock(quiDraws){
 
   // Simplified Pleno al 15: position===15 directly
   const plenoMatch15=matchesQui.find(x=>parseInt(x.position)===15)||null;
-  const plenoT1=plenoMatch15?cleanTeamName(plenoMatch15.team_1_name):'';
-  const plenoT2=plenoMatch15?cleanTeamName(plenoMatch15.team_2_name):'';
+  const plenoT1=plenoMatch15?plenoMatch15.team_1_name:'';
+  const plenoT2=plenoMatch15?plenoMatch15.team_2_name:'';
   // Goals from r.extra array directly
   const plenoRaw=Array.isArray(rQui.extra)?rQui.extra:(rQui.extra!=null?[rQui.extra]:[]);
   const plenoG1=plenoRaw.length>0?String(plenoRaw[0]):null;
@@ -2800,8 +3314,8 @@ function makeQuinielaBlock(quiDraws){
     if(fd) bodyHtml+=`<div class="rb-date" style="font-family:var(--font-ui);font-size:${dateFsQui};font-weight:600;color:var(--text2);margin-bottom:3px">${esc(fd)}</div>`;
     betQui.forEach((resQui,idx)=>{
       const mQui=matchesQui.find(x=>parseInt(x.position)===idx+1)||{};
-      const t1=esc(cleanTeamName(mQui.team_1_name||('Eq'+(idx*2+1))));
-      const t2=esc(cleanTeamName(mQui.team_2_name||('Eq'+(idx*2+2))));
+      const t1=esc(mQui.team_1_name||('Eq'+(idx*2+1)));
+      const t2=esc(mQui.team_2_name||('Eq'+(idx*2+2)));
       const scoreQui=mQui.result?String(mQui.result).replace(/\s+/g,''):'';
       const scoreHtml=scoreQui
         ?`<span class="qscore" style="font-family:var(--font-ui);font-size:var(--fs-sm);color:var(--muted);flex-shrink:0;min-width:30px;text-align:center">${esc(scoreQui)}</span>`
@@ -2863,8 +3377,8 @@ function makeQuiniGolBlock(qgDraws){
     if(fd) bodyHtml+=`<div class="rb-date" style="font-family:var(--font-ui);font-size:${dateFsQG};font-weight:600;color:var(--text2);margin-bottom:4px">${esc(fd)}</div>`;
     betQG.forEach((res,idx)=>{
       const mQG=matchesQG.find(x=>parseInt(x.position)===idx+1)||{};
-      const t1=esc(cleanTeamName(mQG.team_1_name||('Eq'+(idx*2+1))));
-      const t2=esc(cleanTeamName(mQG.team_2_name||('Eq'+(idx*2+2))));
+      const t1=esc(mQG.team_1_name||('Eq'+(idx*2+1)));
+      const t2=esc(mQG.team_2_name||('Eq'+(idx*2+2)));
       const ds=idx<betQG.length-1?'border-bottom:1px solid var(--border)':'';
       bodyHtml+=`<div class="qrow" style="display:flex;align-items:center;gap:4px;padding:${rowPad};line-height:1.2;flex:1;min-height:0;overflow:hidden;${ds}"><div class="qtext" style="flex:1;min-width:0;font-family:var(--font-ui);font-size:var(--fs-lg);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t1}<span style="color:var(--muted)"> - </span>${t2}</div>${qgBadge(res)}</div>`;
     });
@@ -3089,6 +3603,10 @@ function openMenu(){
 }
 function closeOverlay(){
   document.getElementById('overlay').classList.remove('visible');
+  // Por si se cierra el overlay con el modal de info del dispositivo
+  // abierto (showDeviceInfo()) — mismo timer que usa la pantalla de
+  // activación, ver populateDeviceInfoGrid().
+  if(deviceInfoDatetimeTimer){clearInterval(deviceInfoDatetimeTimer);deviceInfoDatetimeTimer=null;}
   startAutoRotate(loadConfig());
 }
 function showMenu(){
@@ -3097,6 +3615,7 @@ function showMenu(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-device-info').style.display='none';
   setTimeout(()=>{const first=document.querySelector('#modal-menu button');if(first)first.focus();},50);
 }
 // El mando (D-Pad) navega por los campos moviendo el foco, y WebView abre el
@@ -3130,6 +3649,7 @@ function showConfig(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-device-info').style.display='none';
   setupDpadTextInputs();
   setTimeout(()=>{
     document.querySelectorAll('#modal-config input,#modal-config select,#modal-config button').forEach((el,i)=>el.setAttribute('tabindex',String(i+1)));
@@ -3143,6 +3663,20 @@ function showDiag(){
   document.getElementById('modal-diag').style.display='';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-device-info').style.display='none';
+}
+// Botón de Ajustes que abre la misma info técnica que ya se ve en la
+// pantalla de activación (junto al código) — para consultarla sin tener
+// que desemparejar el dispositivo. Reutiliza populateDeviceInfoGrid() con
+// el prefijo 'di' en vez de 'pi' (ver esa función más arriba).
+function showDeviceInfo(){
+  document.getElementById('modal-menu').style.display='none';
+  document.getElementById('modal-config').style.display='none';
+  document.getElementById('modal-diag').style.display='none';
+  document.getElementById('modal-manual-login').style.display='none';
+  document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-device-info').style.display='';
+  populateDeviceInfoGrid('di');
 }
 function manualRefresh(){closeOverlay();_booted=false;_loadingInProgress=false;loadAllData();}
 // Se muestra una sola vez, justo tras completar el emparejamiento por
@@ -3155,6 +3689,7 @@ function showSetHomePrompt(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='';
+  document.getElementById('modal-device-info').style.display='none';
   document.getElementById('overlay').classList.add('visible');
 }
 function exitApp(){
@@ -3178,6 +3713,7 @@ function showManualLogin(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-device-info').style.display='none';
   document.getElementById('manual-token').value='';
   document.getElementById('manual-pass').value='';
   document.getElementById('manual-login-error').textContent='';
@@ -3374,6 +3910,13 @@ async function diagRun(endpoint){
 
 (function boot(){
   const cfg=loadConfig();
+  // Se aplica lo primero de todo, directo desde localStorage — si el
+  // dispositivo se reinició estando en mantenimiento, la pantalla debe
+  // aparecer al instante sin esperar a ninguna llamada de red. No frena el
+  // resto del arranque (loadAllData() sigue su curso más abajo) porque el
+  // WebSocket tiene que seguir conectado para poder recibir el aviso de
+  // "maintenance-mode" que lo desactive.
+  applyMaintenanceMode(cfg.maintenance);
   // Orientación del Menú (giro manual) solo tiene sentido en TV — en tablet
   // el sensor ya rota de verdad, ver updateRealOrientation() más abajo.
   const orientMenuItem=document.getElementById('menu-item-orient');
