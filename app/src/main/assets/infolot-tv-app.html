@@ -1044,7 +1044,13 @@ async function checkPairingActivation(){
     loadAllData();
   }catch(e){
     console.error('[pairing] validate-service-code FAILED:',e.message);
-    errEl.textContent='Todavía no está activado. Inténtalo de nuevo en un momento.';
+    // Antes esto mostraba siempre el mismo texto genérico sin importar la
+    // causa real — imposible saber desde la TV si el código no estaba
+    // guardado en el panel, si era un fallo de red/CORS, un timeout, etc.
+    // logService() no sirve aquí (necesita token/pass, que todavía no
+    // existen en esta pantalla), así que el único rastro disponible es
+    // este mensaje en pantalla — se muestra el motivo real debajo.
+    errEl.textContent='Todavía no está activado. Inténtalo de nuevo en un momento. ('+e.message+')';
     btn.disabled=false;
     btn.textContent=origText;
   }
@@ -1253,8 +1259,15 @@ function unpairDevice(resetDeviceCode){
   _booted=false;_loadingInProgress=false;
   showPairingScreen();
 }
-function logoutPairing(){
+async function logoutPairing(){
   if(!confirm('¿Cerrar sesión? El dispositivo quedará desvinculado y volverá a la pantalla de activación.')) return;
+  // Antes de borrar las credenciales en local, avisamos al backend para que
+  // suelte el código de activación de este dispositivo — si no, el
+  // device_id se queda atado para siempre al código viejo (UNIQUE con
+  // id_service) y bloquea cualquier reactivación futura, igual que si se
+  // hubiera desinstalado la app sin pasar por aquí. unpairDevice() de abajo
+  // ya deja cfg.token/pass vacíos, así que esto tiene que ir primero.
+  try{ await wsCall('unpair-device'); }catch(e){ console.error('[logout] unpair-device FAILED:',e.message); }
   unpairDevice();
 }
 
@@ -1747,6 +1760,13 @@ let socket=null;
 let socketConnectedUrl=null; // cfg.url contra la que se conectó el socket actual
 let socketInfoFetchedAt = null; // Date.now() de la última vez que refrescamos el token
 let lastWsMessageAt = null; // Date.now() del último mensaje recibido (incluye los 'ka' cada 30s)
+// Date.now() del último refresco real de jackpots/resultados (no solo del
+// socket) — ver STALE_DATA_MS/resumeLiveUpdates(): si la TV ha estado
+// apagada varios días (apagar/encender por mando normalmente NO mata el
+// proceso, solo la pantalla — onResume() puede no dispararse en absoluto),
+// la app se queda mostrando estos datos para siempre sin ningún mecanismo
+// que la avise de que ha pasado tanto tiempo.
+let lastFullRefreshAt = null;
 let wsHealthCheckTimer = null;
 // Un socket puede quedarse "zombi" — abierto a nivel de navegador pero sin
 // recibir nada más (un intermediario de red lo corta en silencio, por
@@ -1818,8 +1838,24 @@ function pauseLiveUpdates(){
 // Reconexión limpia y única al volver de pausa — reemplaza a las varias
 // reconexiones que antes se disparaban solas (chequeo de salud + onclose
 // + posible refresco), que eran las que dejaban sockets zombis.
+// Apagar la TV por mando normalmente NO mata el proceso de Android, solo la
+// pantalla — onResume() puede llegar (o no) sin que haya pasado por
+// onPause() de verdad, y aunque llegue, antes solo reconectaba el socket.
+// Si ha pasado más de STALE_DATA_MS desde el último refresco real de
+// jackpots/resultados (p.ej. la tele ha estado apagada todo el fin de
+// semana), se fuerza una recarga completa en vez de fiarse de que el
+// socket vaya a traer algo — así no hace falta esperar a un aviso por
+// socket ni pulsar "Actualizar datos" a mano al volver un lunes.
+const STALE_DATA_MS=2*3600000; // 2 horas
 function resumeLiveUpdates(){
   if(!socket) reconnectLiveUpdates();
+  if(!_loadingInProgress&&(!lastFullRefreshAt||Date.now()-lastFullRefreshAt>STALE_DATA_MS)){
+    console.log('[boot] datos con más de',STALE_DATA_MS/3600000,'h de antigüedad al reanudar — forzando recarga completa');
+    refreshPvAndGames()
+      .then(()=>Promise.all([fetchJackpots(),fetchResults()]))
+      .then(()=>{lastFullRefreshAt=Date.now();})
+      .catch(e=>console.error('[boot] recarga al reanudar FAILED:',e.message));
+  }
 }
 
 async function ensureFreshAuthToken(){
@@ -1946,6 +1982,9 @@ function manageMessage(message){
   switch (message.action) {
     case 'results':
       console.log('[WS] results for games', message.ids);
+      // DEBUG TEMPORAL — investigando duplicado de sorteo en LotoTurf/
+      // Lotería Nacional, quitar en cuanto se confirme la causa.
+      logService(0,'debug-results-ws',{ids:message.ids,idsTypes:(message.ids||[]).map(x=>typeof x)});
       fetchJackpots();
       (message.ids || []).forEach(id => fetchResults(id));
       break;
@@ -2353,11 +2392,25 @@ async function fetchResults(id_game){
     console.log('[Results] flat:',flat.length,'draws');
     if(id_game){
       // Solo se ha refrescado un juego: quitar sus entradas viejas del array
-      // existente y añadir las nuevas, sin tocar el resto de juegos.
+      // existente y añadir las nuevas, sin tocar el resto de juegos. Si dos
+      // llamadas a fetchResults() para el mismo juego llegan a solaparse
+      // (p.ej. un aviso "results" por socket duplicado), esto podría dejar
+      // una fecha repetida — se deduplica por (id_game,fecha) justo debajo,
+      // quedándonos con la entrada más reciente de cada día.
       lastResultsData=lastResultsData.filter(x=>x.id_game!==id_game).concat(flat);
     }else{
       // Refresco completo: sustituye todo, como hacía hasta ahora.
       lastResultsData=flat;
+    }
+    {
+      const dedupSeen={},dedupOut=[];
+      for(let i=lastResultsData.length-1;i>=0;i--){
+        const r=lastResultsData[i],dKey=r.id_game+'_'+r.date;
+        if(dedupSeen[dKey]) continue;
+        dedupSeen[dKey]=true;
+        dedupOut.unshift(r);
+      }
+      lastResultsData=dedupOut;
     }
     if(currentView==='mixed') renderMixedResults(lastResultsData);
     if(currentView==='results'){
@@ -2826,9 +2879,16 @@ function paintResultsCols34(grid,byGame,cols){
 function _renderResults(data,grid,forceVertical){
   grid.innerHTML='';
   const isV=forceVertical||document.body.classList.contains('orient-v');
-  const byGame={};
+  // Último filtro antes de pintar: nunca mostrar dos filas con la misma
+  // fecha para un mismo juego, sea cual sea la causa de que lastResultsData
+  // acabe con una entrada repetida (p.ej. el bug de LotoTurf/Lotería
+  // Nacional mostrando el mismo día duplicado en sus dos huecos).
+  const byGame={},seenDate={};
   (data||[]).forEach(r=>{
     if(!gamesMap[r.id_game]) return;
+    const dKey=r.id_game+'_'+r.date;
+    if(seenDate[dKey]) return;
+    seenDate[dKey]=true;
     if(!byGame[r.id_game]) byGame[r.id_game]=[];
     byGame[r.id_game].push(r);
   });
@@ -3468,9 +3528,12 @@ function renderMixedResults(data){
   if(!grid) return;
   grid.innerHTML='';
 
-  const byGame={};
+  const byGame={},seenDate={};
   (data||[]).forEach(r=>{
     if(!gamesMap[r.id_game]) return;
+    const dKey=r.id_game+'_'+r.date;
+    if(seenDate[dKey]) return;
+    seenDate[dKey]=true;
     if(!byGame[r.id_game]) byGame[r.id_game]=[];
     byGame[r.id_game].push(r);
   });
@@ -3807,6 +3870,7 @@ async function loadAllData(){
     await fetchServiceConfig();
     setLoadingStep(cfg.demoMode?'Cargando resultados (DEMO)...':'Cargando datos...');
     await Promise.all([fetchJackpots(),fetchResults()]);
+    lastFullRefreshAt=Date.now();
     setLoadingStep('Listo');
     // Primera carga con éxito real del webservice: el dispositivo queda
     // "emparejado" para siempre — App ID/Token/Contraseña pasan a solo lectura.
