@@ -801,7 +801,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
 // ════════════════════════════════════════════════════════════
 
 // ── 1. CONSTANTES Y ESTADO GLOBAL ────────────────────────────
-const APP_VERSION  = '4';
+const APP_VERSION  = '4.1';
 const APP_REVISION = '20260921-001';
 const STORAGE_KEY  = 'infolot_cfg_v23';
 const LOGO_BASE    = 'https://panel.infolot.es';
@@ -869,7 +869,7 @@ const DEVICE_CODE_KEY = 'infolot_device_code';
 
 let gamesMap={}, pvData={}, serviceConfig={}, timers={}, countdownTimers=[];
 let lastJackpotsData=[], lastResultsData=[], currentView='jackpots';
-let _loadingInProgress=false, _booted=false;
+let _loadingInProgress=false, _booted=false, _loadingStartedAt=null;
 let autoRotateTimer=null;
 let resolvedResultsWeekRef=null; // semana realmente usada la última vez que se pintaron resultados (ver fetchResults)
 
@@ -1268,7 +1268,11 @@ async function logoutPairing(){
   // hubiera desinstalado la app sin pasar por aquí. unpairDevice() de abajo
   // ya deja cfg.token/pass vacíos, así que esto tiene que ir primero.
   try{ await wsCall('unpair-device'); }catch(e){ console.error('[logout] unpair-device FAILED:',e.message); }
-  unpairDevice();
+  // true: el backend ya ha caducado el código viejo (unpair-device de
+  // arriba) — si no se descarta aquí también, getDeviceCode() seguiría
+  // devolviendo ese mismo número muerto, y nunca podría volver a darse de
+  // alta en el panel ("ya existe", aunque esté caducado).
+  unpairDevice(true);
 }
 
 function fv(id){return document.getElementById(id).value.trim();}
@@ -3755,7 +3759,14 @@ function showDeviceInfo(){
   document.getElementById('modal-device-info').style.display='';
   populateDeviceInfoGrid('di');
 }
-function manualRefresh(){closeOverlay();_booted=false;_loadingInProgress=false;loadAllData();}
+// _loadingInProgress NO se toca aquí a propósito: si ya hay una carga en
+// marcha (p.ej. alguien pulsó el botón dos veces seguidas), queremos que el
+// guard de loadAllData() la bloquee — antes se forzaba siempre a false justo
+// antes de llamar a loadAllData(), así que dos pulsaciones seguidas podían
+// dejar dos loadAllData() corriendo a la vez, pisándose las mismas variables
+// globales (gamesMap, lastJackpotsData, el socket...) y dejando la pantalla
+// colgada a medio camino.
+function manualRefresh(){closeOverlay();_booted=false;loadAllData();}
 // Se muestra una sola vez, justo tras completar el emparejamiento por
 // primera vez — el momento en que más sentido tiene pedir este único paso
 // extra, en vez de dejarlo escondido en Ajustes esperando a que alguien lo
@@ -3856,9 +3867,21 @@ function setupTimers(cfg){
 // ── 13. ORQUESTACIÓN DE CARGA INICIAL ──────────────────────────
 async function loadAllData(){
   if(_booted){console.log('[boot] already booted');return;}
-  if(_loadingInProgress){console.log('[boot] already running');return;}
+  if(_loadingInProgress){
+    // Dos loadAllData() a la vez pisándose las mismas variables globales
+    // (gamesMap, el socket...) es justo el tipo de carrera que puede dejar
+    // la pantalla colgada a medio camino — este log confirma con datos
+    // reales si esto llega a ocurrir alguna vez, en vez de tener que
+    // deducirlo del patrón de horarios en los logs del servidor.
+    console.warn('[boot] already running, carga duplicada bloqueada');
+    logService(1,'duplicate-load-blocked',{
+      currentView,
+      msSinceOtherLoadStarted:_loadingStartedAt?(Date.now()-_loadingStartedAt):null
+    });
+    return;
+  }
   hidePairingScreen();
-  _booted=true;_loadingInProgress=true;
+  _booted=true;_loadingInProgress=true;_loadingStartedAt=Date.now();
   showLoading(true);
   const cfg=loadConfig();
   let justPaired=false;
@@ -3907,7 +3930,7 @@ async function loadAllData(){
     await new Promise(r=>setTimeout(r,5000));
   }
   showLoading(false);
-  _loadingInProgress=false;
+  _loadingInProgress=false;_loadingStartedAt=null;
   switchView(currentView||'jackpots');
   startAutoRotate(cfg);
   if(justPaired){
