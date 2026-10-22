@@ -695,6 +695,9 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
           </div>
         </div>
         <div class="form-group"><button type="button" class="dd-trigger" tabindex="0" onclick="showDeviceInfo()">📱 Info del dispositivo</button></div>
+        <div class="form-group" id="cfg-kiosk-lock-group" style="display:none">
+          <button type="button" class="dd-trigger" id="cfg-kiosk-lock-btn" tabindex="0" onclick="requestKioskLock()">🔒 Bloqueo anti-mando</button>
+        </div>
       </div>
 
       <!-- COL 3: WebService -->
@@ -712,7 +715,6 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
       <button class="btn btn-secondary" tabindex="0" onclick="showMenu()">← Volver</button>
       <button class="btn btn-secondary" id="cfg-diag-btn" tabindex="0" onclick="showDiag()">🔍 Diagnóstico</button>
       <button class="btn btn-secondary" id="cfg-set-home-btn" tabindex="0" onclick="requestSetAsHome()" style="display:none" title="Pantalla de inicio" aria-label="Pantalla de inicio">🏠</button>
-      <button class="btn btn-secondary" id="cfg-kiosk-lock-btn" tabindex="0" onclick="requestKioskLock()" style="display:none" title="Bloqueo anti-mando" aria-label="Bloqueo anti-mando">🔒</button>
       <button class="btn btn-warning" tabindex="0" onclick="resetConfig()">Restablecer</button>
       <button class="btn btn-danger" id="cfg-logout-btn" tabindex="0" onclick="logoutPairing()" style="display:none;margin-left:0">Cerrar sesión</button>
     </div>
@@ -3726,6 +3728,7 @@ function setupDpadTextInputs(){
 }
 function showConfig(){
   fillConfigForm(loadConfig());
+  updateKioskLockStatus();
   document.getElementById('modal-menu').style.display='none';
   document.getElementById('modal-config').style.display='flex';
   document.getElementById('modal-diag').style.display='none';
@@ -3798,6 +3801,17 @@ function requestSetAsHome(){
 // onPause()/bringSelfToFront() en MainActivity.kt).
 function requestKioskLock(){
   if(window.AndroidBridge&&window.AndroidBridge.requestKioskLockPermission) window.AndroidBridge.requestKioskLockPermission();
+}
+// Texto del botón de bloqueo anti-mando — se vuelve a llamar cada vez que se
+// abre Ajustes (showConfig()) porque el permiso se concede en una pantalla
+// de Android aparte; al volver no hay ningún evento JS que avise del cambio.
+function updateKioskLockStatus(){
+  try{
+    const btn=document.getElementById('cfg-kiosk-lock-btn');
+    if(!btn||!window.AndroidBridge||!window.AndroidBridge.hasKioskLockPermission) return;
+    const active=window.AndroidBridge.hasKioskLockPermission();
+    btn.textContent=active?'🔒 Bloqueo anti-mando: activo':'🔓 Bloqueo anti-mando: inactivo (pulsa para activar)';
+  }catch(e){}
 }
 // Modal mínimo para la vía de escape de la pantalla de activación: solo pide
 // token y contraseña (URL/App ID ya son los fijos de producción en
@@ -4048,11 +4062,13 @@ async function diagRun(endpoint){
     }
   }catch(e){}
   // "Bloqueo anti-mando" — lo contrario del botón de arriba: solo tiene
-  // sentido en TV (ver isKioskLockAvailable() en MainActivity.kt).
+  // sentido en TV (ver isKioskLockAvailable() en MainActivity.kt). El texto
+  // (activo/inactivo) se actualiza aparte, cada vez que se abre Ajustes —
+  // ver updateKioskLockStatus().
   try{
-    const kioskLockBtn=document.getElementById('cfg-kiosk-lock-btn');
-    if(kioskLockBtn&&window.AndroidBridge&&window.AndroidBridge.isKioskLockAvailable){
-      kioskLockBtn.style.display=window.AndroidBridge.isKioskLockAvailable()?'':'none';
+    const kioskLockGroup=document.getElementById('cfg-kiosk-lock-group');
+    if(kioskLockGroup&&window.AndroidBridge&&window.AndroidBridge.isKioskLockAvailable){
+      kioskLockGroup.style.display=window.AndroidBridge.isKioskLockAvailable()?'':'none';
     }
   }catch(e){}
   // Vista Mixta no existe en tablet — se quita también del desplegable de
