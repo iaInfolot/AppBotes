@@ -9,9 +9,12 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.KeyEvent
 import android.view.View
@@ -41,6 +44,12 @@ class MainActivity : Activity() {
     // red momentáneo que se recupera solo), la recarga salta igualmente
     // encima de una app que ya está funcionando, arrancando boot() dos veces.
     private var pendingReloadRunnable: Runnable? = null
+
+    // true mientras está abierta la pantalla de sistema de "Mostrar sobre
+    // otras apps" (ver requestKioskLockPermission() en OrientationBridge) —
+    // pausa el auto-refoco de onPause() para no taparla.
+    @Volatile private var awaitingOverlayPermission = false
+    private val kioskLockHandler = Handler(Looper.getMainLooper())
 
     private inner class OrientationBridge {
         @JavascriptInterface
@@ -155,6 +164,44 @@ class MainActivity : Activity() {
                 try {
                     startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
                 } catch (e: Exception) {
+                }
+            }
+        }
+
+        // Botón "Bloqueo anti-mando" en Ajustes (solo TV) — visible siempre,
+        // sin comprobar si ya está concedido: la pantalla de Ajustes del
+        // sistema a la que lleva funciona igual de bien para revisar el
+        // estado que para concederlo, así que no hace falta duplicar esa
+        // lógica aquí.
+        @JavascriptInterface
+        fun isKioskLockAvailable(): Boolean {
+            return isRunningOnTv()
+        }
+
+        @JavascriptInterface
+        fun hasKioskLockPermission(): Boolean {
+            return Settings.canDrawOverlays(this@MainActivity)
+        }
+
+        // Pide el permiso "Mostrar sobre otras apps" — ver onPause() y el
+        // comentario en AndroidManifest.xml para el porqué. awaitingOverlayPermission
+        // evita que el propio onPause() disparado al abrir esta pantalla de
+        // Ajustes del sistema se interprete como "algo nos ha sacado de la
+        // app" y la traiga de vuelta a sí misma por encima del diálogo de
+        // permisos, que es justo lo que se está intentando mostrar.
+        @JavascriptInterface
+        fun requestKioskLockPermission() {
+            runOnUiThread {
+                try {
+                    awaitingOverlayPermission = true
+                    startActivity(
+                        Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")
+                        )
+                    )
+                } catch (e: Exception) {
+                    awaitingOverlayPermission = false
                 }
             }
         }
@@ -399,6 +446,8 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        awaitingOverlayPermission = false
+        kioskLockHandler.removeCallbacksAndMessages(null)
         webView.onResume()
         webView.requestFocus()
         hideSystemUI()
@@ -419,9 +468,42 @@ class MainActivity : Activity() {
         // raro durante la pausa (ver comentario en onResume()).
         webView.evaluateJavascript("if(typeof pauseLiveUpdates==='function') pauseLiveUpdates();", null)
         webView.onPause()
+
+        // Bloqueo anti-mando (solo TV): si algo saca la app de primer plano
+        // sin que lo haya pedido la propia app (p.ej. un mando compartido
+        // con otra TV que dispara el botón Home, o cualquier pulsación
+        // fantasma), se trae de vuelta al instante. Técnica verificada
+        // contra Fully Kiosk Browser (2026-10-22): no usa startLockTask()/
+        // Device Owner (eso exige restablecer de fábrica cada TV, inviable
+        // con el parque de hardware de los PV — ver memoria
+        // project_home_role_tv_limitation), sino que se apoya en que el
+        // permiso SYSTEM_ALERT_WINDOW es una excepción a la restricción de
+        // "background activity launch" de Android 10+: sin él, este mismo
+        // startActivity() sería ignorado en silencio.
+        //
+        // No afecta a tablet (ahí "Salir" del menú debe poder cerrar la app
+        // de verdad) ni cuando la propia Activity se está cerrando o
+        // recreando a propósito (restartApp() no pasa por aquí: recarga el
+        // WebView sin tocar el ciclo de vida de la Activity).
+        if (isRunningOnTv() && !awaitingOverlayPermission && !isFinishing && !isChangingConfigurations
+            && Settings.canDrawOverlays(this)
+        ) {
+            kioskLockHandler.postDelayed({ bringSelfToFront() }, 300L)
+        }
+    }
+
+    private fun bringSelfToFront() {
+        try {
+            val relaunch = Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            }
+            startActivity(relaunch)
+        } catch (e: Exception) {
+        }
     }
 
     override fun onDestroy() {
+        kioskLockHandler.removeCallbacksAndMessages(null)
         webView.destroy()
         super.onDestroy()
     }

@@ -6,6 +6,16 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- "Mostrar sobre otras apps" — en TV no sirve para overlays, se pide solo
+         por su efecto colateral: es una de las pocas excepciones oficiales a la
+         restricción de "background activity launch" de Android 10+, necesaria
+         para que la app pueda traerse sola a primer plano si el mando (p.ej.
+         uno compartido con otra TV) la saca de pantalla. Confirmado por
+         ingeniería inversa de Fully Kiosk Browser (apptest en emulador,
+         2026-10-22) — así es como su "Kiosk Mode" bloquea Home/Back/Recientes
+         sin usar Device Owner. Ver requestKioskLockPermission() en
+         MainActivity.kt. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Android TV -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />

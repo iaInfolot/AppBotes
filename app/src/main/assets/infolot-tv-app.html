@@ -712,6 +712,7 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
       <button class="btn btn-secondary" tabindex="0" onclick="showMenu()">← Volver</button>
       <button class="btn btn-secondary" id="cfg-diag-btn" tabindex="0" onclick="showDiag()">🔍 Diagnóstico</button>
       <button class="btn btn-secondary" id="cfg-set-home-btn" tabindex="0" onclick="requestSetAsHome()" style="display:none" title="Pantalla de inicio" aria-label="Pantalla de inicio">🏠</button>
+      <button class="btn btn-secondary" id="cfg-kiosk-lock-btn" tabindex="0" onclick="requestKioskLock()" style="display:none" title="Bloqueo anti-mando" aria-label="Bloqueo anti-mando">🔒</button>
       <button class="btn btn-warning" tabindex="0" onclick="resetConfig()">Restablecer</button>
       <button class="btn btn-danger" id="cfg-logout-btn" tabindex="0" onclick="logoutPairing()" style="display:none;margin-left:0">Cerrar sesión</button>
     </div>
@@ -3790,6 +3791,14 @@ function exitApp(){
 function requestSetAsHome(){
   if(window.AndroidBridge&&window.AndroidBridge.requestSetAsHome) window.AndroidBridge.requestSetAsHome();
 }
+// Permiso "Mostrar sobre otras apps" — solo TV. No reemplaza el launcher (esa
+// vía sigue bloqueada por la plataforma, ver memoria
+// project_home_role_tv_limitation), pero deja que la app se traiga sola a
+// primer plano si un mando compartido con otra TV la saca de pantalla (ver
+// onPause()/bringSelfToFront() en MainActivity.kt).
+function requestKioskLock(){
+  if(window.AndroidBridge&&window.AndroidBridge.requestKioskLockPermission) window.AndroidBridge.requestKioskLockPermission();
+}
 // Modal mínimo para la vía de escape de la pantalla de activación: solo pide
 // token y contraseña (URL/App ID ya son los fijos de producción en
 // DEFAULTS), para no exponer todo Ajustes a quien solo necesita entrar con
@@ -4036,6 +4045,14 @@ async function diagRun(endpoint){
     const setHomeBtn=document.getElementById('cfg-set-home-btn');
     if(setHomeBtn&&window.AndroidBridge&&window.AndroidBridge.isHomeRoleAvailable){
       setHomeBtn.style.display=window.AndroidBridge.isHomeRoleAvailable()?'':'none';
+    }
+  }catch(e){}
+  // "Bloqueo anti-mando" — lo contrario del botón de arriba: solo tiene
+  // sentido en TV (ver isKioskLockAvailable() en MainActivity.kt).
+  try{
+    const kioskLockBtn=document.getElementById('cfg-kiosk-lock-btn');
+    if(kioskLockBtn&&window.AndroidBridge&&window.AndroidBridge.isKioskLockAvailable){
+      kioskLockBtn.style.display=window.AndroidBridge.isKioskLockAvailable()?'':'none';
     }
   }catch(e){}
   // Vista Mixta no existe en tablet — se quita también del desplegable de
