@@ -459,6 +459,11 @@ class MainActivity : Activity() {
         // "zombis" recibiendo cada aviso por duplicado — de ahí el
         // parpadeo al volver.
         webView.evaluateJavascript("if(typeof resumeLiveUpdates==='function') resumeLiveUpdates();", null)
+        // Al volver de la pantalla de Ajustes del sistema (tras conceder o
+        // denegar "Mostrar sobre otras apps"), si Ajustes de la app seguía
+        // abierto de fondo su texto se había quedado con el estado de antes
+        // — esto lo refresca sin que haga falta cerrar y volver a entrar.
+        webView.evaluateJavascript("if(typeof updateKioskLockStatus==='function') updateKioskLockStatus();", null)
     }
 
     override fun onPause() {

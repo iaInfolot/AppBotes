@@ -750,6 +750,16 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
     </div>
   </div>
 
+  <div class="modal" id="modal-kiosk-lock-prompt" style="display:none;">
+    <button class="close-btn" onclick="closeOverlay()">✕</button>
+    <h2>Un último paso</h2>
+    <div class="modal-msg">Actívalo para que la app se quede fija en la TV y vuelva sola si algo la saca de pantalla.</div>
+    <div class="cfg-actions">
+      <button class="btn btn-primary" onclick="requestKioskLock();closeOverlay()">🔒 Configurar</button>
+      <button class="btn btn-secondary" onclick="closeOverlay()">Ahora no</button>
+    </div>
+  </div>
+
   <div class="modal" id="modal-device-info" style="display:none;width:480px;max-width:95vw;">
     <button class="close-btn" onclick="closeOverlay()">✕</button>
     <h2>Info del dispositivo</h2>
@@ -3699,6 +3709,7 @@ function showMenu(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-kiosk-lock-prompt').style.display='none';
   document.getElementById('modal-device-info').style.display='none';
   setTimeout(()=>{const first=document.querySelector('#modal-menu button');if(first)first.focus();},50);
 }
@@ -3734,6 +3745,7 @@ function showConfig(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-kiosk-lock-prompt').style.display='none';
   document.getElementById('modal-device-info').style.display='none';
   setupDpadTextInputs();
   setTimeout(()=>{
@@ -3748,6 +3760,7 @@ function showDiag(){
   document.getElementById('modal-diag').style.display='';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-kiosk-lock-prompt').style.display='none';
   document.getElementById('modal-device-info').style.display='none';
 }
 // Botón de Ajustes que abre la misma info técnica que ya se ve en la
@@ -3760,6 +3773,7 @@ function showDeviceInfo(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-kiosk-lock-prompt').style.display='none';
   document.getElementById('modal-device-info').style.display='';
   populateDeviceInfoGrid('di');
 }
@@ -3781,6 +3795,20 @@ function showSetHomePrompt(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='none';
   document.getElementById('modal-set-home').style.display='';
+  document.getElementById('modal-kiosk-lock-prompt').style.display='none';
+  document.getElementById('modal-device-info').style.display='none';
+  document.getElementById('overlay').classList.add('visible');
+}
+// Equivalente a showSetHomePrompt() pero para TV — mismo momento (justo
+// tras emparejar por primera vez), mismo motivo: es cuando más sentido
+// tiene pedir este paso extra, en vez de dejarlo escondido en Ajustes.
+function showKioskLockPrompt(){
+  document.getElementById('modal-menu').style.display='none';
+  document.getElementById('modal-config').style.display='none';
+  document.getElementById('modal-diag').style.display='none';
+  document.getElementById('modal-manual-login').style.display='none';
+  document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-kiosk-lock-prompt').style.display='';
   document.getElementById('modal-device-info').style.display='none';
   document.getElementById('overlay').classList.add('visible');
 }
@@ -3824,6 +3852,7 @@ function showManualLogin(){
   document.getElementById('modal-diag').style.display='none';
   document.getElementById('modal-manual-login').style.display='';
   document.getElementById('modal-set-home').style.display='none';
+  document.getElementById('modal-kiosk-lock-prompt').style.display='none';
   document.getElementById('modal-device-info').style.display='none';
   document.getElementById('manual-token').value='';
   document.getElementById('manual-pass').value='';
@@ -3960,6 +3989,9 @@ async function loadAllData(){
     try{
       if(window.AndroidBridge&&window.AndroidBridge.isHomeRoleAvailable&&window.AndroidBridge.isHomeRoleAvailable()){
         showSetHomePrompt();
+      }else if(window.AndroidBridge&&window.AndroidBridge.isKioskLockAvailable&&window.AndroidBridge.isKioskLockAvailable()
+        &&window.AndroidBridge.hasKioskLockPermission&&!window.AndroidBridge.hasKioskLockPermission()){
+        showKioskLockPrompt();
       }
     }catch(e){}
   }
