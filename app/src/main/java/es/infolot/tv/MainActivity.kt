@@ -51,6 +51,36 @@ class MainActivity : Activity() {
     @Volatile private var awaitingOverlayPermission = false
     private val kioskLockHandler = Handler(Looper.getMainLooper())
 
+    // Apps de streaming/entretenimiento típicas de un Fire TV de PV que no
+    // se usan durante el funcionamiento normal del punto de venta, pero se
+    // quedan cacheadas en memoria (decenas o cientos de MB cada una) en
+    // cuanto se abren una vez — confirmado con "dumpsys meminfo" en un Fire
+    // TV Stick real (1,3 GB de RAM) donde Netflix en caché ocupaba 135 MB
+    // sin estar en uso. Con tan poca RAM libre, eso es lo que acaba forzando
+    // al sistema a matar nuestra Activity en primer plano para hacer sitio
+    // (ver freeBackgroundMemory() más abajo).
+    private val memoryHoggingPackages = listOf(
+        "com.netflix.ninja",
+        "com.disney.disneyplus",
+        "com.spotify.tv.android",
+        "com.amazon.firetv.youtube",
+        "com.movistarplus.androidtv",
+        "com.rtve.androidtv",
+        "com.filmin.firetv",
+        "tv.accedo.mitele_xdk",
+        "com.antena3.atresplayer.tv",
+        "tv.pluto.android",
+        "com.amazon.bueller.photos",
+        "com.amazon.venezia"
+    )
+    private val memoryCleanupHandler = Handler(Looper.getMainLooper())
+    private val memoryCleanupRunnable = object : Runnable {
+        override fun run() {
+            freeBackgroundMemory()
+            memoryCleanupHandler.postDelayed(this, MEMORY_CLEANUP_INTERVAL_MS)
+        }
+    }
+
     private inner class OrientationBridge {
         @JavascriptInterface
         fun setRotation(degrees: Int) {
@@ -261,6 +291,8 @@ class MainActivity : Activity() {
         // necesita un origen https real (en vez de file://) para que el fetch()
         // al webservice desde el JS funcione con CORS igual que antes.
         const val APP_URL = "https://appassets.androidplatform.net/assets/infolot-tv-app.html"
+
+        private const val MEMORY_CLEANUP_INTERVAL_MS = 5 * 60 * 1000L
     }
 
     private lateinit var assetLoader: WebViewAssetLoader
@@ -304,6 +336,18 @@ class MainActivity : Activity() {
             isFocusable          = true
             isFocusableInTouchMode = true
             requestFocus()
+
+            // Fuerza renderizado por software en vez de aceleración por
+            // hardware. Confirmado con un tombstone real en un Fire TV Stick
+            // (chip gráfico PowerVR Rogue): el driver de GPU revienta con
+            // SIGSEGV dentro del RenderThread justo en glBindFramebuffer,
+            // llamado desde el compositor del WebView de Amazon — mata el
+            // proceso entero de golpe (no es un renderer sandboxeado, así
+            // que onRenderProcessGone no lo cubre). Al no depender del
+            // driver de GPU para esto, se esquiva el bug de raíz; para una
+            // pantalla de datos como esta (sin vídeo ni animaciones pesadas)
+            // el coste de rendimiento no debería notarse.
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null)
         }
         webView.addJavascriptInterface(OrientationBridge(), "AndroidBridge")
         assetLoader = WebViewAssetLoader.Builder()
@@ -393,11 +437,49 @@ class MainActivity : Activity() {
                     })();
                 """.trimIndent(), null)
             }
+
+            // Bajo presión de memoria (p.ej. con "Rotación automática" activada en
+            // Ajustes, que repinta Botes/Resultados cada pocos segundos sin parar)
+            // el proceso de renderizado del WebView puede morir. Sin este método,
+            // el comportamiento por defecto de Android es matar la app entera
+            // (ver onDestroy); devolviendo true aquí asumimos la recuperación
+            // nosotros y recargamos la página en vez de dejar que el sistema
+            // cierre la app.
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                loadAppUrl()
+                return true
+            }
         }
 
         webView.webChromeClient = WebChromeClient()
 
         loadAppUrl()
+
+        // Solo en TV: en una tablet, el usuario puede cerrar él mismo las
+        // apps que no use, y matarle procesos de fondo sin que lo pida
+        // podría interrumpirle algo en lo que esté. En un Fire TV de PV,
+        // nadie usa Netflix/Disney+/etc. mientras la app está puesta, así
+        // que liberar su caché es pura ganancia (ver memoryHoggingPackages).
+        if (isRunningOnTv()) {
+            memoryCleanupHandler.post(memoryCleanupRunnable)
+        }
+    }
+
+    // Pide a Android que libere la memoria en caché de apps de streaming que
+    // no se usan en el punto de venta (ver memoryHoggingPackages) — la misma
+    // RAM que, si no se libera, acaba forzando al sistema a matar nuestra
+    // propia Activity en primer plano para hacer sitio. No requiere ninguna
+    // pantalla de permiso especial (a diferencia del bloqueo anti-mando):
+    // KILL_BACKGROUND_PROCESSES es un permiso "normal", concedido solo por
+    // declararlo en el manifest.
+    private fun freeBackgroundMemory() {
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        for (pkg in memoryHoggingPackages) {
+            try {
+                am.killBackgroundProcesses(pkg)
+            } catch (e: Exception) {
+            }
+        }
     }
 
     // Extraído de onCreate() para poder reutilizarlo desde restartApp() —
@@ -509,6 +591,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         kioskLockHandler.removeCallbacksAndMessages(null)
+        memoryCleanupHandler.removeCallbacksAndMessages(null)
         webView.destroy()
         super.onDestroy()
     }

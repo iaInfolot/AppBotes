@@ -6,6 +6,14 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Permiso normal (concedido solo por tenerlo declarado, sin pantalla de
+         sistema) que deja pedir a Android que libere la memoria en caché de
+         OTRAS apps — ver freeBackgroundMemory() en MainActivity.kt. En TV con
+         poca RAM (p.ej. Fire TV Stick, 1,3 GB), apps de streaming instaladas
+         (Netflix, Disney+...) se quedan en caché ocupando cientos de MB sin
+         usarse, y eso es lo que acaba forzando al sistema a matar nuestra app
+         en primer plano para hacer sitio. -->
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
     <!-- "Mostrar sobre otras apps" — en TV no sirve para overlays, se pide solo
          por su efecto colateral: es una de las pocas excepciones oficiales a la
          restricción de "background activity launch" de Android 10+, necesaria
