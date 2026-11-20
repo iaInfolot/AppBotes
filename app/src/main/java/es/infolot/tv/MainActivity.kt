@@ -16,6 +16,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
@@ -44,6 +45,10 @@ class MainActivity : Activity() {
     // red momentáneo que se recupera solo), la recarga salta igualmente
     // encima de una app que ya está funcionando, arrancando boot() dos veces.
     private var pendingReloadRunnable: Runnable? = null
+
+    // Último momento en que onRenderProcessGone recargó la página — ver el
+    // cooldown en ese método, más abajo en onCreate().
+    @Volatile private var lastRenderProcessGoneReloadAt = 0L
 
     // true mientras está abierta la pantalla de sistema de "Mostrar sobre
     // otras apps" (ver requestKioskLockPermission() en OrientationBridge) —
@@ -133,6 +138,27 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun exitApp() {
             runOnUiThread { finishAndRemoveTask() }
+        }
+
+        // Consultado desde el aviso remoto "app-status" (ver manageMessage() en
+        // infolot-tv-app.html) — memoria del sistema en el momento exacto del
+        // aviso, para poder diagnosticar reinicios/crashes en PVs a los que no
+        // se puede acceder físicamente sin depender solo de suposiciones sobre
+        // el modelo del dispositivo.
+        @JavascriptInterface
+        fun getMemoryInfo(): String {
+            val json = JSONObject()
+            try {
+                val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                val info = android.app.ActivityManager.MemoryInfo()
+                am.getMemoryInfo(info)
+                json.put("availMemMb", info.availMem / (1024 * 1024))
+                json.put("totalMemMb", info.totalMem / (1024 * 1024))
+                json.put("thresholdMb", info.threshold / (1024 * 1024))
+                json.put("lowMemory", info.lowMemory)
+            } catch (e: Exception) {
+            }
+            return json.toString()
         }
 
         // Aviso remoto "app-restart" por WebSocket (ver manageMessage() en
@@ -293,6 +319,7 @@ class MainActivity : Activity() {
         const val APP_URL = "https://appassets.androidplatform.net/assets/infolot-tv-app.html"
 
         private const val MEMORY_CLEANUP_INTERVAL_MS = 5 * 60 * 1000L
+        private const val RENDER_PROCESS_GONE_COOLDOWN_MS = 5000L
     }
 
     private lateinit var assetLoader: WebViewAssetLoader
@@ -363,7 +390,15 @@ class MainActivity : Activity() {
             javaScriptEnabled                = true
             domStorageEnabled                = true
             databaseEnabled                  = true
-            cacheMode                        = WebSettings.LOAD_NO_CACHE
+            // LOAD_NO_CACHE se puso cuando la pantalla se servía por red desde
+            // GitHub Pages, para evitar quedarse con un HTML viejo en caché.
+            // Desde que se empaquetó en el APK (WebViewAssetLoader) ese riesgo
+            // ya no existe: el HTML sale siempre de assets/, nunca de caché.
+            // Ahora este ajuste solo forzaba redescargar también el logo del
+            // PV entero por red en cada recarga, sin reaprovechar nada de la
+            // vez anterior — con LOAD_DEFAULT el WebView sí puede servirlo de
+            // caché si el PV recarga varias veces seguidas.
+            cacheMode                        = WebSettings.LOAD_DEFAULT
             mediaPlaybackRequiresUserGesture = false
             loadWithOverviewMode             = true
             useWideViewPort                  = true
@@ -445,13 +480,39 @@ class MainActivity : Activity() {
             // (ver onDestroy); devolviendo true aquí asumimos la recuperación
             // nosotros y recargamos la página en vez de dejar que el sistema
             // cierre la app.
+            //
+            // Sin cooldown, un PV donde el renderer muere varias veces seguidas
+            // (visto en logs reales: 3-4 recargas en menos de un segundo) entra
+            // en un bucle de recarga instantánea que nunca deja que la causa de
+            // fondo (memoria, driver gráfico...) se asiente antes de volver a
+            // pintar lo mismo otra vez. Si la última recarga por este motivo fue
+            // hace menos de RENDER_PROCESS_GONE_COOLDOWN_MS, se espera el resto
+            // del cooldown en vez de recargar al instante.
             override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                val now = System.currentTimeMillis()
+                val elapsed = now - lastRenderProcessGoneReloadAt
+                lastRenderProcessGoneReloadAt = now
+                if (elapsed < RENDER_PROCESS_GONE_COOLDOWN_MS) {
+                    view.postDelayed({ loadAppUrl() }, RENDER_PROCESS_GONE_COOLDOWN_MS - elapsed)
+                    return true
+                }
                 loadAppUrl()
                 return true
             }
         }
 
-        webView.webChromeClient = WebChromeClient()
+        webView.webChromeClient = object : WebChromeClient() {
+            // Este WebView de Amazon no vuelca los console.log/warn/error de
+            // la pagina a logcat por su cuenta (confirmado: con el
+            // WebChromeClient por defecto no aparece ni una linea "chromium:
+            // [INFO:CONSOLE...]" aunque la pagina loguee sin parar) — forzado
+            // a mano aqui para poder depurar con "adb logcat" sin cable USB
+            // ni chrome://inspect.
+            override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                Log.d("WebConsole", "${message.message()} -- ${message.sourceId()}:${message.lineNumber()}")
+                return true
+            }
+        }
 
         loadAppUrl()
 

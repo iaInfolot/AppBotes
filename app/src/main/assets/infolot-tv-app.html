@@ -815,8 +815,12 @@ button:focus,select:focus,input:focus,[tabindex]:focus{outline:2px solid var(--p
 // ════════════════════════════════════════════════════════════
 
 // ── 1. CONSTANTES Y ESTADO GLOBAL ────────────────────────────
-const APP_VERSION  = '4.3';
-const APP_REVISION = '20260921-001';
+const APP_VERSION  = '4.4';
+const APP_REVISION = '20261120-001';
+// Momento en que arrancó ESTA carga de la página — ver 'app-status' en
+// manageMessage(): si al pedirlo lleva pocos segundos de vida, es que se
+// acaba de recargar; si lleva horas, no.
+const BOOT_AT = Date.now();
 const STORAGE_KEY  = 'infolot_cfg_v23';
 const LOGO_BASE    = 'https://panel.infolot.es';
 // Logos de cada sorteo hardcodeados en local en vez de usar game.logo/
@@ -1793,8 +1797,41 @@ let wsHealthCheckTimer = null;
 // reconexión. Deliberadamente NO es un polling de datos — no pide nada al
 // backend salvo que detecte que la conexión está realmente muerta.
 const WS_STALE_MS = 90000;
+// Aviso automático cada pocos minutos mientras la app esté viva — a
+// diferencia de 'app-status'/'error-history' (que solo responden si se
+// piden justo durante el fallo), este no hace falta pedirlo: si la app se
+// cuelga de verdad (no solo el logo, el propio hilo de JS bloqueado), este
+// aviso deja de aparecer en los logs sin más, y el hueco entre el último
+// heartbeat y el siguiente dato real marca la ventana exacta del cuelgue.
+//
+// APAGADO por defecto y persistido en cfg (igual que maintenance-mode): con
+// decenas/cientos de PVs activos a la vez, un heartbeat de todos ellos cada
+// pocos minutos satura los logs para un beneficio que solo importa en el
+// puñado de dispositivos que de verdad se están investigando. Se activa a
+// distancia por socket solo para el PV concreto que interese (ver
+// 'heartbeat-mode' en manageMessage()).
+let heartbeatTimer = null;
+const HEARTBEAT_MS = 5 * 60000;
+function startHeartbeat(){
+  if(heartbeatTimer) return;
+  if(!loadConfig().heartbeatEnabled) return;
+  heartbeatTimer = setInterval(()=>{
+    logService(0,'heartbeat',{currentView,msSinceBoot:Date.now()-BOOT_AT});
+  }, HEARTBEAT_MS);
+}
+function stopHeartbeat(){
+  if(heartbeatTimer){clearInterval(heartbeatTimer);heartbeatTimer=null;}
+}
+function setHeartbeatMode(enabled){
+  const cfg=loadConfig();
+  cfg.heartbeatEnabled=!!enabled;
+  persistConfig(cfg);
+  if(cfg.heartbeatEnabled) startHeartbeat(); else stopHeartbeat();
+}
+
 function startWsHealthCheck(){
   if(wsHealthCheckTimer) return; // ya en marcha, no duplicar
+  startHeartbeat();
   wsHealthCheckTimer = setInterval(()=>{
     if(!lastWsMessageAt) return; // todavía no ha llegado el primer mensaje, no juzgar aún
     const idleMs = Date.now() - lastWsMessageAt;
@@ -1847,6 +1884,7 @@ function connectLiveUpdates(){
 // que se reanuda) y disparar varias reconexiones a la vez al volver.
 function pauseLiveUpdates(){
   if(wsHealthCheckTimer){ clearInterval(wsHealthCheckTimer); wsHealthCheckTimer=null; }
+  stopHeartbeat();
   if(socket){
     socket.onopen=null; socket.onmessage=null; socket.onclose=null;
     try{ socket.close(); }catch(e){}
@@ -1943,7 +1981,17 @@ async function reconnectLiveUpdates(){
   if(_wsReconnecting) return;
   _wsReconnecting = true;
   try{
-    await ensureFreshAuthToken();
+    // socketInfo solo se rellena en fetchSocketInfo() (ver boot inicial) —
+    // si se intenta reconectar antes de que esa primera petición termine
+    // (p.ej. la pantalla se pausa/reanuda muy rápido nada más arrancar),
+    // connectLiveUpdates() reventaba leyendo socketInfo.ws_host de null
+    // (confirmado en logs reales: TypeError en connectLiveUpdates llamado
+    // desde reconnectLiveUpdates). Pedirlo aquí si falta antes de conectar,
+    // en vez de asumir que ya existe.
+    if(!socketInfo){
+      await fetchSocketInfo();
+      if(!socketInfo) return; // seguía sin conseguirse (red caída, etc.) — ya lo reintentará el health check
+    }
     connectLiveUpdates();
   } finally {
     _wsReconnecting = false;
@@ -1993,6 +2041,49 @@ function manageMessageGlobal(rawEvent){
   }
 }
 
+// Identifica el chip/driver gráfico real a través de WebGL — ver
+// 'app-status' más abajo. Mucho más fiable que adivinar por el nombre
+// comercial del dispositivo (p.ej. "TPV 2020/2021 UHD Android TV" no dice
+// nada del hardware real por sí solo).
+function getWebglRenderer(){
+  try{
+    const canvas=document.createElement('canvas');
+    const gl=canvas.getContext('webgl')||canvas.getContext('experimental-webgl');
+    if(!gl) return null;
+    const ext=gl.getExtension('WEBGL_debug_renderer_info');
+    if(!ext) return {vendor:gl.getParameter(gl.VENDOR),renderer:gl.getParameter(gl.RENDERER)};
+    return {
+      vendor:gl.getParameter(ext.UNMASKED_VENDOR_WEBGL),
+      renderer:gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
+    };
+  }catch(e){return null;}
+}
+
+// Estado REAL de lo que hay en pantalla ahora mismo, no solo los datos que
+// la app tiene en memoria — ver 'app-status'. Los datos pueden haberse
+// cargado bien y aun así no llegar a pintarse (un error de render, la
+// pantalla de carga atascada tapándolo todo, etc.), así que esto comprueba
+// el DOM directamente: cuántos botes/resultados hay de verdad pintados, y
+// si alguna pantalla superpuesta (carga, mantenimiento, emparejamiento)
+// sigue tapando el contenido.
+function getScreenStatus(){
+  const el=(id)=>document.getElementById(id);
+  const isVisible=(node)=>{
+    if(!node) return false;
+    const style=getComputedStyle(node);
+    return style.display!=='none' && node.offsetParent!==null;
+  };
+  return {
+    overlayVisible: isVisible(el('overlay')),
+    maintenanceVisible: isVisible(el('maintenance-screen')),
+    pairingVisible: isVisible(el('pairing-screen')),
+    jackpotsPainted: el('jackpots-grid') ? el('jackpots-grid').children.length : 0,
+    resultsPainted: el('results-grid') ? el('results-grid').children.length : 0,
+    logoVisible: isVisible(el('pv-logo')),
+    documentHidden: document.hidden
+  };
+}
+
 // Mensajes de negocio ya parseados: {action, id_game?}.
 function manageMessage(message){
   // TODO: switch(message.action) --> Espera el evento del WebSocket
@@ -2021,6 +2112,10 @@ function manageMessage(message){
         manageMessage({ action: 'maintenance-mode', enabled: true, message: txt.slice('maintenance-on'.length).trim() || undefined });
       } else if (txt === 'maintenance-off') {
         manageMessage({ action: 'maintenance-mode', enabled: false });
+      } else if (txt === 'heartbeat-on') {
+        manageMessage({ action: 'heartbeat-mode', enabled: true });
+      } else if (txt === 'heartbeat-off') {
+        manageMessage({ action: 'heartbeat-mode', enabled: false });
       } else if (txt === 'log-request' || txt.startsWith('log-request ')) {
         const op = txt.slice('log-request'.length).trim();
         manageMessage({ action: 'log-request', op: op || 'panel-log-request', is_error: 0, txt: { title: inner.title } });
@@ -2099,6 +2194,13 @@ function manageMessage(message){
       setMaintenanceMode(message.enabled, message.message);
       break;
 
+    // {action:'heartbeat-mode', enabled:true|false} — activa/desactiva el
+    // heartbeat de este PV concreto (ver startHeartbeat() más arriba).
+    case 'heartbeat-mode':
+      console.log('[WS] heartbeat-mode', message.enabled);
+      setHeartbeatMode(message.enabled);
+      break;
+
     // Backend pide la info técnica del dispositivo (la misma que se ve en
     // la pantalla de activación, junto al código) para diagnóstico remoto —
     // se manda vía logService() en vez de por una respuesta directa del
@@ -2122,8 +2224,21 @@ function manageMessage(message){
     // activa, cuántos botes/resultados cargados, si el WebSocket está
     // vivo y desde cuándo no recibe nada, modo demo/mantenimiento...) sin
     // que nadie tenga que adivinar qué preguntar.
-    case 'app-status':
+    case 'app-status': {
       console.log('[WS] app-status');
+      // Memoria del sistema en el momento exacto del aviso (ver
+      // getMemoryInfo() en MainActivity.kt) — para diagnosticar PVs sin
+      // tener que acceder al dispositivo físicamente.
+      let memory=null;
+      let device=null;
+      try{
+        if(window.AndroidBridge&&window.AndroidBridge.getMemoryInfo){
+          memory=JSON.parse(window.AndroidBridge.getMemoryInfo());
+        }
+        if(window.AndroidBridge&&window.AndroidBridge.getDeviceInfo){
+          device=JSON.parse(window.AndroidBridge.getDeviceInfo());
+        }
+      }catch(e){}
       logService(0,'app-status',{
         currentView,
         jackpots: lastJackpotsData.length,
@@ -2131,13 +2246,20 @@ function manageMessage(message){
         games: Object.keys(gamesMap).length,
         socket: socket ? (socket.readyState===1?'open':'readyState:'+socket.readyState) : 'null',
         msSinceLastWs: lastWsMessageAt ? (Date.now()-lastWsMessageAt) : null,
+        msSinceBoot: Date.now()-BOOT_AT,
         demoMode: loadConfig().demoMode,
         autoRotate: loadConfig().autoRotate,
         url: loadConfig().url,
         resultsWeekRef: resolvedResultsWeekRef ? toYMD(resolvedResultsWeekRef) : null,
-        maintenance: loadConfig().maintenance || null
+        maintenance: loadConfig().maintenance || null,
+        memory,
+        network: device ? {type:device.network,signalLevel:device.signalLevel,signalDbm:device.signalDbm,ip:device.ip} : null,
+        gpu: getWebglRenderer(),
+        userAgent: navigator.userAgent,
+        screen: getScreenStatus()
       });
       break;
+    }
 
     // Vuelca el buffer de los últimos console.warn()/console.error()
     // (ver wrapConsoleForBuffer() más arriba) — el "historial" de los
@@ -2261,7 +2383,16 @@ function applyServiceConfig(sc){
 // El logo del punto de venta — fuente definitiva: get-service-config (ver
 // applyServiceConfig). applyPvInfo() también la llama, pero solo como
 // adelanto rápido mientras llega get-service-config.
+// Timer pendiente de la llamada anterior a applyPvLogo() (si la hay) — ver
+// cancelación al principio de la función. Sin esto, dos llamadas seguidas
+// (pv-info + get-service-config, o varias recargas seguidas de la página)
+// dejaban el timeout de 8s de la primera corriendo de fondo, y acababa
+// disparando su propio aviso de fallo sobre una URL ya reemplazada por la
+// segunda llamada — así es como se amontonaban varios "pv-logo-load-failed"
+// casi a la vez en los logs sin que hubiera varios fallos reales.
+let pendingLogoTimer=null;
 function applyPvLogo(media){
+  if(pendingLogoTimer){clearTimeout(pendingLogoTimer);pendingLogoTimer=null;}
   const nameEl=document.getElementById('pv-name');
   const logoEl=document.getElementById('pv-logo');
   const loadingLogoEl=document.getElementById('loading-logo');
@@ -2280,6 +2411,7 @@ function applyPvLogo(media){
     const logoTimer=setTimeout(()=>{
       if(!settled){settled=true;console.warn('[Logo] Timeout:',logoUrl);logService(1,'pv-logo-load-failed',{url:logoUrl,reason:'timeout'});logoEl.style.display='none';if(nameEl)nameEl.style.display='';}
     },8000);
+    pendingLogoTimer=logoTimer;
     logoEl.onload=()=>{
       if(settled) return;settled=true;clearTimeout(logoTimer);
       console.log('[Logo] Loaded OK:',logoUrl);
